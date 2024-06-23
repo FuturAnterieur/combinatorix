@@ -10,8 +10,6 @@ enum class combination_kind {
   substance_of,
 };
 
-//This should hold a container of functions
-//That way, many on_combine callbacks may be added to the same entity, probably following what other components it has (but not always)
 struct on_combine_func {
   std::list<std::function<void(entt::registry &, combination_kind, entt::entity, entt::entity)>> Funcs;
 };

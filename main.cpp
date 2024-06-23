@@ -5,44 +5,6 @@
 #include <iostream>
 #include <string>
 
-
-/* Monster code from 2021 that antedated registry.storage()
-// Required registry.visit(), which does not exist anymore
-template<typename... Type>
-entt::type_list<Type...> as_type_list(const entt::type_list<Type...> &);
-
-template<typename Entity>
-struct PolyStorage: entt::type_list_cat_t<
-    decltype(as_type_list(std::declval<entt::Storage<Entity>>())),
-    entt::type_list<void(entt::basic_registry<Entity> &, const Entity, const Entity)>
-> {
-    template<typename Base>
-    struct type: entt::Storage<Entity>::template type<Base> {
-        static constexpr auto base = decltype(as_type_list(std::declval<entt::Storage<Entity>>()))::size;
-
-        void copy_to(entt::basic_registry<Entity> &reg, const Entity from, const Entity to) {
-            entt::poly_call<base + 0>(*this, reg, from, to);
-        }
-    };
-
-    template<typename Type>
-    static void copy_to(Type &pool, entt::basic_registry<Entity> &reg, const Entity from, const Entity to) {
-        pool.emplace(reg, to, pool.get(from));
-    }
-
-    template<typename Type>
-    using impl = entt::value_list_cat_t<
-        typename entt::Storage<Entity>::template impl<Type>,
-        entt::value_list<&copy_to<Type>>
-    >;
-};
-
-template<typename Entity>
-struct entt::poly_storage_traits<Entity> {
-    using storage_type = entt::poly<PolyStorage<Entity>>;
-};
-*/
-
 //==========================
 template<typename... Ts>
 struct combination_connector{
@@ -167,12 +129,6 @@ int main(int argc, char* argv[]){
   const auto le_monstre = registry.create();
   registry.emplace<on_combine_func>(le_monstre); 
   
-  //could try using a std::bind(&couverturable::on_combined_to, &registry.get<couverturable>(le_monstre))
-  //BUT : 
-  //kinda associates the whole le_monstre's on_combine routine to his couverturable component
-  //You should never hold on to component references
-  
-
   combination_info monster_info;
   monster_info.AcceptedCombinations.emplace(combination_kind::equipping, std::set<entt::type_info>({entt::type_id<couverture>()}));
   registry.emplace<combination_info>(le_monstre, monster_info);
