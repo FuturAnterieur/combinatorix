@@ -22,14 +22,14 @@ bool combine(entt::registry &registry, entt::entity a, entt::entity b){
       if(storage_ptr && storage_ptr->contains(b)){
         
         combinable_of_a.CurrentCombinations[kind].insert(b);
-        if(registry.any_of<on_combine_func>(a)){
-          for(const auto &func : registry.get<on_combine_func>(a).Funcs){
+        if(registry.any_of<on_combine_trigger>(a)){
+          for(const auto &func : registry.get<on_combine_trigger>(a).Funcs){
             func(registry, kind, a, b);
           }
         }
         
-        if(registry.any_of<on_combine_func>(b)){
-          for(const auto &func : registry.get<on_combine_func>(b).Funcs){
+        if(registry.any_of<on_combine_trigger>(b)){
+          for(const auto &func : registry.get<on_combine_trigger>(b).Funcs){
             func(registry, kind, b, a);
           }
         }

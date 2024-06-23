@@ -10,7 +10,7 @@ enum class combination_kind {
   substance_of,
 };
 
-struct on_combine_func {
+struct on_combine_trigger {
   std::list<std::function<void(entt::registry &, combination_kind, entt::entity, entt::entity)>> Funcs;
 };
 
@@ -24,8 +24,8 @@ bool combine(entt::registry &registry, entt::entity a, entt::entity b);
 template<typename Component>
 void emplace_combination_reactive_component(entt::registry &registry, entt::entity e){
   registry.emplace<Component>(e);
-  if(registry.any_of<on_combine_func>(e)){
-    on_combine_func &es_funcs = registry.get<on_combine_func>(e);
+  if(registry.any_of<on_combine_trigger>(e)){
+    on_combine_trigger &es_funcs = registry.get<on_combine_trigger>(e);
     es_funcs.Funcs.push_back(&Component::on_combined_to);
   }
 }

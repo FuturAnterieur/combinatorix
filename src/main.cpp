@@ -118,7 +118,7 @@ int main(int argc, char* argv[]){
   display(registry);
 
   const auto la_couverte = registry.create();
-  registry.emplace<on_combine_func>(la_couverte);
+  registry.emplace<on_combine_trigger>(la_couverte);
  
   combination_info starting_couverture_combinable;
   starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::equipping, std::set<entt::type_info>({entt::type_id<couverturable>()}));
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]){
   emplace_combination_reactive_component<couverture>(registry, la_couverte);
 
   const auto le_monstre = registry.create();
-  registry.emplace<on_combine_func>(le_monstre); 
+  registry.emplace<on_combine_trigger>(le_monstre); 
   
   combination_info monster_info;
   monster_info.AcceptedCombinations.emplace(combination_kind::equipping, std::set<entt::type_info>({entt::type_id<couverture>()}));
