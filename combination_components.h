@@ -1,0 +1,33 @@
+#pragma once
+
+#include <entt/entity/registry.hpp>
+#include <functional>
+#include <map>
+#include <set>
+
+enum class combination_kind {
+  equipping,
+  substance_of,
+};
+
+//This should hold a container of functions
+//That way, many on_combine callbacks may be added to the same entity, probably following what other components it has (but not always)
+struct on_combine_func {
+  std::list<std::function<void(entt::registry &, combination_kind, entt::entity, entt::entity)>> Funcs;
+};
+
+struct combination_info{
+  std::map<combination_kind, std::set<entt::type_info>> AcceptedCombinations;
+  std::map<combination_kind, std::set<entt::entity>> CurrentCombinations;
+};
+
+bool combine(entt::registry &registry, entt::entity a, entt::entity b);
+
+template<typename Component>
+void emplace_combination_reactive_component(entt::registry &registry, entt::entity e){
+  registry.emplace<Component>(e);
+  if(registry.any_of<on_combine_func>(e)){
+    on_combine_func &es_funcs = registry.get<on_combine_func>(e);
+    es_funcs.Funcs.push_back(&Component::on_combined_to);
+  }
+}
