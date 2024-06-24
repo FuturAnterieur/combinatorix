@@ -39,4 +39,4 @@ struct on_use_trigger {
   std::list<on_use_trigger_info> Triggers;
 };
 
-void use(entt::registry &registry, entt::entity entity);
+void use(entt::registry &registry, entt::entity source, entt::entity target);

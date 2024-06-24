@@ -5,23 +5,6 @@
 #include <iostream>
 #include <string>
 
-//==========================
-template<typename... Ts>
-struct combination_connector{
-  entt::entity connected;
-};
-
-template<typename... Ts, typename... Us>
-bool connect(combination_connector<Ts...> &t, combination_connector<Us...> &u, entt::registry &registry, entt::entity &candidate_t, entt::entity &candidate_u){
-  if(!registry.any_of<Ts...>(candidate_u) || !registry.any_of<Us...>(candidate_t)){
-    return false;
-  }
-  t.connected = candidate_u;
-  u.connected = candidate_t;
-  return true;
-}
-
-//======================================
 
 //======================================
 struct has_name {
@@ -34,17 +17,18 @@ struct factoryable{
 
 struct factory{
   
-  std::vector<entt::entity> ProducedEntities;
-  bool attach(entt::registry &registry, const entt::entity &new_ent) {
-    if(registry.any_of<factoryable>(new_ent)){
-      ProducedEntities.push_back(new_ent);
-      return true;
+  static void produce(entt::registry &registry, entt::entity me){
+    if(!registry.any_of<combination_info>(me)){
+      return;
     }
-    return false;
-  }
 
-  void produce(entt::registry &registry){
-    for(const entt::entity &source : ProducedEntities){
+    combination_info &info = registry.get<combination_info>(me);
+    auto map_it = info.CurrentCombinations.find(combination_kind::production);
+    if(map_it == info.CurrentCombinations.end()){
+      return;
+    }
+
+    for(const entt::entity &source : map_it->second){
       const entt::entity other = registry.create();
       for(const auto [id, storage] : registry.storage()){
         if(storage.contains(source)){
@@ -92,27 +76,30 @@ void display(entt::registry &registry){
 int main(int argc, char* argv[]){
 
   entt::registry registry;
-  std::vector<entt::entity> AllEntities;
-  for(int i = 0; i < 10; i++) {
-      const auto entity = registry.create();
-      registry.emplace<has_name>(entity, std::to_string(i));
-      if(i % 2 == 0) registry.emplace<factoryable>(entity);
-      AllEntities.push_back(entity);
-  }
 
   const auto the_factory = registry.create();
   registry.emplace<factory>(the_factory);
   registry.emplace<has_name>(the_factory, "Gurren Lagann");
+  combination_info fci;
+  fci.AcceptedCombinations.emplace(combination_kind::production, std::set<entt::type_info>{entt::type_id<factoryable>()});
+  registry.emplace<combination_info>(the_factory, fci);
 
-  factory &fac = registry.get<factory>(the_factory);
-  for(const auto entity : AllEntities) {
-    fac.attach(registry, entity);
+  for(int i = 0; i < 10; i++) {
+      const auto entity = registry.create();
+      registry.emplace<has_name>(entity, std::to_string(i));
+      if(i % 2 == 0) {
+        registry.emplace<factoryable>(entity);
+        combination_info fable_info;
+        fable_info.AcceptedCombinations.emplace(combination_kind::production, std::set<entt::type_info>{entt::type_id<factory>()});
+        registry.emplace<combination_info>(entity, fable_info);
+        combine(registry, the_factory, entity);
+      }
   }
-
+  
   std::cout << "Before producing : \n";
   display(registry);
 
-  fac.produce(registry);
+  factory::produce(registry, the_factory);
   
   std::cout << "After producing : \n";
   display(registry);

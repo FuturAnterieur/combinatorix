@@ -8,6 +8,7 @@
 enum class combination_kind {
   equipping,
   substance_of,
+  production //produced items could also be simply 'equipped' to a factory
 };
 
 struct on_combine_trigger {
