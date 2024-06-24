@@ -17,8 +17,14 @@ struct on_combine_trigger {
   std::list<combine_trigger_t> Funcs;
 };
 
-struct combination_info{
 
+struct combination_info{
+  //FUTURE : 
+  //- codify AcceptedCombinations in the registry.ctx()
+  //- make it a structure saying : for this combination_kind, these type pairings are accepted
+  //  - actually probably a lambda for each combination kind
+  //  - entities will only have to register their types for the combine function to analyse them based on the structure in the ctx().
+  //  - I could still support the capacity for individual entities to override the comparison lambda for certain combination kinds.
   std::set<combination_kind> AcceptedCombinations;
   std::map<combination_kind, std::set<entt::entity>> CurrentCombinations;
 };

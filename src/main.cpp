@@ -2,7 +2,9 @@
 #include "split.h"
 #include "effect.h"
 #include "combination_components.h"
+#include "types.h"
 #include <entt/entity/registry.hpp>
+#include <entt/entity/runtime_view.hpp>
 #include <iostream>
 #include <string>
 
@@ -71,6 +73,38 @@ void display(entt::registry &registry){
 int main(int argc, char* argv[]){
 
   entt::registry registry;
+
+  std::cout << "Testing storage (should write Mermelionos) : ";
+  const entt::entity mermelionos = registry.create();
+  registry.emplace<has_name>(mermelionos, "Mermelionos");
+  const entt::entity taliesin = registry.create();
+  registry.emplace<has_name>(taliesin, "Taliesin");
+
+  auto &&wizzy_storage = registry.storage<has_type>(entt::hashed_string::value("wizard"));
+  wizzy_storage.emplace(mermelionos);
+  wizzy_storage.emplace(taliesin);
+
+  auto &&roby_storage = registry.storage<has_type>(entt::hashed_string::value("has_robe"));
+  roby_storage.emplace(mermelionos);
+
+  
+  entt::runtime_view rt_view{};
+  rt_view.iterate(wizzy_storage).iterate(roby_storage).iterate(registry.storage<has_name>());
+  for(auto entity : rt_view){
+    has_name &hn = registry.get<has_name>(entity);
+    std::cout << hn.Name;
+  }
+  std::cout << "\n";
+  std::cout << "Again (should write Taliesin) : ";
+  auto yes_view = entt::view<entt::get_t<has_type>>{wizzy_storage};
+  auto yes_view_2 = entt::view<entt::get_t<has_name>>(registry.storage<has_name>());
+  auto no_view = entt::view<entt::get_t<>, entt::exclude_t<has_type>>{roby_storage};
+
+  for(auto entity : yes_view | yes_view_2 | no_view){
+    has_name &hn = registry.get<has_name>(entity);
+    std::cout << hn.Name;
+  }
+  std::cout << "\n";
 
   const auto the_factory = registry.create();
   registry.emplace<has_name>(the_factory, "Gurren Lagann");
