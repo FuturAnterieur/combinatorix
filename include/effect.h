@@ -3,6 +3,7 @@
 #include <entt/entity/registry.hpp>
 #include <functional>
 #include <list>
+#include <set>
 
 struct effect_info {
   entt::entity OriginatingEntity;
@@ -22,9 +23,10 @@ void update_effects(entt::registry &registry); //i.e. update (status) effects
 
 //To whom should the effect be added?
 
+//registry, ability, target (can group many targets together in one entity)
+using use_func_t = std::function<void(entt::registry&, entt::entity, entt::entity)>;
 struct usable {
-  //registry, source, target (can group many targets together in one entity)
-  std::function<void(entt::registry&, entt::entity, entt::entity)> UseFunc;
+  use_func_t UseFunc;
 };
 
 //How do I tell > Ent B has a trigger that goes off only when A is used?
@@ -39,4 +41,12 @@ struct on_use_trigger {
   std::list<on_use_trigger_info> Triggers;
 };
 
-void use(entt::registry &registry, entt::entity source, entt::entity target);
+struct can_have_abilities {};
+
+void use(entt::registry &registry, entt::entity ability, entt::entity target);
+
+struct combination_info;
+entt::entity add_ability(entt::registry &registry, entt::entity candidate_owner, use_func_t func, const combination_info &info);
+bool add_ability(entt::registry &registry, entt::entity candidate_owner, entt::entity ability);
+
+std::set<entt::entity> list_abilities(entt::registry &registry, entt::entity owner);

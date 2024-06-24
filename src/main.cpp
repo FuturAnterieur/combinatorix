@@ -1,5 +1,6 @@
 
 #include "split.h"
+#include "effect.h"
 #include "combination_components.h"
 #include <entt/entity/registry.hpp>
 #include <iostream>
@@ -11,19 +12,14 @@ struct has_name {
   std::string Name;
 };
 
-struct factoryable{
-
-};
-
-struct factory{
-  
-  static void produce(entt::registry &registry, entt::entity me){
+namespace factory_effect{
+  void produce(entt::registry &registry, entt::entity me, entt::entity target){
     if(!registry.any_of<combination_info>(me)){
       return;
     }
 
     combination_info &info = registry.get<combination_info>(me);
-    auto map_it = info.CurrentCombinations.find(combination_kind::production);
+    auto map_it = info.CurrentCombinations.find(combination_kind::attached);
     if(map_it == info.CurrentCombinations.end()){
       return;
     }
@@ -37,7 +33,13 @@ struct factory{
       }
     }
   }
-};
+
+  entt::entity init(entt::registry &registry, entt::entity owner){
+    combination_info base_info;
+    base_info.AcceptedCombinations.emplace(combination_kind::attached);
+    return add_ability(registry, owner, factory_effect::produce, base_info);
+  }
+}
 
 //==================================
 
@@ -65,7 +67,7 @@ struct couverture {
 };
 
 void display(entt::registry &registry){
-  auto view = registry.view<factoryable, has_name>();
+  auto view = registry.view<has_name>();
 
   for(auto entity : view){
     has_name &hn = view.get<has_name>(entity);
@@ -78,46 +80,39 @@ int main(int argc, char* argv[]){
   entt::registry registry;
 
   const auto the_factory = registry.create();
-  registry.emplace<factory>(the_factory);
   registry.emplace<has_name>(the_factory, "Gurren Lagann");
-  combination_info fci;
-  fci.AcceptedCombinations.emplace(combination_kind::production, std::set<entt::type_info>{entt::type_id<factoryable>()});
-  registry.emplace<combination_info>(the_factory, fci);
+  entt::entity feff = factory_effect::init(registry, the_factory);
+  
 
   for(int i = 0; i < 10; i++) {
       const auto entity = registry.create();
       registry.emplace<has_name>(entity, std::to_string(i));
       if(i % 2 == 0) {
-        registry.emplace<factoryable>(entity);
         combination_info fable_info;
-        fable_info.AcceptedCombinations.emplace(combination_kind::production, std::set<entt::type_info>{entt::type_id<factory>()});
+        fable_info.AcceptedCombinations.emplace(combination_kind::attached);
         registry.emplace<combination_info>(entity, fable_info);
-        combine(registry, the_factory, entity);
+        combine(registry, feff, entity);
       }
   }
   
   std::cout << "Before producing : \n";
   display(registry);
 
-  factory::produce(registry, the_factory);
+  use(registry, feff, entt::null);
   
   std::cout << "After producing : \n";
   display(registry);
 
   const auto la_couverte = registry.create();
-  registry.emplace<on_combine_trigger>(la_couverte);
- 
   combination_info starting_couverture_combinable;
-  starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::equipping, std::set<entt::type_info>({entt::type_id<couverturable>()}));
-  starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::substance_of, std::set<entt::type_info>({entt::type_id<spell>(), entt::type_id<material>()}));
+  starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::equipping);
+  starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::substance_of);
   registry.emplace<combination_info>(la_couverte, starting_couverture_combinable);
   emplace_combination_reactive_component<couverture>(registry, la_couverte);
 
   const auto le_monstre = registry.create();
-  registry.emplace<on_combine_trigger>(le_monstre); 
-  
   combination_info monster_info;
-  monster_info.AcceptedCombinations.emplace(combination_kind::equipping, std::set<entt::type_info>({entt::type_id<couverture>()}));
+  monster_info.AcceptedCombinations.emplace(combination_kind::equipping);
   registry.emplace<combination_info>(le_monstre, monster_info);
   emplace_combination_reactive_component<couverturable>(registry, le_monstre);
 
@@ -133,9 +128,9 @@ int main(int argc, char* argv[]){
   split(registry, la_couverte, my_rule, split_result);
 
   std::cout << "split result" << std::endl;
-  auto it = registry.get<combination_info>(split_result[1]).AcceptedCombinations.at(combination_kind::equipping).begin();
-  std::cout << entt::type_id<couverturable>().index() << std::endl;
-  std::cout << it->index() << std::endl;
+  auto &combines = registry.get<combination_info>(split_result[1]).AcceptedCombinations;
+  auto it = combines.find(combination_kind::equipping);
+  std::cout << (it != combines.end()) << std::endl;
 
   return 0;
 }

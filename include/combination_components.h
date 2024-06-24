@@ -8,7 +8,8 @@
 enum class combination_kind {
   equipping,
   substance_of,
-  production //produced items could also be simply 'equipped' to a factory
+  attached, //produced items could also be simply 'equipped' to a factory
+  ability
 };
 
 struct on_combine_trigger {
@@ -16,7 +17,8 @@ struct on_combine_trigger {
 };
 
 struct combination_info{
-  std::map<combination_kind, std::set<entt::type_info>> AcceptedCombinations;
+
+  std::set<combination_kind> AcceptedCombinations;
   std::map<combination_kind, std::set<entt::entity>> CurrentCombinations;
 };
 
@@ -25,8 +27,9 @@ bool combine(entt::registry &registry, entt::entity a, entt::entity b);
 template<typename Component>
 void emplace_combination_reactive_component(entt::registry &registry, entt::entity e){
   registry.emplace<Component>(e);
-  if(registry.any_of<on_combine_trigger>(e)){
-    on_combine_trigger &es_funcs = registry.get<on_combine_trigger>(e);
-    es_funcs.Funcs.push_back(&Component::on_combined_to);
-  }
+  if(!registry.any_of<on_combine_trigger>(e)){
+    registry.emplace<on_combine_trigger>(e);
+  } 
+  on_combine_trigger &es_funcs = registry.get<on_combine_trigger>(e);
+  es_funcs.Funcs.push_back(&Component::on_combined_to);
 }
