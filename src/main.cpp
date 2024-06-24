@@ -43,28 +43,21 @@ namespace factory_effect{
 
 //==================================
 
-struct couverturable  {
-  static void on_combined_to(entt::registry &registry, combination_kind kind, entt::entity me, entt::entity other) {
+namespace couverturable  {
+  void on_combined_to(entt::registry &registry, combination_kind kind, entt::entity me, entt::entity other) {
     std::cout << "couverturable has been combined\n";
   }
-};
-
-struct material {
-  
-};
-
-struct spell {
-};
+}
 
 void my_on_combined_to(entt::registry &registry, combination_kind kind, entt::entity me, entt::entity other){
   std::cout << "le_monstre has been combined\n";
 }
 
-struct couverture {
-  static void on_combined_to(entt::registry &registry, combination_kind kind, entt::entity me, entt::entity other) {
+namespace couverture {
+  void on_combined_to(entt::registry &registry, combination_kind kind, entt::entity me, entt::entity other) {
     std::cout << "couverture has been combined\n";
   }
-};
+}
 
 void display(entt::registry &registry){
   auto view = registry.view<has_name>();
@@ -104,33 +97,33 @@ int main(int argc, char* argv[]){
   display(registry);
 
   const auto la_couverte = registry.create();
-  combination_info starting_couverture_combinable;
-  starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::equipping);
-  starting_couverture_combinable.AcceptedCombinations.emplace(combination_kind::substance_of);
-  registry.emplace<combination_info>(la_couverte, starting_couverture_combinable);
-  emplace_combination_reactive_component<couverture>(registry, la_couverte);
+  registry.emplace<has_name>(la_couverte, "Couverture Name!!!");
+  combination_info couverture_info;
+  couverture_info.AcceptedCombinations.emplace(combination_kind::equipping);
+  couverture_info.AcceptedCombinations.emplace(combination_kind::substance_of);
+  registry.emplace<combination_info>(la_couverte, couverture_info);
+  add_combine_trigger(registry, la_couverte, &couverture::on_combined_to);
 
   const auto le_monstre = registry.create();
   combination_info monster_info;
   monster_info.AcceptedCombinations.emplace(combination_kind::equipping);
   registry.emplace<combination_info>(le_monstre, monster_info);
-  emplace_combination_reactive_component<couverturable>(registry, le_monstre);
+  add_combine_trigger(registry, le_monstre, &couverturable::on_combined_to);
 
   if(combine(registry, la_couverte, le_monstre)){
     std::cout << "combination success" << std::endl;
   }
 
   split_rule my_rule;
-  my_rule.TypeGroups.push_back(std::set<entt::type_info>({entt::type_id<couverture>()}));
+  my_rule.TypeGroups.push_back(std::set<entt::type_info>({entt::type_id<has_name>()}));
   my_rule.TypeGroups.push_back(std::set<entt::type_info>({entt::type_id<combination_info>()}));
 
   std::vector<entt::entity> split_result;
   split(registry, la_couverte, my_rule, split_result);
 
-  std::cout << "split result" << std::endl;
-  auto &combines = registry.get<combination_info>(split_result[1]).AcceptedCombinations;
-  auto it = combines.find(combination_kind::equipping);
-  std::cout << (it != combines.end()) << std::endl;
+  std::cout << "split result : ";
+  auto &combines = registry.get<has_name>(split_result[0]).Name;
+  std::cout << combines << "\n";
 
   return 0;
 }

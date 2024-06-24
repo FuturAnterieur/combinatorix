@@ -12,8 +12,9 @@ enum class combination_kind {
   ability
 };
 
+using combine_trigger_t = std::function<void(entt::registry &, combination_kind, entt::entity, entt::entity)>;
 struct on_combine_trigger {
-  std::list<std::function<void(entt::registry &, combination_kind, entt::entity, entt::entity)>> Funcs;
+  std::list<combine_trigger_t> Funcs;
 };
 
 struct combination_info{
@@ -24,12 +25,4 @@ struct combination_info{
 
 bool combine(entt::registry &registry, entt::entity a, entt::entity b);
 
-template<typename Component>
-void emplace_combination_reactive_component(entt::registry &registry, entt::entity e){
-  registry.emplace<Component>(e);
-  if(!registry.any_of<on_combine_trigger>(e)){
-    registry.emplace<on_combine_trigger>(e);
-  } 
-  on_combine_trigger &es_funcs = registry.get<on_combine_trigger>(e);
-  es_funcs.Funcs.push_back(&Component::on_combined_to);
-}
+void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func);

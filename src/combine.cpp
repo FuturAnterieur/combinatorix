@@ -30,3 +30,12 @@ bool combine(entt::registry &registry, entt::entity a, entt::entity b){
   }
   return match_found;
 }
+
+void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func) 
+{
+  if(!registry.any_of<on_combine_trigger>(e)){
+    registry.emplace<on_combine_trigger>(e);
+  } 
+  on_combine_trigger &es_funcs = registry.get<on_combine_trigger>(e);
+  es_funcs.Funcs.push_back(func);
+}
