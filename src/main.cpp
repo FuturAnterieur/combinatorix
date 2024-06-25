@@ -2,7 +2,7 @@
 #include "split.h"
 #include "effect.h"
 #include "combination_components.h"
-#include "types.h"
+#include "status.h"
 #include <entt/entity/registry.hpp>
 #include <entt/entity/runtime_view.hpp>
 #include <iostream>

@@ -5,24 +5,27 @@
 #include <list>
 #include <set>
 
-struct effect_info {
+struct status_effect_info {
   entt::entity OriginatingEntity;
   std::function<void(entt::registry&, entt::entity, entt::entity)> ApplyFunc;
 };
 
-struct effects { //i.e. generally status effects currently applying to the parent entity
-  std::list<effect_info> Infos;
-  entt::constness_as_t<entt::storage_type_t<effect_info, entt::entity, std::allocator<effect_info>>, effect_info> InfosOnSteroids;
+struct status_effects { //i.e. generally status effects currently applying to the parent entity
+  std::list<status_effect_info> Infos;
+  //entt::constness_as_t<entt::storage_type_t<effect_info, entt::entity, std::allocator<effect_info>>, effect_info> InfosOnSteroids;
 };
 
-void update_effects(entt::registry &registry); //i.e. update (status) effects
+//Update status effects for EVERYONE
+void update_all_status_effects(entt::registry &registry); //i.e. update (status) effects
+//Update status effects for a single entity (rerun the calculation in the order the list is sorted)
+void update_status_effects(entt::registry &registry, entt::entity entity);
+void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info);
 
 //Active effects, Passive effects
-//Passive : are called at each update
+//Passive : Status modifying effects -> reran each time they are modified
+//Effects that stay on place but do something at regular time intervals / according to certain events -> use a trigger system
 //Active : are called only on use
-//But the signature for the call should be the same so...
 
-//To whom should the effect be added?
 
 //registry, ability, target (can group many targets together in one entity)
 using use_func_t = std::function<void(entt::registry&, entt::entity, entt::entity)>;

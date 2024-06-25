@@ -1,15 +1,45 @@
 #include "effect.h"
 #include "combination_components.h"
+#include "status.h"
 
 //=================================================
-void update_effects(entt::registry &registry){
-  auto view = registry.view<effects>();
+void update_all_status_effects(entt::registry &registry){
+  auto view = registry.view<status_effects>();
 
-  view.each([&](auto entity, effects &eff){
+  reset_all_original_status(registry);
+
+  view.each([&](auto entity, status_effects &eff){
     for(const auto &info : eff.Infos){
       info.ApplyFunc(registry, info.OriginatingEntity, entity);
     }
   });
+}
+
+//=================================================
+void update_status_effects(entt::registry &registry, entt::entity entity){
+  status_effects* effs = registry.try_get<status_effects>(entity);
+  if(!effs){
+    return;
+  }
+
+  //Reset params and status to their original values
+  reset_original_status(registry, entity);
+
+  for(const auto &info : effs->Infos){
+    info.ApplyFunc(registry, info.OriginatingEntity, entity);
+  }
+}
+
+//==================================================
+void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info){
+  if(!registry.any_of<status_effects>(entity)){
+    registry.emplace<status_effects>(entity, std::list<status_effect_info>({info}));
+  } else {
+    status_effects &effs = registry.get<status_effects>(entity);
+    effs.Infos.push_back(info);
+  }
+  //Sort Infos according to the current rules about Status Effect Modification priority, then
+  update_status_effects(registry, entity);
 }
 
 //==================================================
