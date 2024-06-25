@@ -80,13 +80,12 @@ int main(int argc, char* argv[]){
   const entt::entity taliesin = registry.create();
   registry.emplace<has_name>(taliesin, "Taliesin");
 
-  auto &&wizzy_storage = registry.storage<has_type>(entt::hashed_string::value("wizard"));
+  auto &&wizzy_storage = registry.storage<void>(entt::hashed_string::value("wizard"));
   wizzy_storage.emplace(mermelionos);
   wizzy_storage.emplace(taliesin);
 
-  auto &&roby_storage = registry.storage<has_type>(entt::hashed_string::value("has_robe"));
+  auto &&roby_storage = registry.storage<void>(entt::hashed_string::value("has_robe"));
   roby_storage.emplace(mermelionos);
-
   
   entt::runtime_view rt_view{};
   rt_view.iterate(wizzy_storage).iterate(roby_storage).iterate(registry.storage<has_name>());
@@ -96,9 +95,9 @@ int main(int argc, char* argv[]){
   }
   std::cout << "\n";
   std::cout << "Again (should write Taliesin) : ";
-  auto yes_view = entt::view<entt::get_t<has_type>>{wizzy_storage};
+  auto yes_view = entt::view<entt::get_t<void>>{wizzy_storage};
   auto yes_view_2 = entt::view<entt::get_t<has_name>>(registry.storage<has_name>());
-  auto no_view = entt::view<entt::get_t<>, entt::exclude_t<has_type>>{roby_storage};
+  auto no_view = entt::view<entt::get_t<>, entt::exclude_t<void>>{roby_storage};
 
   for(auto entity : yes_view | yes_view_2 | no_view){
     has_name &hn = registry.get<has_name>(entity);

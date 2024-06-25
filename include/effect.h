@@ -12,6 +12,7 @@ struct effect_info {
 
 struct effects { //i.e. generally status effects currently applying to the parent entity
   std::list<effect_info> Infos;
+  entt::constness_as_t<entt::storage_type_t<effect_info, entt::entity, std::allocator<effect_info>>, effect_info> InfosOnSteroids;
 };
 
 void update_effects(entt::registry &registry); //i.e. update (status) effects
