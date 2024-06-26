@@ -116,8 +116,8 @@ void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attr
     if(!param_specific_storage.contains(entity)  && snapshot.ParamValues.find(hash) == snapshot.ParamValues.end()){
       param_specific_storage.emplace(entity, param);
     } else {
-      assert(param_specific_storage.contains(entity));
-      param_specific_storage.get(entity) = param;
+      //Use patch so that registry.on_update<parameter>(entt::hashed_string::value(param_name)) will work
+      param_specific_storage.patch(entity, [&](auto &local_p) { local_p.DT = param.DT; local_p.Value = param.Value; });
     }
   }
 
