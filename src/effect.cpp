@@ -1,19 +1,7 @@
 #include "effect.h"
 #include "combination_components.h"
 #include "status.h"
-
-//=================================================
-void update_all_status_effects(entt::registry &registry){
-  auto view = registry.view<status_effects>();
-
-  reset_all_original_status(registry);
-
-  view.each([&](auto entity, status_effects &eff){
-    for(const auto &info : eff.Infos){
-      info.ApplyFunc(registry, info.OriginatingEntity, entity);
-    }
-  });
-}
+//#include "entt/entity/observer.hpp"
 
 //=================================================
 void update_status_effects(entt::registry &registry, entt::entity entity){
@@ -23,11 +11,16 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   }
 
   //Reset params and status to their original values
-  reset_original_status(registry, entity);
+  attributes_info_snapshot snapshot;
+  reset_original_status(registry, snapshot, entity);
 
   for(const auto &info : effs->Infos){
     info.ApplyFunc(registry, info.OriginatingEntity, entity);
   }
+
+  commit_attr_info(registry, registry.get<attributes_info>(entity), snapshot, entity);
+  //Launch trigger for 'on status updated' on 'entity'
+  //registry.on_destroy<void>(entt::hashed_string::value("in_grave")).connect<&super_listener>();
 }
 
 //==================================================

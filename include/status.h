@@ -6,7 +6,7 @@
 #include <map>
 
 struct type_inheritance_node {
-  type_inheritance_node *Parent{nullptr};
+  type_inheritance_node *Parent{nullptr}; //NO! Could have many parents. To be confirmed.
   std::list<type_inheritance_node *> Children;
   std::string Name;
   entt::id_type Hash;
@@ -37,16 +37,22 @@ struct attributes_info {
   std::set<entt::id_type> OriginalStatusHashes;
   std::set<entt::id_type> CurrentStatusHashes;
   std::map<entt::id_type, parameter> OriginalParamValues;
-  std::set<entt::id_type> CurrentParamHashes;
+  std::map<entt::id_type, parameter> CurrentParamValues;
+};
+
+struct attributes_info_snapshot {
+  std::set<entt::id_type> StatusHashes;
+  std::map<entt::id_type, parameter> ParamValues;
 };
 
 bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 bool add_additional_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 
-void reset_original_status(entt::registry &registry, entt::entity entity);
-void reset_all_original_status(entt::registry &registry);
+void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
 
-void reset_original_status(entt::registry &registry, attributes_info &attr_info, entt::entity entity);
+void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
+void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
+
 
 //Now : Modifiers : the revenge
 //they should always be additive

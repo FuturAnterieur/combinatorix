@@ -15,8 +15,7 @@ struct status_effects { //i.e. generally status effects currently applying to th
   //entt::constness_as_t<entt::storage_type_t<effect_info, entt::entity, std::allocator<effect_info>>, effect_info> InfosOnSteroids;
 };
 
-//Update status effects for EVERYONE
-void update_all_status_effects(entt::registry &registry); //i.e. update (status) effects
+
 //Update status effects for a single entity (rerun the calculation in the order the list is sorted)
 void update_status_effects(entt::registry &registry, entt::entity entity);
 void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info);

@@ -39,7 +39,7 @@ bool add_original_parameter(entt::registry &registry, entt::entity entity, const
   
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   attr_info.OriginalParamValues.emplace(hash, parameter{dt, value}); 
-  attr_info.CurrentParamHashes.emplace(hash);
+  attr_info.CurrentParamValues.emplace(hash, parameter{dt, value});
 
   auto &&specific_storage = registry.storage<parameter>(hash);
   if(!specific_storage.contains(entity)){
@@ -58,7 +58,7 @@ bool add_additional_parameter(entt::registry &registry, entt::entity entity, con
   }
 
   attributes_info &attr_info = registry.get<attributes_info>(entity);
-  attr_info.CurrentParamHashes.emplace(hash);
+  attr_info.CurrentParamValues.emplace(hash, parameter{dt, value});
 
   auto &&specific_storage = registry.storage<parameter>(hash);
   if(!specific_storage.contains(entity)){
@@ -72,54 +72,48 @@ bool add_additional_parameter(entt::registry &registry, entt::entity entity, con
 
 
 //=====================================
-void reset_original_status(entt::registry &registry, entt::entity entity){
+void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity){
   attributes_info *attr_info = registry.try_get<attributes_info>(entity);
   if(!attr_info){
     return;
   }
-  reset_original_status(registry, *attr_info, entity);
+  reset_original_status(registry, *attr_info, snapshot, entity);
 }
 
-//=====================================
-void reset_all_original_status(entt::registry &registry){
-  auto view = registry.view<attributes_info>();
-  view.each([&](auto entity, attributes_info &attr_info){
-    reset_original_status(registry, attr_info, entity);
-  });
-}
 
-void reset_original_status(entt::registry &registry, attributes_info &attr_info, entt::entity entity){
+void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
   
   //won't need to worry about status inheritance here because ALL statuses are impacted
-  for(const auto &hash : attr_info.CurrentStatusHashes){
-    if(attr_info.OriginalStatusHashes.find(hash) == attr_info.OriginalStatusHashes.end()){
-      auto &&status_specific_storage = registry.storage<void>(hash);
-      assert(status_specific_storage.contains(entity));
-      status_specific_storage.remove(entity);
-    }
+  snapshot.ParamValues = entity_attr_info.CurrentParamValues;
+  snapshot.StatusHashes = entity_attr_info.CurrentStatusHashes;
+
+  entity_attr_info.CurrentParamValues.clear();
+  for(const auto &[hash, param] : entity_attr_info.OriginalParamValues){
+    entity_attr_info.CurrentParamValues.emplace(hash, param);
   }
 
-  for(const auto &hash : attr_info.OriginalStatusHashes){
-    if(attr_info.CurrentStatusHashes.find(hash) == attr_info.CurrentStatusHashes.end()){
-      auto &&status_specific_storage = registry.storage<void>(hash);
-      assert(!status_specific_storage.contains(entity));
+  entity_attr_info.CurrentStatusHashes = entity_attr_info.OriginalStatusHashes;
+}
+
+void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
+
+  for(const auto &hash : attr_info.CurrentStatusHashes){
+    auto &&status_specific_storage = registry.storage<void>(hash);
+    if(!status_specific_storage.contains(entity) && snapshot.StatusHashes.find(hash) == snapshot.StatusHashes.end()){
       status_specific_storage.emplace(entity);
     }
   }
 
-  
-  for(const auto &hash : attr_info.CurrentParamHashes){
-    if(attr_info.OriginalParamValues.find(hash) == attr_info.OriginalParamValues.end()){
-      auto &&param_specific_storage = registry.storage<parameter>(hash);
-      assert(param_specific_storage.contains(entity));
-      param_specific_storage.remove(entity);
+  for(const auto &hash : snapshot.StatusHashes){
+    auto &&status_specific_storage = registry.storage<void>(hash);
+    if(status_specific_storage.contains(entity) && attr_info.CurrentStatusHashes.find(hash) == attr_info.CurrentStatusHashes.end()){
+      status_specific_storage.remove(entity);
     }
   }
 
-  for(const auto &[hash, param] : attr_info.OriginalParamValues){
+  for(const auto &[hash, param] : attr_info.CurrentParamValues){
     auto &&param_specific_storage = registry.storage<parameter>(hash);
-    if(attr_info.CurrentParamHashes.find(hash) == attr_info.CurrentParamHashes.end()){
-      assert(!param_specific_storage.contains(entity));
+    if(!param_specific_storage.contains(entity)  && snapshot.ParamValues.find(hash) == snapshot.ParamValues.end()){
       param_specific_storage.emplace(entity, param);
     } else {
       assert(param_specific_storage.contains(entity));
@@ -127,10 +121,10 @@ void reset_original_status(entt::registry &registry, attributes_info &attr_info,
     }
   }
 
-  attr_info.CurrentParamHashes.clear();
-  for(const auto &[hash, param] : attr_info.OriginalParamValues){
-    attr_info.CurrentParamHashes.insert(hash);
+  for(const auto &[hash, param] : snapshot.ParamValues){
+    auto &&param_specific_storage = registry.storage<parameter>(hash);
+    if(param_specific_storage.contains(entity) && attr_info.CurrentParamValues.find(hash) == attr_info.CurrentParamValues.end()){
+      param_specific_storage.remove(entity);
+    } 
   }
-
-  attr_info.CurrentStatusHashes = attr_info.OriginalStatusHashes;
 }
