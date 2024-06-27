@@ -1,7 +1,6 @@
 #include "effect.h"
 #include "combination_components.h"
 #include "status.h"
-//#include "entt/entity/observer.hpp"
 
 //=================================================
 void update_status_effects(entt::registry &registry, entt::entity entity){
@@ -14,16 +13,17 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   attributes_info_snapshot snapshot;
   reset_original_status(registry, snapshot, entity);
 
-  for(const auto &info : effs->Infos){
-    info.ApplyFunc(registry, info.OriginatingEntity, entity);
+  attributes_info &attr_info = registry.get<attributes_info>(entity);
+  for(const auto &eff_info : effs->Infos){
+    eff_info.ApplyFunc(registry, attr_info, eff_info.OriginatingEntity);
   }
 
-  commit_attr_info(registry, registry.get<attributes_info>(entity), snapshot, entity);
-  //Launch trigger for 'on status updated' on 'entity'
-  //registry.on_destroy<void>(entt::hashed_string::value("in_grave")).connect<&super_listener>();
+  commit_attr_info(registry, attr_info, snapshot, entity);
 }
 
 //==================================================
+//Update in my thinking : this will be invokable outside of an on_combined_trigger
+//Like, directly by the causating entity
 void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info){
   if(!registry.any_of<status_effects>(entity)){
     registry.emplace<status_effects>(entity, std::list<status_effect_info>({info}));
@@ -42,12 +42,9 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
   }
 
   auto view = registry.view<on_use_trigger>();
-  view.each([&](auto entity, on_use_trigger &trig_group){
+  view.each([&](auto trigger_owner, on_use_trigger &trig_group){
     for(const on_use_trigger_info &info : trig_group.Triggers){
-      auto stor_ptr = registry.storage(info.UsableTypeThatTriggersThis.hash());
-      if(stor_ptr && stor_ptr->contains(ability)){
-        info.Func(registry, ability);
-      }
+      info.Func(registry, ability, trigger_owner);
     }
   });
 

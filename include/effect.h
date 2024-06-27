@@ -5,9 +5,10 @@
 #include <list>
 #include <set>
 
+struct attributes_info;
 struct status_effect_info {
   entt::entity OriginatingEntity;
-  std::function<void(entt::registry&, entt::entity, entt::entity)> ApplyFunc;
+  std::function<void(entt::registry&, attributes_info&, entt::entity)> ApplyFunc;
 };
 
 struct status_effects { //i.e. generally status effects currently applying to the parent entity
@@ -35,9 +36,9 @@ struct usable {
 //How do I tell > Ent B has a trigger that goes off only when A is used?
   //Or better, when a certain type of usable is used?
 struct on_use_trigger_info {
-  //registry, usable entity source
-  std::function<void(entt::registry &, entt::entity)> Func;
-  entt::type_info UsableTypeThatTriggersThis; //if I want to handle boolean combinations of types, this will have to be improved
+  //registry, usable entity source, entity that owns the trigger
+  std::function<void(entt::registry &, entt::entity, entt::entity)> Func;
+  entt::entity TriggerOwner; 
 };
 
 struct on_use_trigger {

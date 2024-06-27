@@ -53,6 +53,26 @@ void reset_original_status(entt::registry &registry, attributes_info_snapshot &s
 void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
 void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
 
+//integrating this to attributes_info (with accessor functions) would be more work, but would allow much easier contradicting change detection.
+//so maybe future TO-DO
+struct attributes_info_changes{ 
+  std::set<entt::id_type> AddedStatuses; 
+  std::set<entt::id_type> RemovedStatuses;
+  std::map<entt::id_type, parameter> AddedParams;
+  std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
+  std::map<entt::id_type, parameter> RemovedParams; //contains old value
+};
+
+struct on_status_change_trigger_info {
+  //registry, status changes, entity whose status changed, owning entity of the trigger
+  std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)> Func;
+  entt::entity TriggerOwner;
+};
+
+struct on_status_change_triggers {
+  std::list<on_status_change_trigger_info> Triggers;
+};
+
 
 //Now : Modifiers : the revenge
 //they should always be additive
