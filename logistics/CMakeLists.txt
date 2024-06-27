@@ -14,11 +14,13 @@ add_library(logistics SHARED ${CORE_LOGISTICS_SRCS})
 target_include_directories(logistics PRIVATE ${ENTT_SOURCE_DIR}/src)
 target_include_directories(logistics PRIVATE include)
 
-
-add_executable(TestCombine ${SYSTEM_SRCS} tests/combine.test.cpp)
+add_executable(TestCombine tests/combine.test.cpp)
 target_include_directories(TestCombine PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
 target_link_libraries(TestCombine PUBLIC logistics)
 
-add_executable(TestStorageSanity ${SYSTEM_SRCS} tests/storage_sanity.test.cpp)
+add_executable(TestStorageSanity tests/storage_sanity.test.cpp)
 target_include_directories(TestStorageSanity PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
 target_link_libraries(TestStorageSanity PUBLIC logistics)
+
+add_test(NAME awasete!!! COMMAND $<TARGET_FILE:TestCombine>)
+add_test(NAME storage_demo COMMAND $<TARGET_FILE:TestStorageSanity>)
