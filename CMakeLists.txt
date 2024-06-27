@@ -3,12 +3,28 @@ project(concepts)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(EXTERNAL_LIBS_DIR "C:/Users/Pierre/Documents/Code\ Source")
 
-set(entt_SOURCE_DIR "C:/Users/Pierre/Documents/Code\ Source/entt")
+set(ENTT_SOURCE_DIR "${EXTERNAL_LIBS_DIR}/entt")
+set(DOCTEST_INCLUDE_DIR "${EXTERNAL_LIBS_DIR}/doctest/doctest")
 
-FILE(GLOB CONCEPTS_SRCS src/*.cpp)
+set(CORE_LOGISTICS_SRCS 
+  src/combine.cpp
+  src/effect.cpp
+  src/split.cpp
+  src/status.cpp
+)
 
-add_executable(concepts ${CONCEPTS_SRCS})
+add_library(logistics ${CORE_LOGISTICS_SRCS})
 
-target_include_directories(concepts PRIVATE ${entt_SOURCE_DIR}/src)
-target_include_directories(concepts PRIVATE include)
+target_include_directories(logistics PRIVATE ${ENTT_SOURCE_DIR}/src)
+target_include_directories(logistics PRIVATE include)
+
+
+add_executable(TestCombine ${SYSTEM_SRCS} tests/combine.test.cpp)
+target_include_directories(TestCombine PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
+target_link_libraries(TestCombine logistics)
+
+add_executable(TestStorageSanity ${SYSTEM_SRCS} tests/storage_sanity.test.cpp)
+target_include_directories(TestStorageSanity PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
+target_link_libraries(TestStorageSanity logistics)

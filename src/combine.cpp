@@ -1,4 +1,4 @@
-#include "combination_components.h"
+#include "combine.h"
 
 bool combine(entt::registry &registry, entt::entity a, entt::entity b){
   if(!registry.any_of<combination_info>(a) || !registry.any_of<combination_info>(b)){

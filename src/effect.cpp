@@ -1,5 +1,5 @@
 #include "effect.h"
-#include "combination_components.h"
+#include "combine.h"
 #include "status.h"
 
 //=================================================
