@@ -1,5 +1,6 @@
 #pragma once
 
+#include "logistics_export.h"
 #include <entt/entity/registry.hpp>
 #include <set>
 #include <list>
@@ -18,7 +19,7 @@ struct type_inheritance_graph { //context will have one single instance of this
 };
 
 
-bool assign_status(entt::registry &registry, entt::entity entity, const std::string &status_name, bool is_original = true);
+logistics_API bool assign_status(entt::registry &registry, entt::entity entity, const std::string &status_name, bool is_original = true);
 bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool is_original = true);
 
 enum class data_type {
@@ -45,8 +46,8 @@ struct attributes_info_snapshot {
   std::map<entt::id_type, parameter> ParamValues;
 };
 
-bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
-bool add_additional_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+logistics_API bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+logistics_API bool add_additional_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
 

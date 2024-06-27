@@ -1,4 +1,5 @@
 #pragma once
+#include "logistics_export.h"
 
 #include <entt/entity/registry.hpp>
 #include <functional>
@@ -29,6 +30,6 @@ struct combination_info{
   std::map<combination_kind, std::set<entt::entity>> CurrentCombinations;
 };
 
-bool combine(entt::registry &registry, entt::entity a, entt::entity b);
+logistics_API bool combine(entt::registry &registry, entt::entity a, entt::entity b);
 
-void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func);
+logistics_API void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func);
