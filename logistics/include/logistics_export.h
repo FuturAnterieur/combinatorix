@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef _WIN32
 # ifdef logistics_EXPORTS
 #   define logistics_API  __declspec( dllexport )
