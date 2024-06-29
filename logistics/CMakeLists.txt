@@ -17,7 +17,7 @@ target_link_libraries(TestCombine PUBLIC logistics)
 add_test(NAME awasete!!! COMMAND $<TARGET_FILE:TestCombine>)
 
 add_executable(TestStorageSanity tests/storage_sanity.test.cpp)
-target_include_directories(TestStorageSanity PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
+target_include_directories(TestStorageSanity PRIVATE ${ENTT_SOURCE_DIR}/src ${CEREAL_SOURCE_DIR}/include ${DOCTEST_INCLUDE_DIR} include)
 target_link_libraries(TestStorageSanity PUBLIC logistics)
 add_test(NAME storage_demo COMMAND $<TARGET_FILE:TestStorageSanity>)
 

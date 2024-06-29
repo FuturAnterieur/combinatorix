@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(EXTERNAL_LIBS_DIR "C:/Users/Pierre/Documents/Code\ Source")
 set(ENTT_SOURCE_DIR "${EXTERNAL_LIBS_DIR}/entt")
+set(CEREAL_SOURCE_DIR "${EXTERNAL_LIBS_DIR}/cereal")
 set(DOCTEST_INCLUDE_DIR "${EXTERNAL_LIBS_DIR}/doctest/doctest")
 
 

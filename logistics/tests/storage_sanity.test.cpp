@@ -4,11 +4,18 @@
 #include <entt/entity/runtime_view.hpp>
 #include <entt/core/hashed_string.hpp>
 #include <entt/entity/snapshot.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/archives/binary.hpp>
 #include "status.h"
 
 struct has_name {
   std::string Name;
 };
+
+template<typename Archive>
+void serialize(Archive &archive, parameter &param){
+  archive(param.DT, param.Value);
+}
 
 
 TEST_CASE("Storage sanity"){
@@ -58,8 +65,9 @@ TEST_CASE("Storage sanity"){
   
 
   //Using storage.data()
+  auto param_updated_hash = entt::hashed_string::value("description_updated");
 
-  auto &&my_param_storage = registry.storage<parameter>(entt::hashed_string::value("description_updated"));
+  auto &&my_param_storage = registry.storage<parameter>(param_updated_hash);
   my_param_storage.emplace(mermelionos, data_type::string, "Le roi des paranoiaques");
   my_param_storage.emplace(taliesin, data_type::string, "Celui qui a ecrit le Livre");
   my_param_storage.emplace(merlin, data_type::string, "en vacances avec viviane");
@@ -75,7 +83,33 @@ TEST_CASE("Storage sanity"){
   CHECK(my_param_storage.get(wizards[2]).Value == wizards_data[2].Value);
 
   //COPYING REGISTRY PARTS
+  std::stringstream data_store;
+  
+
+  {
+    cereal::BinaryOutputArchive output{data_store};
+    entt::snapshot{registry}
+      .get<entt::entity>(output)
+      .get<parameter>(output, param_updated_hash);
+  }
+
+  cereal::BinaryInputArchive input{data_store};
   entt::registry registry2;
+  entt::continuous_loader loader(registry2);
+
+  loader.get<entt::entity>(input)
+        .get<parameter>(input, param_updated_hash);
+
+  auto &&my_param_storage2 = registry2.storage<parameter>(param_updated_hash);
+  std::vector<parameter> wizards_data2;
+  std::vector<entt::entity> wizards2;
+  for(size_t i = 0; i < my_param_storage2.size(); i++ ){
+    wizards2.push_back(my_param_storage.data()[i]);
+    wizards_data2.push_back(my_param_storage.get(wizards2[i]));
+    CHECK(wizards_data2[i].Value == wizards_data[i].Value);
+    CHECK(wizards2[i] == wizards[i]);
+  }  
+
   
 }
 

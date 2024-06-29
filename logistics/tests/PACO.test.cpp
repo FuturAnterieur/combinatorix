@@ -25,7 +25,7 @@ struct scene_3d_manager {
     std::cout << "Manager #" << InternalData << " updating a marker for entity " << entt::to_integral(entity)  << "\n";
     auto &&marker_update_storage = registry.storage<has_name>(entt::hashed_string::value("marker:request_update"));
     const has_name &updated_name = marker_update_storage.get(entity);
-    //Notice : do not delete the name component from request_update, EnTT expects the component to still exist (i.e. entity still in its storage) after this function returns.
+    //Notice : do not delete the name component from request_update here, EnTT expects the component to still exist (i.e. entity still in its storage) after this function returns.
     if(updated_name.Name != "Forbidden") {
       has_name &current_real_name = registry.get<has_name>(entity);
       current_real_name.Name = updated_name.Name;
@@ -40,6 +40,7 @@ struct scene_3d_manager {
 TEST_CASE("Storage insanity"){
   entt::registry registry;
 
+  //Initial construction steps
   scene_3d_manager manager(&registry, 2501);
   
   const entt::entity ent1 = registry.create();
@@ -52,11 +53,22 @@ TEST_CASE("Storage insanity"){
   registry.emplace<has_name>(ent2, "Initial2");
 
   auto &&marker_update_name_storage = registry.storage<has_name>(entt::hashed_string::value("marker:request_update"));
-  marker_update_name_storage.emplace(ent1, has_name{});
+  //Important that they exist in this storage so that the update signal works
+  //The most book-keeping-ish part of this method
+  marker_update_name_storage.emplace(ent1, has_name{}); 
   marker_update_name_storage.emplace(ent2, has_name{});
   
+
+
   //....
   //Then in the drawer
+
+  //has_name &current_name = registry.get<has_name>(ent1);
+  //std::string temp = current_name.Name;
+  //...
+  //Use draw calls to display current name
+
+
   //(marker_update_storage still being fetchable from the registry)
   //i.e. using this:
   auto ent1_types = registry.get<has_types>(ent1);
