@@ -1,25 +1,42 @@
 #include "thread_pool.h"
 
 struct thread_pool::pimpl {
-  std::atomic_bool is_active {true};
+  std::atomic_bool is_active;
   std::vector<std::thread> pool;
   std::condition_variable cv;
   std::mutex guard;
   std::deque<std::packaged_task<void()>> pending_jobs;
+  size_t num_threads;
 };
 
 thread_pool::thread_pool(int num_threads) : _Pimpl(new pimpl)
 {
-  for (int i = 0; i < num_threads; i++) {
+  _Pimpl->num_threads = num_threads;
+  _Pimpl->pool.reserve(num_threads);
+}
+
+void thread_pool::launch() {
+  if(_Pimpl->is_active){
+    return;
+  }
+  _Pimpl->is_active = true;
+  for (int i = 0; i < _Pimpl->num_threads; i++) {
     _Pimpl->pool.emplace_back(&thread_pool::run, this);
   }
 }
 
 thread_pool::~thread_pool() {
-  _Pimpl->is_active = false;
-  _Pimpl->cv.notify_all();
-  join();
+  abort();
+  
   delete _Pimpl;
+}
+
+void thread_pool::abort() {
+  if(_Pimpl->is_active){
+    _Pimpl->is_active = false;
+    _Pimpl->cv.notify_all();
+    join();
+  }
 }
 
 void thread_pool::post(std::packaged_task<void()> job) {

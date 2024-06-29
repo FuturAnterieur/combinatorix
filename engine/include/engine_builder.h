@@ -13,6 +13,7 @@ public:
   ~engine_builder();
   
   void set_registry(entt::registry *registry);
+  void set_num_threads(size_t num);
   bool finalize(engine *eng);
 
 private:

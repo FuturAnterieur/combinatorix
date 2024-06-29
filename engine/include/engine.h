@@ -1,23 +1,19 @@
 #pragma once
 
 
-#include "engine_export.h"
+#include "engine/include/engine_export.h"
+#include <entt/entity/registry.hpp>
 
-struct engine_pimpl;
 class engine_API engine
 {
   public:
-    engine();
+    engine(size_t num_threads, entt::registry *registry);
     ~engine();
     void launch();
-    void run();
-    void joinThread();
+    void abort();
+    //void run_request(/**/);
     
-    bool isFinished();
-    bool isInfoRequired();
-
   private:
-    engine_pimpl *_Pimpl;
-    void engine_thread();
-    
+    struct pimpl;
+    pimpl *_Pimpl;
 };

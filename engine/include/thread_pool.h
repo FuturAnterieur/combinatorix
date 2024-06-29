@@ -22,7 +22,10 @@ public:
   explicit thread_pool(int num_threads = 1);
   ~thread_pool();
   
+  void launch();
   void post(std::packaged_task<void()> job);
+
+  void abort();
 
 private:
   void join();

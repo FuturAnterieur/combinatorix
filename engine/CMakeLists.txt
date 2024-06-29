@@ -2,6 +2,7 @@
 set(ENGINE_SRCS 
   include/thread_pool.h
   src/thread_pool.cpp
+  src/engine.cpp
 
 )
 

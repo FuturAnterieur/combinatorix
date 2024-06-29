@@ -1,15 +1,11 @@
 #pragma once
 
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+#include "engine/include/thread_pool.h"
+#include "engine/include/engine.h"
 
-#include <entt/entity/registry.hpp>
-
-struct engine_pimpl {
-  std::thread EngineThread;
-  std::mutex EngineMutex;
-  std::condition_variable CVServer;
-  std::condition_variable CVClient;
+struct engine::pimpl {
+  pimpl(int num_threads) : ThreadPool(num_threads) {}
+  std::atomic_bool IsRunning{false};
+  thread_pool ThreadPool;
   entt::registry* Registry{nullptr};
 };

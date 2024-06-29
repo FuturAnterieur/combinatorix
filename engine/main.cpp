@@ -5,6 +5,8 @@
 #include "logistics/include/status.h"
 #include "logistics/include/effect.h"
 #include "engine/include/thread_pool.h"
+#include "engine/include/engine.h"
+#include "engine/include/geometry_components.h"
 
 #include <iostream>
 #include <string>
@@ -31,9 +33,26 @@ int main(int argc, char *argv[]){
   std::cout << dumbo.get<attributes_info>(ent1).CurrentParamValues[1234].Value << "\n";
 
   thread_pool spa{2};
+  spa.launch();
   using namespace std::chrono_literals;
   std::future<int> waiter = post(spa, use_future([](){std::this_thread::sleep_for(1s); return 1000; }));
   std::cout << waiter.get() << "\n";
+
+  engine moteur(1, &dumbo);
+  dumbo.emplace<position>(ent1, 0.0f, 0.f);
+  dumbo.emplace<position>(ent2, 5.f, 0.f);
+
+  dumbo.emplace<velocity>(ent1, 0.3f, 0.f);
+  dumbo.emplace<velocity>(ent2, -0.3f, 0.f);
+
+  moteur.launch();
+
+  std::this_thread::sleep_for(2s);
+
+  moteur.abort();
+
+  position &pos1 = dumbo.get<position>(ent1);
+  std::cout << "x: " << pos1.x << ", y: " << pos1.y << "\n";
 
   return 0;
 }
