@@ -44,6 +44,7 @@ void serialize_round_trip(entt::registry &registry, entt::continuous_loader &loa
 
 void update_wizards(entt::registry &registry, wizards_info &info){
   info.clear();
+  //Using storage.data()
   auto &&my_update_storage = registry.storage<parameter>(param_updated_hash);
   auto &&my_stable_storage = registry.storage<parameter>(param_hash);
   for(size_t i = 0; i < my_update_storage.size(); i++ ){
@@ -120,19 +121,23 @@ TEST_CASE("Storage sanity"){
   //This launches an assert. Cannot have the same name assigned to pools of different types.
   //auto &&my_param_storage = registry.storage<parameter>(entt::hashed_string::value("has_robe"));
   
-
-  //Using storage.data()
-  
+  //COPYING REGISTRY PARTS
+  //registry is the central/server registry
+  //registry2 is a client registry
+  //param_updated_hash is for the pool of items that are to be updated
+  //param_hash is for the pool of commited items
   auto &&my_update_storage = registry.storage<parameter>(param_updated_hash);
   my_update_storage.emplace(mermelionos, data_type::string, "Le roi des paranoiaques");
   my_update_storage.emplace(taliesin, data_type::string, "Celui qui a ecrit le Livre");
   my_update_storage.emplace(merlin, data_type::string, "en vacances avec viviane");
   
-  //Beware of order!
   wizards_info wizards1;
   update_wizards(registry, wizards1);
   
-  //COPYING REGISTRY PARTS
+  
+  //see behavior when...
+
+  //we deserialize reg1's 'params to update' output to reg2
   entt::registry registry2;
   entt::continuous_loader loader(registry2);
   serialize_round_trip(registry, loader);
@@ -141,9 +146,9 @@ TEST_CASE("Storage sanity"){
   update_wizards(registry2, wizards2);
   compare_wizards(wizards1, wizards2);
   
-  //auto sorcier2_only = registry2.create();
-  auto sorcier1_only = registry.create();
+  //We create a new wizard in the central registry
   my_update_storage.clear();
+  auto sorcier1_only = registry.create();
   my_update_storage.emplace(sorcier1_only, data_type::string, "Le nouveau-venu");
   
   update_wizards(registry, wizards1);
@@ -153,6 +158,7 @@ TEST_CASE("Storage sanity"){
 
   compare_wizards(wizards1, wizards2);
 
+  //We update an existing wizard in the central registry
   my_update_storage.clear();
   my_update_storage.emplace(taliesin, data_type::string, "Entité 1 avec nouvelle desc");
   update_wizards(registry, wizards1);
@@ -161,5 +167,16 @@ TEST_CASE("Storage sanity"){
   update_wizards(registry2, wizards2);
 
   compare_wizards(wizards1, wizards2);
+
+  //We create a new wizard in the client registry (tagging it 'to be updated')
+  my_update_storage.clear();
+  auto &&my_stable_storage2 = registry2.storage<parameter>(param_updated_hash);
+  auto ron_weasley = registry2.create();
+  my_stable_storage2.emplace(ron_weasley, data_type::string, "Ron weasley, entite 4 sur le client");
+
+  serialize_round_trip(registry, loader);
+  update_wizards(registry2, wizards2);
+
+
 }
 
