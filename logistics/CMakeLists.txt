@@ -25,3 +25,8 @@ add_executable(TestStatus tests/status.test.cpp)
 target_include_directories(TestStatus PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
 target_link_libraries(TestStatus PRIVATE logistics)
 add_test(NAME status_seeker COMMAND $<TARGET_FILE:TestStatus>)
+
+add_executable(Paco tests/PACO.test.cpp)
+target_include_directories(Paco PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
+target_link_libraries(Paco PRIVATE logistics)
+add_test(NAME entity_update_test COMMAND $<TARGET_FILE:Paco>)
