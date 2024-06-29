@@ -11,5 +11,5 @@ struct engine_pimpl {
   std::mutex EngineMutex;
   std::condition_variable CVServer;
   std::condition_variable CVClient;
-  entt::registry Registry;
+  entt::registry* Registry{nullptr};
 };
