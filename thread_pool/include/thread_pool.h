@@ -2,7 +2,7 @@
 //https://nixiz.github.io/yazilim-notlari/2023/10/07/thread_pool-en 
 
 #pragma once
-#include "engine/include/engine_export.h"
+#include "thread_pool/include/thread_pool_export.h"
 
 #include <atomic>
 #include <thread>
@@ -12,7 +12,7 @@
 #include <deque>
 #include <vector>
 
-class engine_API thread_pool
+class thread_pool_API thread_pool
 {
 private:
   struct pimpl;

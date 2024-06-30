@@ -4,6 +4,7 @@
 #include <entt/entity/runtime_view.hpp>
 #include <entt/core/hashed_string.hpp>
 #include <entt/entity/snapshot.hpp>
+#include <entt/meta/resolve.hpp>
 #include <cereal/types/memory.hpp>
 #include <cereal/archives/binary.hpp>
 #include "status.h"
@@ -14,14 +15,14 @@ struct has_name {
 
 struct wizard_info {
   entt::entity Entity;
-  std::string Description;
+  std::string Description{};
   bool is_updating{false};
 };
 
 using wizards_info = std::vector<wizard_info>;
 
-constexpr auto param_hash = entt::hashed_string::value("description");
-constexpr auto param_updated_hash = entt::hashed_string::value("description_updated");
+constexpr auto desc_hash = entt::hashed_string::value("description");
+constexpr auto desc_updated_hash = entt::hashed_string::value("description_updated");
 
 template<typename Archive>
 void serialize(Archive &archive, parameter &param){
@@ -34,19 +35,23 @@ void serialize_round_trip(entt::registry &registry, entt::continuous_loader &loa
     cereal::BinaryOutputArchive output{data_store};
     entt::snapshot{registry}
       .get<entt::entity>(output)
-      .get<parameter>(output, param_updated_hash);
+      .get<parameter>(output, desc_updated_hash);
   }
 
   cereal::BinaryInputArchive input{data_store};
   loader.get<entt::entity>(input)
-        .get<parameter>(input, param_updated_hash);
+        .get<parameter>(input, desc_updated_hash)
+        .orphans();
 }
 
 void update_wizards(entt::registry &registry, wizards_info &info){
   info.clear();
   //Using storage.data()
-  auto &&my_update_storage = registry.storage<parameter>(param_updated_hash);
-  auto &&my_stable_storage = registry.storage<parameter>(param_hash);
+
+  auto &&my_entity_storage = registry.storage<entt::entity>();
+  auto &&my_update_storage = registry.storage<parameter>(desc_updated_hash);
+  auto &&my_stable_storage = registry.storage<parameter>(desc_hash);
+
   for(size_t i = 0; i < my_update_storage.size(); i++ ){
     //Update our wizards info
     auto entity = my_update_storage.data()[i];
@@ -61,12 +66,19 @@ void update_wizards(entt::registry &registry, wizards_info &info){
     stable_param->DT = update_param.DT;
     stable_param->Value = update_param.Value;
   }  
+
+  /*for(size_t i = 0; i < my_entity_storage.size(); i++){
+    info.push_back(wizard_info{my_entity_storage.data()[i]});
+  }*/
+
   for(size_t i = 0; i < my_stable_storage.size(); i++){
     auto entity = my_stable_storage.data()[i];
     parameter &stable_param = my_stable_storage.get(entity);
     info.push_back(wizard_info{entity, stable_param.Value});
   }
 }
+
+//entt::meta_type type = entt::resolve(desc_hash);
 
 void compare_wizards(wizards_info &wizards1, wizards_info &wizards2){
   CHECK(wizards1.size() == wizards2.size());
@@ -89,7 +101,7 @@ TEST_CASE("Storage sanity"){
   wizzy_storage.emplace(merlin);
   wizzy_storage.emplace(mermelionos);
   wizzy_storage.emplace(taliesin);
-  
+
 
   auto &&roby_storage = registry.storage<void>(entt::hashed_string::value("has_robe"));
   roby_storage.emplace(mermelionos);
@@ -124,9 +136,9 @@ TEST_CASE("Storage sanity"){
   //COPYING REGISTRY PARTS
   //registry is the central/server registry
   //registry2 is a client registry
-  //param_updated_hash is for the pool of items that are to be updated
-  //param_hash is for the pool of commited items
-  auto &&my_update_storage = registry.storage<parameter>(param_updated_hash);
+  //desc_updated_hash is for the pool of items that are to be updated
+  //desc_hash is for the pool of commited items
+  auto &&my_update_storage = registry.storage<parameter>(desc_updated_hash);
   my_update_storage.emplace(mermelionos, data_type::string, "Le roi des paranoiaques");
   my_update_storage.emplace(taliesin, data_type::string, "Celui qui a ecrit le Livre");
   my_update_storage.emplace(merlin, data_type::string, "en vacances avec viviane");
@@ -151,6 +163,8 @@ TEST_CASE("Storage sanity"){
   auto sorcier1_only = registry.create();
   my_update_storage.emplace(sorcier1_only, data_type::string, "Le nouveau-venu");
   
+
+
   update_wizards(registry, wizards1);
 
   serialize_round_trip(registry, loader);
@@ -169,14 +183,62 @@ TEST_CASE("Storage sanity"){
   compare_wizards(wizards1, wizards2);
 
   //We create a new wizard in the client registry (tagging it 'to be updated')
+  //AND we create a new wizard in the server at the same time.
   my_update_storage.clear();
-  auto &&my_stable_storage2 = registry2.storage<parameter>(param_updated_hash);
+  auto &&my_update_storage2 = registry2.storage<parameter>(desc_updated_hash);
   auto ron_weasley = registry2.create();
-  my_stable_storage2.emplace(ron_weasley, data_type::string, "Ron weasley, entite 4 sur le client");
+  my_update_storage2.emplace(ron_weasley, data_type::string, "Ron weasley, entite 4 sur le client");
+
+  auto hermione_granger = registry.create();
+  my_update_storage.emplace(hermione_granger, data_type::string, "Hermione Granger, entity 4 sur le serveur");
+
+  update_wizards(registry, wizards1);
 
   serialize_round_trip(registry, loader);
   update_wizards(registry2, wizards2);
 
+  CHECK(entt::to_integral(ron_weasley) == 4);
+  CHECK(entt::to_integral(hermione_granger) == 4);
 
+  //loader.map makes the cnversion "entityID in its (serialized) source -> entityID in destination registry"
+  CHECK(entt::to_integral(loader.map(ron_weasley)) == 5); //makes no 'sense' to make this request
+  CHECK(entt::to_integral(loader.map(hermione_granger)) == 5);
+  //So we know entity 4 maps to entity 5.
+
+
+  //What about the previous ones?
+  for(std::uint32_t i = 0; i < 4; i++){
+    CHECK(entt::to_integral(loader.map(static_cast<entt::entity>(i))) == i);
+  }
+
+  auto entity_maps_to_null = [&](uint32_t n){return loader.map(static_cast<entt::entity>(n)) == entt::null;};
+
+  //And finally...
+  CHECK(entity_maps_to_null(5));
+
+  //Then, test what happens when an entity is destroyed:
+  registry.destroy(taliesin); //TALIESIN NOOOOOOO. Taliesin is entity 1
+
+  update_wizards(registry, wizards1);
+  serialize_round_trip(registry, loader);
+
+  update_wizards(registry2, wizards2);
+  //Wow. Entity 1 is now absent from wizards2
+
+  CHECK(entity_maps_to_null(1));
+  my_update_storage.clear();
+  my_update_storage.emplace(hermione_granger, data_type::string, "Hermione Granger MODIFIEE, entity 4 sur le serveur");
+
+  update_wizards(registry, wizards1);
+  serialize_round_trip(registry, loader);
+
+  update_wizards(registry2, wizards2);
+
+  my_update_storage.clear();
+
+  auto &&my_stable_storage_2 = registry2.storage<parameter>(desc_hash);
+  std::string hg_desc_on_client = my_stable_storage_2.get(loader.map(hermione_granger)).Value;
+
+  CHECK(hg_desc_on_client == "Hermione Granger MODIFIEE, entity 4 sur le serveur");
 }
 

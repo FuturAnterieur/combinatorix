@@ -64,9 +64,12 @@ struct attributes_info_changes{
   std::map<entt::id_type, parameter> RemovedParams; //contains old value
 };
 
+using status_change_trigger_func_t = std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
+using status_change_trigger_filter_t = std::function<bool(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
 struct on_status_change_trigger_info {
   //registry, status changes, entity whose status changed, owning entity of the trigger
-  std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)> Func;
+  status_change_trigger_func_t Func;
+  status_change_trigger_filter_t Filter;
   entt::entity TriggerOwner;
 };
 

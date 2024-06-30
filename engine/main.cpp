@@ -4,7 +4,7 @@
 
 #include "logistics/include/status.h"
 #include "logistics/include/effect.h"
-#include "engine/include/thread_pool.h"
+#include "thread_pool/include/thread_pool.h"
 #include "engine/include/engine.h"
 #include "engine/include/geometry_components.h"
 

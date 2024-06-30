@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/include/thread_pool.h"
+#include "thread_pool/include/thread_pool.h"
 #include "engine/include/engine.h"
 
 struct engine::pimpl {

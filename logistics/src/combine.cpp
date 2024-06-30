@@ -26,6 +26,12 @@ bool combine(entt::registry &registry, entt::entity a, entt::entity b){
         func(registry, kind, b, a);
       }
     }
+
+    if(const on_combine_trigger *global_triggers = registry.ctx().find<on_combine_trigger>(); global_triggers){
+      for(const auto &func : global_triggers->Funcs){
+        func(registry, kind, a, b);
+      }
+    }
     match_found = true;
   }
   return match_found;

@@ -130,9 +130,22 @@ void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attr
     } 
   }
 
+  
   if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
     for(const on_status_change_trigger_info &info : triggers->Triggers){
-      info.Func(registry, changes, entity, info.TriggerOwner);
+      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        info.Func(registry, changes, entity, info.TriggerOwner);
+      }
+    }
+  }
+
+  //For now we can still go fetch global triggers here if they exist
+  const on_status_change_triggers *global_triggers = registry.ctx().find<on_status_change_triggers>();
+  if(global_triggers){
+    for(const on_status_change_trigger_info &info : global_triggers->Triggers){
+      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        info.Func(registry, changes, entity, info.TriggerOwner);
+      }
     }
   }
 }
