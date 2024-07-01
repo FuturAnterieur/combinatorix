@@ -15,7 +15,7 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
 
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   for(const auto &eff_info : effs->Infos){
-    eff_info.ApplyFunc(registry, attr_info, eff_info.OriginatingEntity);
+    eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
   }
 
   commit_attr_info(registry, attr_info, snapshot, entity);
@@ -44,12 +44,20 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
   auto view = registry.view<on_use_trigger>();
   view.each([&](auto trigger_owner, on_use_trigger &trig_group){
     for(const on_use_trigger_info &info : trig_group.Triggers){
-      info.Func(registry, ability, trigger_owner);
+      info.Func(registry, ability, target, trigger_owner);
     }
   });
 
+  //check for registry.ctx() global triggers???
+
   usable &used = registry.get<usable>(ability);
   used.UseFunc(registry, ability, target);
+}
+
+//====================================================
+void add_on_use_trigger(entt::registry &registry, entt::entity owner, const on_use_trigger_func_t &func){
+  on_use_trigger &triggers = registry.get_or_emplace<on_use_trigger>(owner);
+  triggers.Triggers.push_back({func, owner});
 }
 
 //=====================================================

@@ -9,7 +9,7 @@
 struct attributes_info;
 struct status_effect_info {
   entt::entity OriginatingEntity;
-  std::function<void(entt::registry&, attributes_info&, entt::entity)> ApplyFunc;
+  std::function<void(entt::registry&, attributes_info&, entt::entity, entt::entity)> ApplyFunc;
 };
 
 struct status_effects { //i.e. generally status effects currently applying to the parent entity
@@ -35,10 +35,13 @@ struct usable {
 };
 
 //How do I tell > Ent B has a trigger that goes off only when A is used?
-  //Or better, when a certain type of usable is used?
+//Or better, when a certain type of usable is used?
+  
+//registry, usable entity source, target of the ability, entity that owns the trigger
+using on_use_trigger_func_t = std::function<void(entt::registry &, entt::entity, entt::entity, entt::entity)>;
 struct on_use_trigger_info {
-  //registry, usable entity source, entity that owns the trigger
-  std::function<void(entt::registry &, entt::entity, entt::entity)> Func;
+  
+  on_use_trigger_func_t Func;
   entt::entity TriggerOwner; 
 };
 
@@ -49,6 +52,7 @@ struct on_use_trigger {
 struct can_have_abilities {};
 
 logistics_API void use(entt::registry &registry, entt::entity ability, entt::entity target);
+logistics_API void add_on_use_trigger(entt::registry &registry, entt::entity owner, const on_use_trigger_func_t &func);
 
 struct combination_info;
 logistics_API entt::entity add_ability(entt::registry &registry, entt::entity candidate_owner, use_func_t func, const combination_info &info);

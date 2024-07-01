@@ -1,4 +1,6 @@
 #include "status.h"
+#include "combine.h"
+#include "effect.h"
 
 //=====================================
 bool assign_status(entt::registry &registry, entt::entity entity, const std::string &type_name, bool is_original){
@@ -47,6 +49,9 @@ bool add_original_parameter(entt::registry &registry, entt::entity entity, const
   return true;
 }
 
+
+
+
 //=====================================
 bool add_additional_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
   entt::id_type hash = entt::hashed_string::value(param_name.data());
@@ -56,15 +61,60 @@ bool add_additional_parameter(entt::registry &registry, entt::entity entity, con
   }
 
   attributes_info &attr_info = registry.get<attributes_info>(entity);
-  attr_info.CurrentParamValues.emplace(hash, parameter{dt, value});
+  attr_info.CurrentParamValues.insert_or_assign(hash, parameter{dt, value});
 
-  /*auto &&specific_storage = registry.storage<parameter>(hash);
+  return true;
+}
+
+//=====================================
+logistics_API bool add_or_set_parameter_and_trigger_on_change(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
+  
+  entt::id_type hash = entt::hashed_string::value(param_name.data());
+  add_additional_parameter(registry, entity, param_name, dt, value);
+
+  attributes_info &attr_info = registry.get<attributes_info>(entity);
+  attr_info.OriginalParamValues.insert_or_assign(hash, parameter{dt, value}); //also set original values because it isn't edited through a Modifier
+  //TODO implement the ChangeTracker (with methods) so that editing statuses/params is less cumbersome
+
+  attributes_info_changes changes;
+  parameter new_param{dt,value};
+  auto &&specific_storage = registry.storage<parameter>(hash);
   if(!specific_storage.contains(entity)){
-    return false;
+    specific_storage.emplace(entity, dt, value);
+    changes.AddedParams.emplace(hash, new_param);
+  } else {
+    parameter &old_param = specific_storage.get(entity);
+    auto &pair = changes.ModifiedParams.emplace(hash, std::make_pair(old_param, new_param));
+    old_param = new_param;
   }
 
-  specific_storage.get(entity) = parameter{dt, value};*/
+  if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
+    for(const on_status_change_trigger_info &info : triggers->Triggers){
+      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        info.Func(registry, changes, entity, info.TriggerOwner);
+      }
+    }
+  }
 
+  //For now we can still go fetch global triggers here if they exist
+  const on_status_change_triggers *global_triggers = registry.ctx().find<on_status_change_triggers>();
+  if(global_triggers){
+    for(const on_status_change_trigger_info &info : global_triggers->Triggers){
+      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        info.Func(registry, changes, entity, info.TriggerOwner);
+      }
+    }
+  }
+
+  if(registry.any_of<combination_info>(entity)){
+    auto &info = registry.get<combination_info>(entity);
+    for(const auto &[kind, entities] : info.CurrentCombinations){
+      for(entt::entity entity : entities){
+        update_status_effects(registry, entity);
+      }
+    }
+  }
+  
   return true;
 }
 
@@ -117,8 +167,10 @@ void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attr
       //Use patch so that registry.on_update<parameter>(entt::hashed_string::value(param_name)) will work
       //But the 'changes' struct is there to prevent us from having to trigger EnTT events all throughout this function
       parameter previous_value = param_specific_storage.get(entity);
-      param_specific_storage.patch(entity, [&](auto &local_p) { local_p.DT = param.DT; local_p.Value = param.Value; });
-      changes.ModifiedParams.emplace(hash, std::make_pair(previous_value, param));
+      if(previous_value.Value != param.Value){
+        param_specific_storage.patch(entity, [&](auto &local_p) { local_p.DT = param.DT; local_p.Value = param.Value; });
+        changes.ModifiedParams.emplace(hash, std::make_pair(previous_value, param));
+      }
     }
   }
 
@@ -148,4 +200,32 @@ void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attr
       }
     }
   }
+
+  if(registry.any_of<combination_info>(entity)){
+    auto &info = registry.get<combination_info>(entity);
+    for(const auto &[kind, entities] : info.CurrentCombinations){
+      for(entt::entity entity : entities){
+        update_status_effects(registry, entity);
+      }
+    }
+  }
+}
+
+void add_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info){
+  on_status_change_triggers &triggers = registry.get_or_emplace<on_status_change_triggers>(entity);
+  add_on_status_change_trigger(registry, triggers, info);
+}
+
+void add_global_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info){
+  on_status_change_triggers *triggers = registry.ctx().find<on_status_change_triggers>();
+  if(!triggers){
+    registry.ctx().emplace<on_status_change_triggers>();
+    triggers = &registry.ctx().get<on_status_change_triggers>();
+  }
+  add_on_status_change_trigger(registry, *triggers, info);
+}
+
+
+void add_on_status_change_trigger(entt::registry &registry, on_status_change_triggers &triggers, on_status_change_trigger_info &info){
+  triggers.Triggers.push_back(info);
 }

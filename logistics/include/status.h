@@ -20,7 +20,7 @@ struct type_inheritance_graph { //context will have one single instance of this
 
 
 logistics_API bool assign_status(entt::registry &registry, entt::entity entity, const std::string &status_name, bool is_original = true);
-bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool is_original = true);
+logistics_API bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool is_original = true);
 
 enum class data_type {
   string,
@@ -47,7 +47,9 @@ struct attributes_info_snapshot {
 };
 
 logistics_API bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+//This is destined to be called by status modifying functions, so it does not commit the change to the registry
 logistics_API bool add_additional_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+logistics_API bool add_or_set_parameter_and_trigger_on_change(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
 
@@ -77,6 +79,6 @@ struct on_status_change_triggers {
   std::list<on_status_change_trigger_info> Triggers;
 };
 
-
-//Now : Modifiers : the revenge
-//they should always be additive
+logistics_API void add_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info);
+logistics_API void add_global_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info);
+void add_on_status_change_trigger(entt::registry &registry, on_status_change_triggers &triggers, on_status_change_trigger_info &info);

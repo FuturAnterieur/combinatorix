@@ -10,7 +10,8 @@ enum class combination_kind {
   equipping,
   substance_of,
   attached, //produced items could also be simply 'equipped' to a factory
-  ability
+  ability,
+  link //the lightest combination. Pretty much like just a graph edge.
 };
 
 using combine_trigger_t = std::function<void(entt::registry &, combination_kind, entt::entity, entt::entity)>;
@@ -31,5 +32,6 @@ struct combination_info{
 };
 
 logistics_API bool combine(entt::registry &registry, entt::entity a, entt::entity b);
+logistics_API void link(entt::registry &registry, entt::entity a, entt::entity b);
 
 logistics_API void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func);
