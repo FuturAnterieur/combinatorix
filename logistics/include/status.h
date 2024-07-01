@@ -17,23 +17,16 @@ struct type_inheritance_graph { //context will have one single instance of this
   type_inheritance_node *Root{nullptr};
 };
 
-
-logistics_API bool assign_status(entt::registry &registry, entt::entity entity, const std::string &status_name, bool is_original = true);
-logistics_API bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool is_original = true);
-
+logistics_API bool assign_active_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool status_value);
+logistics_API bool assign_intrinsic_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool status_value);
 logistics_API bool get_active_value_for_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash);
-
-logistics_API bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 
 //This is destined to be called by status modifying functions, so it does not commit the change to the registry
 logistics_API bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
-logistics_API bool add_or_set_parameter_and_trigger_on_change(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+logistics_API bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
-
-void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
-void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
-
+void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
 
 using status_change_trigger_func_t = std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
 using status_change_trigger_filter_t = std::function<bool(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;

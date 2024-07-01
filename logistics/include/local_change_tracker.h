@@ -8,6 +8,9 @@ namespace logistics{
   template<typename ValueType>
   struct change_tracker_edits_for_hash {
     std::vector<ValueType> Values;
+    void apply_to_value(ValueType &value){
+      value = Values.back();
+    }
   };
 
   template<typename ValueType>
@@ -43,6 +46,8 @@ namespace logistics{
 
       bool get_active_value_for_status(entt::id_type status_hash);
       parameter get_active_value_for_parameter(entt::id_type param_hash);
+
+      attributes_info_snapshot produce_active_snapshot();
 
     private:
       attributes_info_snapshot StartingPoint; //will be the last IntrinsicValues, not the ones previously commited to the active branch

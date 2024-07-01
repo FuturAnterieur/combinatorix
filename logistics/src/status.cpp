@@ -5,26 +5,15 @@
 #include "local_change_tracker.h"
 
 //=====================================
-bool assign_status(entt::registry &registry, entt::entity entity, const std::string &type_name, bool is_original){
-  return assign_status(registry, entity, entt::hashed_string::value(type_name.data()), is_original);
-}
-
-//=====================================
-bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool is_original){
-  if(!registry.any_of<attributes_info>(entity)){
-    registry.emplace<attributes_info>(entity);
+bool assign_active_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool status_value){
+  using namespace logistics;
+  if(!registry.all_of<attributes_info, local_change_tracker>(entity)){
+    return false;
   }
+
+  local_change_tracker &tracker = registry.get<local_change_tracker>(entity);
+  tracker.apply_status_edit(status_hash, status_value);
   
-  attributes_info &attr_info = registry.get<attributes_info>(entity);
-  attr_info.CurrentStatusHashes.emplace(status_hash); 
-
-  if(is_original){
-    attr_info.IntrinsicStatusHashes.emplace(status_hash);
-    auto &&type_specific_storage = registry.storage<void>(status_hash);
-    if(!type_specific_storage.contains(entity)){
-      type_specific_storage.emplace(entity);
-    }
-  }
   
   //TODO : Emplace parent types from the inheritance tree
   //registry.ctx().emplace<type_inheritance_graph>();
@@ -33,26 +22,55 @@ bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type 
 }
 
 //=====================================
-
-
-//=====================================
-bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
-  entt::id_type hash = entt::hashed_string::value(param_name.data());
-
+bool assign_intrinsic_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool status_value){
   if(!registry.any_of<attributes_info>(entity)){
     registry.emplace<attributes_info>(entity);
   }
   
+  auto &&type_specific_storage = registry.storage<void>(status_hash);
   attributes_info &attr_info = registry.get<attributes_info>(entity);
-  attr_info.IntrinsicParamValues.emplace(hash, parameter{dt, value}); 
-  attr_info.CurrentParamValues.emplace(hash, parameter{dt, value});
-
-  auto &&specific_storage = registry.storage<parameter>(hash);
-  if(!specific_storage.contains(entity)){
-    specific_storage.emplace(entity, dt, value);
+  if(status_value){
+    attr_info.CurrentStatusHashes.emplace(status_hash); 
+    attr_info.IntrinsicStatusHashes.emplace(status_hash);
+    
+    if(!type_specific_storage.contains(entity)){
+      type_specific_storage.emplace(entity);
+    }
+  } else {
+    attr_info.CurrentStatusHashes.erase(status_hash); 
+    attr_info.IntrinsicStatusHashes.erase(status_hash);
+    if(type_specific_storage.contains(entity)){
+      type_specific_storage.remove(entity);
+    }
   }
   
+
+  //TODO : Don't forget triggers!!!
   return true;
+}
+
+//=====================================
+bool get_active_value_for_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash){
+  using namespace logistics;
+  if(local_change_tracker *tracker = registry.try_get<local_change_tracker>(entity); tracker){
+    return tracker->get_active_value_for_status(status_hash);
+  }
+
+  //Then check in the current simulation branch
+  if(simulation_engine *sim = registry.ctx().find<simulation_engine>(); sim){
+    auto &&attr_storage = registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+    if(attr_storage.contains(entity)){
+      auto &hashes = attr_storage.get(entity).ModifiedStatuses;
+      auto it = hashes.find(status_hash);
+      bool cond = it != hashes.end() && it->second == smt::added;
+      return registry.storage<void>(status_hash).contains(entity) || cond;
+    }
+  }
+
+  //If we are not actively changing nor even running a simulation, that means we can fall back on the current value.
+  //Invariant : entity.CurrentStatusHashes will be a perfect mirror of the <void> storage
+
+  return registry.storage<void>(status_hash).contains(entity);
 }
 
 //=====================================
@@ -67,17 +85,17 @@ bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const s
 }
 
 //=====================================
-logistics_API bool add_or_set_parameter_and_trigger_on_change(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
+logistics_API bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
   
   entt::id_type hash = entt::hashed_string::value(param_name.data());
   if(!registry.any_of<attributes_info>(entity)){
     return false;
   }
 
+  logistics::start_simulating(registry);
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   attr_info.CurrentParamValues.insert_or_assign(hash, parameter{dt, value});
   attr_info.IntrinsicParamValues.insert_or_assign(hash, parameter{dt, value}); //also set original values because it isn't edited through a Modifier
-  //TODO implement the ChangeTracker (with methods) so that editing statuses/params is less cumbersome
 
   const parameter param_null = parameter{data_type::null, ""};
   attributes_info_changes changes;
@@ -118,29 +136,31 @@ logistics_API bool add_or_set_parameter_and_trigger_on_change(entt::registry &re
       }
     }
   }
+
+  //end simulation here (merge if OK... well to be confirmed on actual mechanic)
+  logistics::merge_active_branch_to_reality(registry);
   
   return true;
 }
 
 
+//TODO : getter for active value of parameter
+
+
+
 //=====================================
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity){
-  attributes_info *attr_info = registry.try_get<attributes_info>(entity);
-  if(!attr_info){
-    return;
-  }
-  reset_original_status(registry, *attr_info, snapshot, entity);
-}
-
-//=========================================
-void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
+  //assert(registry.all_of<attributes_info, logistics::local_change_tracker>(entity));
   
+  auto &entity_attr_info = registry.get<attributes_info>(entity);
+  auto &local_change_tracker = registry.get<logistics::local_change_tracker>(entity);
+
+  //TODO : take snapshot from current branch if in a simulation and snapshot exists for this entity (case of going through the same entity again, basically)
   //won't need to worry about status inheritance here because ALL statuses are impacted
   snapshot.ParamValues = entity_attr_info.CurrentParamValues;
   snapshot.StatusHashes = entity_attr_info.CurrentStatusHashes;
 
-  entity_attr_info.CurrentParamValues = entity_attr_info.IntrinsicParamValues;
-  entity_attr_info.CurrentStatusHashes = entity_attr_info.IntrinsicStatusHashes;
+  local_change_tracker.set_starting_point(attributes_info_snapshot{entity_attr_info.IntrinsicStatusHashes, entity_attr_info.IntrinsicParamValues});
 }
 
 //=========================================
@@ -149,53 +169,47 @@ bool changes_empty(attributes_info_changes &changes){
 }
 
 //=========================================
-void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
+void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
 
   attributes_info_changes changes;
+  auto &local_change_tracker = registry.get<logistics::local_change_tracker>(entity);
+  attributes_info_snapshot new_snapshot = local_change_tracker.produce_active_snapshot();
 
   const parameter param_null = parameter{data_type::null, ""};
   //the new "current status hashes" would be the local_change_tracker's StartingPoint + all the changes in the local tracker
-  for(const auto &hash : attr_info.CurrentStatusHashes){
-    auto &&status_specific_storage = registry.storage<void>(hash);
-    if(!status_specific_storage.contains(entity) && snapshot.StatusHashes.find(hash) == snapshot.StatusHashes.end()){
-      status_specific_storage.emplace(entity);
+  for(const auto &hash : new_snapshot.StatusHashes){
+    if(snapshot.StatusHashes.find(hash) == snapshot.StatusHashes.end()){
       changes.ModifiedStatuses.emplace(hash, smt::added);
     }
   }
 
   for(const auto &hash : snapshot.StatusHashes){
-    auto &&status_specific_storage = registry.storage<void>(hash);
-    if(status_specific_storage.contains(entity) && attr_info.CurrentStatusHashes.find(hash) == attr_info.CurrentStatusHashes.end()){
-      status_specific_storage.remove(entity);
+    if(new_snapshot.StatusHashes.find(hash) == new_snapshot.StatusHashes.end()){
       changes.ModifiedStatuses.emplace(hash, smt::removed);
     }
   }
 
-  for(const auto &[hash, param] : attr_info.CurrentParamValues){
-    auto &&param_specific_storage = registry.storage<parameter>(hash);
-    if(!param_specific_storage.contains(entity)  && snapshot.ParamValues.find(hash) == snapshot.ParamValues.end()){
-      param_specific_storage.emplace(entity, param);
+  for(const auto &[hash, param] : new_snapshot.ParamValues){
+    if(snapshot.ParamValues.find(hash) == snapshot.ParamValues.end()){
       changes.ModifiedParams.emplace(hash, std::make_pair(param_null, param));
     } else {
       //Use patch so that registry.on_update<parameter>(entt::hashed_string::value(param_name)) will work
       //But the 'changes' struct is there to prevent us from having to trigger EnTT events all throughout this function
-      parameter previous_value = param_specific_storage.get(entity);
+      parameter previous_value = snapshot.ParamValues.at(hash);
       if(previous_value.Value != param.Value){
-        param_specific_storage.patch(entity, [&](auto &local_p) { local_p.DT = param.DT; local_p.Value = param.Value; });
         changes.ModifiedParams.emplace(hash, std::make_pair(previous_value, param));
       }
     }
   }
 
   for(const auto &[hash, param] : snapshot.ParamValues){
-    auto &&param_specific_storage = registry.storage<parameter>(hash);
-    if(param_specific_storage.contains(entity) && attr_info.CurrentParamValues.find(hash) == attr_info.CurrentParamValues.end()){
-      param_specific_storage.remove(entity);
+    if(new_snapshot.ParamValues.find(hash) == new_snapshot.ParamValues.end()){
       changes.ModifiedParams.emplace(hash, std::make_pair(param, param_null));
     } 
   }
 
-  //logistics::commit_status_to_active_branch(registry, entity, snapshot);
+  logistics::commit_changes_to_active_branch(registry, entity, changes);
+  registry.remove<logistics::local_change_tracker>(entity);
 
   if(changes_empty(changes)){
     return;

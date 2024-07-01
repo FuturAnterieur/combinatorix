@@ -22,8 +22,7 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
     eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
   }
 
-  commit_attr_info(registry, attr_info, snapshot, entity);
-  registry.remove<logistics::local_change_tracker>(entity);
+  commit_attr_info_to_branch(registry, attr_info, snapshot, entity);
 }
 
 //==================================================

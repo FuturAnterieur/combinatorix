@@ -16,13 +16,13 @@ constexpr entt::id_type k_negated_hash = "negated"_hs;
 constexpr entt::id_type k_enchantment_hash = "enchantment"_hs;
 constexpr entt::id_type k_creature_hash = "creature"_hs;
 
-bool has_status(entt::registry &registry, entt::entity entity, entt::id_type hash){
+bool has_stable_status(entt::registry &registry, entt::entity entity, entt::id_type hash){
   auto &&storage = registry.storage<void>(hash);
   return storage.contains(entity);
 }
 
-bool has_status(entt::registry &registry, entt::entity entity, std::string_view status){
-  return has_status(registry, entity, entt::hashed_string::value(status.data()));
+bool has_stable_status(entt::registry &registry, entt::entity entity, std::string_view status){
+  return has_stable_status(registry, entity, entt::hashed_string::value(status.data()));
 }
 
 bool changing_location_condition(const attributes_info_changes &changes){
@@ -44,9 +44,9 @@ TEST_CASE("Status effects / simple situation"){
   entt::registry registry;
 
   entt::entity opalescence = registry.create();
-  assign_status(registry, opalescence, k_enchantment_hash);
+  assign_intrinsic_status(registry, opalescence, k_enchantment_hash, true);
   entt::entity exploration = registry.create();
-  assign_status(registry, exploration, k_enchantment_hash);
+  assign_intrinsic_status(registry, exploration, k_enchantment_hash, true);
   //entt::entity humility = registry.create();
   //assign_status(registry, humility, "enchantment"_hs);
   
@@ -73,11 +73,11 @@ TEST_CASE("Status effects / simple situation"){
       
 
       auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-        if(has_status(registry, owner, k_negated_hash) || !has_status(registry, target, k_enchantment_hash)){
+        if(get_active_value_for_status(registry, owner, k_negated_hash) || !get_active_value_for_status(registry, target, k_enchantment_hash)){
           return;
         }
         
-        assign_status(registry, target, k_creature_hash, false); //variant to examine : removing its enchantment status
+        assign_active_status(registry, target, k_creature_hash, true); //variant to examine : removing its enchantment status
       };
 
       if(entering_field_condition(changes)){
@@ -93,9 +93,9 @@ TEST_CASE("Status effects / simple situation"){
   add_global_on_status_change_trigger(registry, opalescence, opal_on_other_status_change_info);
   
   //trigger the thing!
-  add_or_set_parameter_and_trigger_on_change(registry, exploration, k_location, data_type::string, k_location_field);
+  add_or_set_intrinsic_parameter(registry, exploration, k_location, data_type::string, k_location_field);
 
-  CHECK(has_status(registry, exploration, k_creature_hash));
+  CHECK(has_stable_status(registry, exploration, k_creature_hash));
 
   //Chapter 2 : opalescence becomes negated
   entt::entity negater = registry.create();
@@ -103,23 +103,23 @@ TEST_CASE("Status effects / simple situation"){
   neg_info.OriginatingEntity = negater;
   neg_info.ApplyFunc = 
     [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-      assign_status(registry, target, k_negated_hash, false);
+      assign_active_status(registry, target, k_negated_hash, true);
     };
   add_status_effect(registry, opalescence, neg_info);
-  CHECK(!has_status(registry, exploration, k_creature_hash));
-  CHECK(has_status(registry, exploration, k_enchantment_hash));
+  CHECK(!has_stable_status(registry, exploration, k_creature_hash));
+  CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 
   // Chapter 3 : un-negate opalescence
   remove_status_effects_originating_from(registry, opalescence, negater);
-  CHECK(has_status(registry, exploration, k_creature_hash));
-  CHECK(has_status(registry, exploration, k_enchantment_hash));
+  CHECK(has_stable_status(registry, exploration, k_creature_hash));
+  CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 
   // Chapter 4 : remove exploration from the field
-  add_or_set_parameter_and_trigger_on_change(registry, exploration, k_location, data_type::string, k_location_grave);
+  add_or_set_intrinsic_parameter(registry, exploration, k_location, data_type::string, k_location_grave);
 
-  CHECK(!has_status(registry, exploration, k_creature_hash));
-  CHECK(has_status(registry, exploration, k_enchantment_hash));
+  CHECK(!has_stable_status(registry, exploration, k_creature_hash));
+  CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 }

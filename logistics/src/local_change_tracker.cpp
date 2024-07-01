@@ -30,4 +30,22 @@ namespace logistics{
     }
     return result;
   }
+
+  attributes_info_snapshot local_change_tracker::produce_active_snapshot(){
+    attributes_info_snapshot result = StartingPoint;
+    for(auto &[hash, edits] : ParameterEdits.Edits){
+      edits.apply_to_value(result.ParamValues.at(hash));
+    }
+
+    for(auto &[hash, edits] : StatusEdits.Edits){
+      if(edits.Values.back() == true){
+        assert(result.StatusHashes.find(hash) == result.StatusHashes.end());
+        result.StatusHashes.insert(hash);
+      } else {
+        assert(result.StatusHashes.find(hash) != result.StatusHashes.end());
+        result.StatusHashes.erase(hash);
+      }
+    }
+    return result;
+  }
 };

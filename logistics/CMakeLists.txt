@@ -3,6 +3,7 @@ set(CORE_LOGISTICS_SRCS
   src/combine.cpp
   src/effect.cpp
   src/local_change_tracker.cpp
+  src/simulation_engine.cpp
   src/split.cpp
   src/status.cpp
 )
