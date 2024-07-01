@@ -23,6 +23,9 @@ void update_status_effects(entt::registry &registry, entt::entity entity);
 logistics_API void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info);
 logistics_API void remove_status_effects_originating_from(entt::registry &registry, entt::entity entity, entt::entity originating_entity);
 
+//I.e. in active branch
+status_effects &get_active_status_effects(entt::registry &registry, entt::entity entity);
+
 //Active effects, Passive effects
 //Passive : Status modifying effects -> reran each time they are modified
 //Effects that stay on place but do something at regular time intervals / according to certain events -> use a trigger system

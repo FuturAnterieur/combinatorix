@@ -27,20 +27,12 @@ bool has_status(entt::registry &registry, entt::entity entity, std::string_view 
 
 bool changing_location_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  auto added_it = changes.AddedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end() || added_it != changes.AddedParams.end());
+  return (it != changes.ModifiedParams.end());
 }
 
 bool entering_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  auto added_it = changes.AddedParams.find(k_location_hash);
-  if((it == changes.ModifiedParams.end() || it->second.second.Value != k_location_field)
-    && (added_it == changes.AddedParams.end() || added_it->second.Value != k_location_field))
-  {
-    return false;
-  }
-  
-  return true;
+  return (it != changes.ModifiedParams.end() && it->second.second.Value == k_location_field);
 }
 
 bool leaving_field_condition(const attributes_info_changes &changes){

@@ -1,6 +1,7 @@
 #include "effect.h"
 #include "combine.h"
 #include "status.h"
+#include "local_change_tracker.h"
 #include <algorithm>
 
 //=================================================
@@ -11,6 +12,8 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   }
 
   //Reset params and status to their original values
+
+  registry.emplace<logistics::local_change_tracker>(entity);
   attributes_info_snapshot snapshot;
   reset_original_status(registry, snapshot, entity);
 
@@ -20,6 +23,7 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   }
 
   commit_attr_info(registry, attr_info, snapshot, entity);
+  registry.remove<logistics::local_change_tracker>(entity);
 }
 
 //==================================================

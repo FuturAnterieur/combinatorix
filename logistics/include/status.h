@@ -1,10 +1,9 @@
 #pragma once
 
 #include "logistics_export.h"
+#include "attributes_info.h"
 #include <entt/entity/registry.hpp>
-#include <set>
-#include <list>
-#include <map>
+
 
 struct type_inheritance_node {
   type_inheritance_node *Parent{nullptr}; //NO! Could have many parents. To be confirmed.
@@ -22,33 +21,12 @@ struct type_inheritance_graph { //context will have one single instance of this
 logistics_API bool assign_status(entt::registry &registry, entt::entity entity, const std::string &status_name, bool is_original = true);
 logistics_API bool assign_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool is_original = true);
 
-enum class data_type {
-  string,
-  number,
-  integer,
-  boolean
-};
-
-struct parameter {
-  data_type DT;
-  std::string Value;
-};
-
-struct attributes_info {
-  std::set<entt::id_type> OriginalStatusHashes;
-  std::set<entt::id_type> CurrentStatusHashes;
-  std::map<entt::id_type, parameter> OriginalParamValues;
-  std::map<entt::id_type, parameter> CurrentParamValues;
-};
-
-struct attributes_info_snapshot {
-  std::set<entt::id_type> StatusHashes;
-  std::map<entt::id_type, parameter> ParamValues;
-};
+logistics_API bool get_active_value_for_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash);
 
 logistics_API bool add_original_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+
 //This is destined to be called by status modifying functions, so it does not commit the change to the registry
-logistics_API bool add_additional_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+logistics_API bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 logistics_API bool add_or_set_parameter_and_trigger_on_change(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
@@ -56,17 +34,6 @@ void reset_original_status(entt::registry &registry, attributes_info_snapshot &s
 void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
 void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
 
-//integrating this to attributes_info (with accessor functions) would be more work, but would allow much easier contradicting change detection.
-//so maybe future TO-DO
-struct attributes_info_changes{ 
-  std::set<entt::id_type> AddedStatuses; 
-  std::set<entt::id_type> RemovedStatuses;
-  std::map<entt::id_type, parameter> AddedParams;
-  std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
-  std::map<entt::id_type, parameter> RemovedParams; //contains old value
-};
-
-bool changes_empty(attributes_info_changes &changes);
 
 using status_change_trigger_func_t = std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
 using status_change_trigger_filter_t = std::function<bool(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
