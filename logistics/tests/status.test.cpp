@@ -8,6 +8,14 @@
 using namespace std::string_view_literals;
 using namespace entt::literals;
 
+constexpr const char *k_location_field = "Field";
+constexpr const char *k_location_grave = "Grave";
+constexpr const char *k_location = "location";
+constexpr entt::id_type k_location_hash = "location"_hs;
+constexpr entt::id_type k_negated_hash = "negated"_hs;
+constexpr entt::id_type k_enchantment_hash = "enchantment"_hs;
+constexpr entt::id_type k_creature_hash = "creature"_hs;
+
 bool has_status(entt::registry &registry, entt::entity entity, entt::id_type hash){
   auto &&storage = registry.storage<void>(hash);
   return storage.contains(entity);
@@ -17,11 +25,17 @@ bool has_status(entt::registry &registry, entt::entity entity, std::string_view 
   return has_status(registry, entity, entt::hashed_string::value(status.data()));
 }
 
+bool changing_location_condition(const attributes_info_changes &changes){
+  auto it = changes.ModifiedParams.find(k_location_hash);
+  auto added_it = changes.AddedParams.find(k_location_hash);
+  return (it != changes.ModifiedParams.end() || added_it != changes.AddedParams.end());
+}
+
 bool entering_field_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find("location"_hs);
-  auto added_it = changes.AddedParams.find("location"_hs);
-  if((it == changes.ModifiedParams.end() || it->second.second.Value != "Field")
-    && (added_it == changes.AddedParams.end() || added_it->second.Value != "Field"))
+  auto it = changes.ModifiedParams.find(k_location_hash);
+  auto added_it = changes.AddedParams.find(k_location_hash);
+  if((it == changes.ModifiedParams.end() || it->second.second.Value != k_location_field)
+    && (added_it == changes.AddedParams.end() || added_it->second.Value != k_location_field))
   {
     return false;
   }
@@ -29,67 +43,91 @@ bool entering_field_condition(const attributes_info_changes &changes){
   return true;
 }
 
+bool leaving_field_condition(const attributes_info_changes &changes){
+  auto it = changes.ModifiedParams.find(k_location_hash);
+  return it != changes.ModifiedParams.end() && it->second.first.Value == k_location_field;
+}
+
 TEST_CASE("Status effects / simple situation"){
   entt::registry registry;
 
   entt::entity opalescence = registry.create();
-  assign_status(registry, opalescence, "enchantment"_hs);
+  assign_status(registry, opalescence, k_enchantment_hash);
   entt::entity exploration = registry.create();
-  assign_status(registry, exploration, "enchantment"_hs);
+  assign_status(registry, exploration, k_enchantment_hash);
   //entt::entity humility = registry.create();
   //assign_status(registry, humility, "enchantment"_hs);
   
   //when an enchantment is brought to the field, make it become a creature in addition to its other types.
-  
+  //Alternately, if it leaves the field, stop modifying it.
 
-  on_status_change_trigger_info opal_on_other_enter_info;
-  opal_on_other_enter_info.TriggerOwner = opalescence;
-  opal_on_other_enter_info.Filter = 
+  //FUTURE : still have to cover the fact of opalescence entering the field.
+  //COULD do it in the same trigger, adding clauses and a registry view applier.
+  on_status_change_trigger_info opal_on_other_status_change_info;
+  opal_on_other_status_change_info.TriggerOwner = opalescence;
+  opal_on_other_status_change_info.Filter = 
     [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
-      if(entity == owner || !has_status(registry, entity, "enchantment"_hs)){
+      if(entity == owner){
         return false;
       }
-      if(!entering_field_condition(changes)){
+      if(!changing_location_condition(changes)){
         return false;
       }
       return true;
   };
 
-  opal_on_other_enter_info.Func = 
+  opal_on_other_status_change_info.Func = 
     [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
-    
-      status_effect_info info;
-      info.OriginatingEntity = owner;
-      info.ApplyFunc = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-        if(has_status(registry, owner, "negated"_hs)){
+      
+
+      auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+        if(has_status(registry, owner, k_negated_hash) || !has_status(registry, target, k_enchantment_hash)){
           return;
         }
-        link(registry, owner, target); //THIS WILL HAVE TO BE PLACED IN THE CORE CODE, NOT IN CLIENT CODE
-        assign_status(registry, target, "creature"_hs, false); //variant to examine : removing its enchantment status
+        
+        assign_status(registry, target, k_creature_hash, false); //variant to examine : removing its enchantment status
       };
-      add_status_effect(registry, entity, info);
+
+      if(entering_field_condition(changes)){
+        status_effect_info info;
+        info.OriginatingEntity = owner;
+        info.ApplyFunc = assign_func;
+        add_status_effect(registry, entity, info);
+      } else if (leaving_field_condition(changes)){
+        remove_status_effects_originating_from(registry, entity, owner);
+      }
   };
 
-  add_global_on_status_change_trigger(registry, opalescence, opal_on_other_enter_info);
+  add_global_on_status_change_trigger(registry, opalescence, opal_on_other_status_change_info);
   
   //trigger the thing!
-  add_or_set_parameter_and_trigger_on_change(registry, exploration, "location", data_type::string, "Field");
+  add_or_set_parameter_and_trigger_on_change(registry, exploration, k_location, data_type::string, k_location_field);
 
-  CHECK(has_status(registry, exploration, "creature"_hs));
+  CHECK(has_status(registry, exploration, k_creature_hash));
 
-  //check what happens if opalesence becomes negated!
+  //Chapter 2 : opalescence becomes negated
   entt::entity negater = registry.create();
-
   status_effect_info neg_info;
   neg_info.OriginatingEntity = negater;
   neg_info.ApplyFunc = 
     [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-      assign_status(registry, target, "negated"_hs, false);
+      assign_status(registry, target, k_negated_hash, false);
     };
-
-
   add_status_effect(registry, opalescence, neg_info);
+  CHECK(!has_status(registry, exploration, k_creature_hash));
+  CHECK(has_status(registry, exploration, k_enchantment_hash));
 
-  CHECK(!has_status(registry, exploration, "creature"_hs));
-  CHECK(has_status(registry, exploration, "enchantment"_hs));
+
+  // Chapter 3 : un-negate opalescence
+  remove_status_effects_originating_from(registry, opalescence, negater);
+  CHECK(has_status(registry, exploration, k_creature_hash));
+  CHECK(has_status(registry, exploration, k_enchantment_hash));
+
+
+  // Chapter 4 : remove exploration from the field
+  add_or_set_parameter_and_trigger_on_change(registry, exploration, k_location, data_type::string, k_location_grave);
+
+  CHECK(!has_status(registry, exploration, k_creature_hash));
+  CHECK(has_status(registry, exploration, k_enchantment_hash));
+
 }

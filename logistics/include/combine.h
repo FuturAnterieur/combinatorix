@@ -33,5 +33,6 @@ struct combination_info{
 
 logistics_API bool combine(entt::registry &registry, entt::entity a, entt::entity b);
 logistics_API void link(entt::registry &registry, entt::entity a, entt::entity b);
+logistics_API void unlink(entt::registry &registry, entt::entity a, entt::entity b);
 
 logistics_API void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func);

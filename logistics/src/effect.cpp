@@ -1,6 +1,7 @@
 #include "effect.h"
 #include "combine.h"
 #include "status.h"
+#include <algorithm>
 
 //=================================================
 void update_status_effects(entt::registry &registry, entt::entity entity){
@@ -31,6 +32,27 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
     status_effects &effs = registry.get<status_effects>(entity);
     effs.Infos.push_back(info);
   }
+
+  link(registry, info.OriginatingEntity, entity); 
+  //Sort Infos according to the current rules about Status Effect Modification priority, then
+  update_status_effects(registry, entity);
+}
+
+//==================================================
+void remove_status_effects_originating_from(entt::registry &registry, entt::entity entity, entt::entity originating_entity){
+  if(!registry.any_of<status_effects>(entity)){
+    return;
+  }
+
+  status_effects &effs = registry.get<status_effects>(entity);
+  
+  effs.Infos.erase(std::remove_if(effs.Infos.begin(),
+                                  effs.Infos.end(),
+                                  [=](const status_effect_info &info)-> bool 
+                                  { return info.OriginatingEntity == originating_entity; }), 
+                  effs.Infos.end());
+
+  unlink(registry, originating_entity, entity);
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   update_status_effects(registry, entity);
 }

@@ -128,7 +128,7 @@ void reset_original_status(entt::registry &registry, attributes_info_snapshot &s
   reset_original_status(registry, *attr_info, snapshot, entity);
 }
 
-
+//=========================================
 void reset_original_status(entt::registry &registry, attributes_info &entity_attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
   
   //won't need to worry about status inheritance here because ALL statuses are impacted
@@ -139,6 +139,14 @@ void reset_original_status(entt::registry &registry, attributes_info &entity_att
   entity_attr_info.CurrentStatusHashes = entity_attr_info.OriginalStatusHashes;
 }
 
+//=========================================
+bool changes_empty(attributes_info_changes &changes){
+  return changes.AddedParams.empty() && changes.AddedStatuses.empty() 
+        && changes.ModifiedParams.empty() && changes.RemovedParams.empty()
+        && changes.RemovedStatuses.empty();
+}
+
+//=========================================
 void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
 
   attributes_info_changes changes;
@@ -182,6 +190,9 @@ void commit_attr_info(entt::registry &registry, attributes_info &attr_info, attr
     } 
   }
 
+  if(changes_empty(changes)){
+    return;
+  }
   
   if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
     for(const on_status_change_trigger_info &info : triggers->Triggers){

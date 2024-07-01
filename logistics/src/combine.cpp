@@ -39,9 +39,13 @@ bool combine(entt::registry &registry, entt::entity a, entt::entity b){
 
 void link(entt::registry &registry, entt::entity a, entt::entity b){
   combination_info &combinable_of_a = registry.get_or_emplace<combination_info>(a);
-  combination_info &combinable_of_b = registry.get_or_emplace<combination_info>(b);
-
+  
   combinable_of_a.CurrentCombinations[combination_kind::link].insert(b);
+}
+
+void unlink(entt::registry &registry, entt::entity a, entt::entity b){
+  combination_info &combinable_of_a = registry.get_or_emplace<combination_info>(a);
+  combinable_of_a.CurrentCombinations[combination_kind::link].erase(b);
 }
 
 void add_combine_trigger(entt::registry &registry, entt::entity e, combine_trigger_t func) 

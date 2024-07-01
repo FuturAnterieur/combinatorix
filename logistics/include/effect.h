@@ -21,6 +21,7 @@ struct status_effects { //i.e. generally status effects currently applying to th
 //Update status effects for a single entity (rerun the calculation in the order the list is sorted)
 void update_status_effects(entt::registry &registry, entt::entity entity);
 logistics_API void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info);
+logistics_API void remove_status_effects_originating_from(entt::registry &registry, entt::entity entity, entt::entity originating_entity);
 
 //Active effects, Passive effects
 //Passive : Status modifying effects -> reran each time they are modified
