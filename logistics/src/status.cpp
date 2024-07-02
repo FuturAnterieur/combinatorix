@@ -3,6 +3,7 @@
 #include "effect.h"
 #include "simulation_engine.h"
 #include "local_change_tracker.h"
+#include "entt_utils.h"
 
 //=====================================
 bool assign_active_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash, bool status_value){
@@ -80,6 +81,36 @@ bool get_active_value_for_status(entt::registry &registry, entt::entity entity, 
 }
 
 //=====================================
+parameter get_active_value_for_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash){
+  using namespace logistics;
+  if(local_change_tracker *tracker = registry.try_get<local_change_tracker>(entity); tracker){
+    return tracker->get_active_value_for_parameter(param_hash);
+  }
+
+  //Then check in the current simulation branch
+  if(simulation_engine *sim = registry.ctx().find<simulation_engine>(); sim){
+    auto &&attr_storage = registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+    if(attr_storage.contains(entity)){
+      auto &mod_params = attr_storage.get(entity).ModifiedParams;
+      auto it = mod_params.find(param_hash);
+      if(it == mod_params.end()){
+        return utils::get_or_default(registry, entity, param_hash, parameter{});
+      } else {
+        return it->second.second;
+      }
+      
+    }
+  }
+
+  //If we are not actively changing nor even running a simulation, that means we can fall back on the current value.
+  //Invariant : entity.CurrentParameters will be a perfect mirror of the <parameter>() storage
+
+  return utils::get_or_default(registry, entity, param_hash, parameter{});
+}
+
+
+
+//=====================================
 //To be called from modifiers
 bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
   entt::id_type hash = entt::hashed_string::value(param_name.data());
@@ -123,11 +154,6 @@ bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entit
   
   return true;
 }
-
-
-//TODO : getter for active value of parameter
-
-
 
 //=====================================
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity){
@@ -198,11 +224,13 @@ void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_
   activate_status_change_triggers(registry, entity, changes);
 }
 
+//==============================================================
 void add_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info){
   on_status_change_triggers &triggers = registry.get_or_emplace<on_status_change_triggers>(entity);
   add_on_status_change_trigger(registry, triggers, info);
 }
 
+//==============================================================
 void add_global_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info){
   on_status_change_triggers *triggers = registry.ctx().find<on_status_change_triggers>();
   if(!triggers){
@@ -212,7 +240,7 @@ void add_global_on_status_change_trigger(entt::registry &registry, entt::entity 
   add_on_status_change_trigger(registry, *triggers, info);
 }
 
-
+//==============================================================
 void add_on_status_change_trigger(entt::registry &registry, on_status_change_triggers &triggers, on_status_change_trigger_info &info){
   triggers.Triggers.push_back(info);
 }

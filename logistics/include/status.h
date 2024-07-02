@@ -46,3 +46,4 @@ struct on_status_change_triggers {
 logistics_API void add_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info);
 logistics_API void add_global_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info);
 void add_on_status_change_trigger(entt::registry &registry, on_status_change_triggers &triggers, on_status_change_trigger_info &info);
+

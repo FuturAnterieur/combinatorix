@@ -15,8 +15,8 @@ enum class data_type {
 };
 
 struct parameter {
-  data_type DT;
-  std::string Value;
+  data_type DT{data_type::null};
+  std::string Value{};
 };
 
 struct attributes_info {

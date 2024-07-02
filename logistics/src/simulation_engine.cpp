@@ -58,7 +58,7 @@ namespace logistics {
         assert(ret);
       } else  { //modification
         attr_info.CurrentParamValues.insert_or_assign(hash, param_pair.second);
-        emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
+        utils::emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
       }
     }
 
