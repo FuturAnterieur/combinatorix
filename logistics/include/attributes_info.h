@@ -43,4 +43,6 @@ struct attributes_info_changes{
   std::map<entt::id_type, smt> ModifiedStatuses; 
   std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
 };
+
 bool changes_empty(attributes_info_changes &changes);
+attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);

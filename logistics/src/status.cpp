@@ -182,43 +182,12 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
 //=========================================
 void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity){
 
-  attributes_info_changes changes;
+  
   auto &local_change_tracker = registry.get<logistics::local_change_tracker>(entity);
   attributes_info_snapshot new_snapshot = local_change_tracker.produce_active_snapshot();
 
-  const parameter param_null = parameter{data_type::null, ""};
-  //the new "current status hashes" would be the local_change_tracker's StartingPoint + all the changes in the local tracker
-  for(const auto &hash : new_snapshot.StatusHashes){
-    if(snapshot.StatusHashes.find(hash) == snapshot.StatusHashes.end()){
-      changes.ModifiedStatuses.emplace(hash, smt::added);
-    }
-  }
-
-  for(const auto &hash : snapshot.StatusHashes){
-    if(new_snapshot.StatusHashes.find(hash) == new_snapshot.StatusHashes.end()){
-      changes.ModifiedStatuses.emplace(hash, smt::removed);
-    }
-  }
-
-  for(const auto &[hash, param] : new_snapshot.ParamValues){
-    if(snapshot.ParamValues.find(hash) == snapshot.ParamValues.end()){
-      changes.ModifiedParams.emplace(hash, std::make_pair(param_null, param));
-    } else {
-      //Use patch so that registry.on_update<parameter>(entt::hashed_string::value(param_name)) will work
-      //But the 'changes' struct is there to prevent us from having to trigger EnTT events all throughout this function
-      parameter previous_value = snapshot.ParamValues.at(hash);
-      if(previous_value.Value != param.Value){
-        changes.ModifiedParams.emplace(hash, std::make_pair(previous_value, param));
-      }
-    }
-  }
-
-  for(const auto &[hash, param] : snapshot.ParamValues){
-    if(new_snapshot.ParamValues.find(hash) == new_snapshot.ParamValues.end()){
-      changes.ModifiedParams.emplace(hash, std::make_pair(param, param_null));
-    } 
-  }
-
+  attributes_info_changes changes = compute_diff(snapshot, new_snapshot);
+  
   logistics::commit_changes_to_active_branch(registry, entity, changes);
   registry.remove<logistics::local_change_tracker>(entity);
 

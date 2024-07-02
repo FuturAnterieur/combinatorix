@@ -1,5 +1,6 @@
 
 set(CORE_LOGISTICS_SRCS 
+  src/attributes_info.cpp
   src/combine.cpp
   src/effect.cpp
   src/local_change_tracker.cpp

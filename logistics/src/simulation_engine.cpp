@@ -1,4 +1,5 @@
 #include "simulation_engine.h"
+#include "entt_utils.h"
 
 namespace logistics {
 
@@ -20,6 +21,9 @@ namespace logistics {
   //=============================
   void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects &info){
     //TODO
+    //For now, status effects modifiers are always commited to the reality
+    //This should change in the future.
+    //But this also entails keeping track of combination_info, triggers, etc... on the side branch. Lots of boilerplate.
   }
 
   //=============================
@@ -54,11 +58,7 @@ namespace logistics {
         assert(ret);
       } else  { //modification
         attr_info.CurrentParamValues.insert_or_assign(hash, param_pair.second);
-        if(storage.contains(entity)){
-          storage.patch(entity, [&](auto &local_p) { local_p.DT = param_pair.second.DT; local_p.Value = param_pair.second.Value; });
-        } else {
-          storage.emplace(entity, param_pair.second);
-        }
+        emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
       }
     }
 
