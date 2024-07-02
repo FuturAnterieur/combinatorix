@@ -27,6 +27,7 @@ bool assign_intrinsic_status(entt::registry &registry, entt::entity entity, entt
     registry.emplace<attributes_info>(entity);
   }
   
+  attributes_info_changes changes;
   auto &&type_specific_storage = registry.storage<void>(status_hash);
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   if(status_value){
@@ -34,18 +35,19 @@ bool assign_intrinsic_status(entt::registry &registry, entt::entity entity, entt
     attr_info.IntrinsicStatusHashes.emplace(status_hash);
     
     if(!type_specific_storage.contains(entity)){
+      changes.ModifiedStatuses.emplace(status_hash, smt::added);
       type_specific_storage.emplace(entity);
     }
   } else {
     attr_info.CurrentStatusHashes.erase(status_hash); 
     attr_info.IntrinsicStatusHashes.erase(status_hash);
     if(type_specific_storage.contains(entity)){
+      changes.ModifiedStatuses.emplace(status_hash, smt::removed);
       type_specific_storage.remove(entity);
     }
   }
   
-
-  //TODO : Don't forget triggers!!!
+  activate_status_change_triggers(registry, entity, changes);
   return true;
 }
 
@@ -62,8 +64,12 @@ bool get_active_value_for_status(entt::registry &registry, entt::entity entity, 
     if(attr_storage.contains(entity)){
       auto &hashes = attr_storage.get(entity).ModifiedStatuses;
       auto it = hashes.find(status_hash);
-      bool cond = it != hashes.end() && it->second == smt::added;
-      return registry.storage<void>(status_hash).contains(entity) || cond;
+      if(it == hashes.end()){
+        return registry.storage<void>(status_hash).contains(entity);
+      } else {
+        return it->second == smt::added;
+      }
+      
     }
   }
 
@@ -85,7 +91,7 @@ bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const s
 }
 
 //=====================================
-logistics_API bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
+bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
   
   entt::id_type hash = entt::hashed_string::value(param_name.data());
   if(!registry.any_of<attributes_info>(entity)){
@@ -110,33 +116,8 @@ logistics_API bool add_or_set_intrinsic_parameter(entt::registry &registry, entt
     old_param = new_param;
   }
 
-  if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
-    for(const on_status_change_trigger_info &info : triggers->Triggers){
-      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
-        info.Func(registry, changes, entity, info.TriggerOwner);
-      }
-    }
-  }
-
-  //For now we can still go fetch global triggers here if they exist
-  const on_status_change_triggers *global_triggers = registry.ctx().find<on_status_change_triggers>();
-  if(global_triggers){
-    for(const on_status_change_trigger_info &info : global_triggers->Triggers){
-      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
-        info.Func(registry, changes, entity, info.TriggerOwner);
-      }
-    }
-  }
-
-  if(registry.any_of<combination_info>(entity)){
-    auto &info = registry.get<combination_info>(entity);
-    for(const auto &[kind, entities] : info.CurrentCombinations){
-      for(entt::entity entity : entities){
-        update_status_effects(registry, entity);
-      }
-    }
-  }
-
+  activate_status_change_triggers(registry, entity, changes);
+  
   //end simulation here (merge if OK... well to be confirmed on actual mechanic)
   logistics::merge_active_branch_to_reality(registry);
   
@@ -166,6 +147,36 @@ void reset_original_status(entt::registry &registry, attributes_info_snapshot &s
 //=========================================
 bool changes_empty(attributes_info_changes &changes){
   return changes.ModifiedStatuses.empty() && changes.ModifiedParams.empty();
+}
+
+//=========================================
+void activate_status_change_triggers(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes){
+  if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
+    for(const on_status_change_trigger_info &info : triggers->Triggers){
+      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        info.Func(registry, changes, entity, info.TriggerOwner);
+      }
+    }
+  }
+
+  //For now we can still go fetch global triggers here if they exist
+  const on_status_change_triggers *global_triggers = registry.ctx().find<on_status_change_triggers>();
+  if(global_triggers){
+    for(const on_status_change_trigger_info &info : global_triggers->Triggers){
+      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        info.Func(registry, changes, entity, info.TriggerOwner);
+      }
+    }
+  }
+
+  if(registry.any_of<combination_info>(entity)){
+    auto &info = registry.get<combination_info>(entity);
+    for(const auto &[kind, entities] : info.CurrentCombinations){
+      for(entt::entity entity : entities){
+        update_status_effects(registry, entity);
+      }
+    }
+  }
 }
 
 //=========================================
@@ -214,33 +225,8 @@ void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_
   if(changes_empty(changes)){
     return;
   }
-  
-  if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
-    for(const on_status_change_trigger_info &info : triggers->Triggers){
-      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
-        info.Func(registry, changes, entity, info.TriggerOwner);
-      }
-    }
-  }
 
-  //For now we can still go fetch global triggers here if they exist
-  const on_status_change_triggers *global_triggers = registry.ctx().find<on_status_change_triggers>();
-  if(global_triggers){
-    for(const on_status_change_trigger_info &info : global_triggers->Triggers){
-      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
-        info.Func(registry, changes, entity, info.TriggerOwner);
-      }
-    }
-  }
-
-  if(registry.any_of<combination_info>(entity)){
-    auto &info = registry.get<combination_info>(entity);
-    for(const auto &[kind, entities] : info.CurrentCombinations){
-      for(entt::entity entity : entities){
-        update_status_effects(registry, entity);
-      }
-    }
-  }
+  activate_status_change_triggers(registry, entity, changes);
 }
 
 void add_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info){

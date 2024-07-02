@@ -2,6 +2,7 @@
 #include "combine.h"
 #include "status.h"
 #include "local_change_tracker.h"
+#include "simulation_engine.h"
 #include <algorithm>
 
 //=================================================
@@ -66,6 +67,9 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
     return;
   }
 
+  //TODO : Start simulation here I think (as long as this was called from outside)
+  logistics::start_simulating(registry);
+
   auto view = registry.view<on_use_trigger>();
   view.each([&](auto trigger_owner, on_use_trigger &trig_group){
     for(const on_use_trigger_info &info : trig_group.Triggers){
@@ -77,6 +81,8 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
 
   usable &used = registry.get<usable>(ability);
   used.UseFunc(registry, ability, target);
+
+  logistics::merge_active_branch_to_reality(registry);
 }
 
 //====================================================

@@ -105,13 +105,28 @@ TEST_CASE("Status effects / simple situation"){
     [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       assign_active_status(registry, target, k_negated_hash, true);
     };
-  add_status_effect(registry, opalescence, neg_info);
+
+
+  entt::entity negater_adding_ability = add_ability(registry, negater, 
+    [=](entt::registry &registry, entt::entity ability, entt::entity target){
+      add_status_effect(registry, target, neg_info);
+    }, combination_info{});
+
+  entt::entity negater_removal_ability = add_ability(registry, negater,
+    [=](entt::registry &registry, entt::entity ability, entt::entity target){
+      remove_status_effects_originating_from(registry, target, negater);
+    }, combination_info{});
+
+
+  
+  use(registry, negater_adding_ability, opalescence);
+
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 
   // Chapter 3 : un-negate opalescence
-  remove_status_effects_originating_from(registry, opalescence, negater);
+  use(registry, negater_removal_ability, opalescence);
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
