@@ -7,18 +7,24 @@ namespace logistics {
     simulation_engine &eng = registry.ctx().emplace<simulation_engine>();
     eng.ActiveBranchHashForStatusChanges = entt::hashed_string::value("branch 0 - status_changes");
     //eng.StartingNode = start;
-    //eng.CurrentNode = start;
+    eng.CurrentNode = start;
   }
 
   //------------------------------------
-  bool enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to){
+  void enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to){
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
 
     sim->DynamicGraph.add_edge(from, to);
     sim->CurrentNode = to;
+  }
 
-    return !sim->DynamicGraph.find_cycle_simple();
+  //-----------------------------------
+  bool graph_has_cycle(entt::registry &registry){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+
+    return sim->DynamicGraph.find_cycle_simple();
   }
 
   //------------------------------------

@@ -40,7 +40,8 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
   }
 
   link(registry, info.OriginatingEntity, entity); 
-  if(!logistics::enter_new_entity(registry, info.OriginatingEntity, entity)){ //cycle detected, do not evaluate further
+  logistics::enter_new_entity(registry, info.OriginatingEntity, entity);
+  if(logistics::graph_has_cycle(registry)){ //cycle detected, do not evaluate further
     return;
   }
 
@@ -64,6 +65,11 @@ void remove_status_effects_originating_from(entt::registry &registry, entt::enti
                   effs.Infos.end());
 
   unlink(registry, originating_entity, entity);
+  logistics::enter_new_entity(registry, originating_entity, entity);
+  if(logistics::graph_has_cycle(registry)){ //cycle detected, do not evaluate further
+    return;
+  }
+
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   update_status_effects(registry, entity);
 }

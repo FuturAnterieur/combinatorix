@@ -22,7 +22,8 @@ namespace logistics{
   };
 
   void start_simulating(entt::registry &registry, entt::entity start);
-  bool enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to);
+  void enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to);
+  bool graph_has_cycle(entt::registry &registry);
 
   void commit_changes_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects &info);
