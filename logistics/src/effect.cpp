@@ -7,14 +7,16 @@
 
 //=================================================
 void update_status_effects(entt::registry &registry, entt::entity entity){
+  
   status_effects* effs = registry.try_get<status_effects>(entity);
   if(!effs){
     return;
   }
 
-  //Reset params and status to their original values
-
+  
   registry.emplace<logistics::local_change_tracker>(entity);
+  
+  //Reset local params and status to their original values
   attributes_info_snapshot snapshot;
   reset_original_status(registry, snapshot, entity);
 
@@ -38,6 +40,11 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
   }
 
   link(registry, info.OriginatingEntity, entity); 
+  if(!logistics::enter_new_entity(registry, info.OriginatingEntity, entity)){ //cycle detected, do not evaluate further
+    return;
+  }
+
+
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   update_status_effects(registry, entity);
 }
@@ -68,7 +75,7 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
   }
 
   //TODO : Start simulation here I think (as long as this was called from outside)
-  logistics::start_simulating(registry);
+  logistics::start_simulating(registry, ability);
 
   auto view = registry.view<on_use_trigger>();
   view.each([&](auto trigger_owner, on_use_trigger &trig_group){

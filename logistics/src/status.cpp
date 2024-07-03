@@ -29,6 +29,7 @@ bool assign_intrinsic_status(entt::registry &registry, entt::entity entity, entt
   }
   
   attributes_info_changes changes;
+  logistics::start_simulating(registry, entity);
   auto &&type_specific_storage = registry.storage<void>(status_hash);
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   if(status_value){
@@ -49,6 +50,9 @@ bool assign_intrinsic_status(entt::registry &registry, entt::entity entity, entt
   }
   
   activate_status_change_triggers(registry, entity, changes);
+  //end simulation here (merge if OK... well to be confirmed on actual mechanic)
+  logistics::merge_active_branch_to_reality(registry);
+
   return true;
 }
 
@@ -61,7 +65,7 @@ bool get_active_value_for_status(entt::registry &registry, entt::entity entity, 
 
   //Then check in the current simulation branch
   if(simulation_engine *sim = registry.ctx().find<simulation_engine>(); sim){
-    auto &&attr_storage = registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+    auto &&attr_storage = get_active_branch_status_changes_storage(registry);
     if(attr_storage.contains(entity)){
       auto &hashes = attr_storage.get(entity).ModifiedStatuses;
       auto it = hashes.find(status_hash);
@@ -89,7 +93,7 @@ parameter get_active_value_for_parameter(entt::registry &registry, entt::entity 
 
   //Then check in the current simulation branch
   if(simulation_engine *sim = registry.ctx().find<simulation_engine>(); sim){
-    auto &&attr_storage = registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+    auto &&attr_storage = get_active_branch_status_changes_storage(registry);
     if(attr_storage.contains(entity)){
       auto &mod_params = attr_storage.get(entity).ModifiedParams;
       auto it = mod_params.find(param_hash);
@@ -129,18 +133,17 @@ bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entit
     return false;
   }
 
-  logistics::start_simulating(registry);
+  logistics::start_simulating(registry, entity);
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   attr_info.CurrentParamValues.insert_or_assign(hash, parameter{dt, value});
   attr_info.IntrinsicParamValues.insert_or_assign(hash, parameter{dt, value}); //also set original values because it isn't edited through a Modifier
 
-  const parameter param_null = parameter{data_type::null, ""};
   attributes_info_changes changes;
   parameter new_param{dt,value};
   auto &&specific_storage = registry.storage<parameter>(hash);
   if(!specific_storage.contains(entity)){
     specific_storage.emplace(entity, dt, value);
-    changes.ModifiedParams.emplace(hash, std::make_pair(param_null, new_param));
+    changes.ModifiedParams.emplace(hash, std::make_pair(parameter{}, new_param));
   } else {
     parameter &old_param = specific_storage.get(entity);
     auto &pair = changes.ModifiedParams.emplace(hash, std::make_pair(old_param, new_param));

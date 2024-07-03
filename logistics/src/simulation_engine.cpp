@@ -3,18 +3,28 @@
 
 namespace logistics {
 
-  void start_simulating(entt::registry &registry){
+  void start_simulating(entt::registry &registry, entt::entity start){
     simulation_engine &eng = registry.ctx().emplace<simulation_engine>();
     eng.ActiveBranchHashForStatusChanges = entt::hashed_string::value("branch 0 - status_changes");
+    //eng.StartingNode = start;
+    //eng.CurrentNode = start;
+  }
+
+  //------------------------------------
+  bool enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+
+    sim->DynamicGraph.add_edge(from, to);
+    sim->CurrentNode = to;
+
+    return !sim->DynamicGraph.find_cycle_simple();
   }
 
   //------------------------------------
   void commit_changes_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes){
-    simulation_engine *sim = registry.ctx().find<simulation_engine>();
-    assert(sim);
-    
     //TODO  if many changes go to the same entity on the same branch : function to squash changes together
-    auto &status_changes_storage = registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+    auto &status_changes_storage = get_active_branch_status_changes_storage(registry);
     status_changes_storage.emplace(entity, changes);
   }
 
@@ -76,4 +86,11 @@ namespace logistics {
 
   }
   
+  status_changes_storage_t &get_active_branch_status_changes_storage(entt::registry &registry){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+    
+    return registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+  }
+
 }
