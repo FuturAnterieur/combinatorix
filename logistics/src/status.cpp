@@ -201,8 +201,13 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
   if(registry.any_of<combination_info>(entity)){
     auto &info = registry.get<combination_info>(entity);
     for(const auto &[kind, entities] : info.CurrentCombinations){
-      for(entt::entity entity : entities){
-        update_status_effects(registry, entity);
+      for(entt::entity target : entities){
+        //We are causing an update on another entity here, so add an edge to the graph.
+        logistics::enter_new_entity(registry, entity, target);
+        if(logistics::graph_has_cycle(registry)){ //cycle detected, do not evaluate further
+          continue;
+        }
+        update_status_effects(registry, target);
       }
     }
   }
