@@ -3,6 +3,7 @@
 #include "status.h"
 #include "effect.h"
 #include "combine.h"
+#include "entt_utils.h"
 #include <string_view>
 
 using namespace std::string_view_literals;
@@ -137,4 +138,90 @@ TEST_CASE("Status effects / simple situation"){
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
+}
+
+constexpr entt::id_type k_object_hash = "object"_hs;
+constexpr entt::id_type k_illuminated_hash = "illuminated"_hs;
+constexpr entt::id_type k_blue_hash = "blue"_hs;
+constexpr entt::id_type k_red_hash = "red"_hs;
+constexpr entt::id_type k_color_hash = "Color"_hs;
+
+struct multi_target {
+  std::vector<entt::entity> Targets;
+};
+
+TEST_CASE("Status effects / diamond pattern"){
+  entt::registry registry;
+
+  entt::entity sorcerer = registry.create();
+  assign_intrinsic_status(registry, sorcerer, k_creature_hash, true);
+  entt::entity light = registry.create();
+  assign_intrinsic_status(registry, light, k_object_hash, true);
+  entt::entity blue_mirror = registry.create();
+  assign_intrinsic_status(registry, blue_mirror, k_object_hash, true);
+  add_or_set_intrinsic_parameter(registry, blue_mirror, "Color", data_type::string, "Blue");
+  entt::entity red_mirror = registry.create();
+  assign_intrinsic_status(registry, red_mirror, k_object_hash, true);
+  add_or_set_intrinsic_parameter(registry, red_mirror, "Color", data_type::string, "Red");
+  
+  entt::entity two_mirrors = registry.create();
+  registry.emplace<multi_target>(two_mirrors, std::vector<entt::entity>{blue_mirror, red_mirror});
+
+  status_effect_info lighter;
+  lighter.OriginatingEntity = sorcerer;
+  lighter.ApplyFunc = 
+    [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+      assign_active_status(registry, target, k_illuminated_hash, true);
+    };
+
+
+  entt::entity spell = add_ability(registry, sorcerer, 
+  [=](entt::registry &registry, entt::entity ability, entt::entity target){
+    const multi_target &targets = registry.get<multi_target>(target);
+    for(const entt::entity &target : targets.Targets){
+      add_status_effect(registry, target, lighter);
+    }
+  }, combination_info{});
+
+  auto mirror_trigger_filter = 
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
+      auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
+      return it != changes.ModifiedStatuses.end() && it->second == smt::added;
+  };
+
+  auto light_changer_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+      parameter color = get_active_value_for_parameter(registry, owner, k_color_hash); //utils::get_or_default(registry, entity, k_color_hash, parameter{});
+      if(color.Value == "Red"){
+        assign_active_status(registry, target, k_red_hash, true); 
+      } else if(color.Value == "Blue"){
+        assign_active_status(registry, target, k_blue_hash, true);
+      }
+    };
+  
+
+  auto mirror_trigger_func = [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
+    status_effect_info info;
+    info.OriginatingEntity = owner;
+    info.ApplyFunc = light_changer_func;
+    add_status_effect(registry, light, info);
+  };
+
+  on_status_change_trigger_info blue_mirror_on_illuminated;
+  blue_mirror_on_illuminated.TriggerOwner = blue_mirror;
+  on_status_change_trigger_info red_mirror_on_illuminated;
+  red_mirror_on_illuminated.TriggerOwner = red_mirror;
+
+  blue_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  blue_mirror_on_illuminated.Func = mirror_trigger_func;
+  red_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  red_mirror_on_illuminated.Func = mirror_trigger_func;
+
+  add_on_status_change_trigger(registry, blue_mirror, blue_mirror_on_illuminated);
+  add_on_status_change_trigger(registry, red_mirror, red_mirror_on_illuminated);
+
+  use(registry, spell, two_mirrors);
+
+  CHECK(has_stable_status(registry, light, k_blue_hash));
+  CHECK(has_stable_status(registry, light, k_red_hash));
+      
 }

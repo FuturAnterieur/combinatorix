@@ -31,6 +31,7 @@ set(TEST_INCLUDES ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
 
 add_cxx_doctest_driver(TestCombine SRCS tests/combine.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics TEST_FANCY_NAME awasete!!!)
 add_cxx_doctest_driver(TestStorageSanity SRCS tests/storage_sanity.test.cpp INCLUDES ${TEST_INCLUDES} ${CEREAL_SOURCE_DIR}/include LINKS logistics TEST_FANCY_NAME storage_demo)
+add_cxx_doctest_driver(TestGraph SRCS tests/graph.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics TEST_FANCY_NAME Shimon!!!)
 
 add_executable(TestStatus tests/status.test.cpp)
 target_include_directories(TestStatus PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
@@ -41,3 +42,4 @@ add_executable(Paco tests/PACO.test.cpp)
 target_include_directories(Paco PRIVATE ${ENTT_SOURCE_DIR}/src ${DOCTEST_INCLUDE_DIR} include)
 target_link_libraries(Paco PRIVATE logistics)
 add_test(NAME entity_update_test COMMAND $<TARGET_FILE:Paco>)
+

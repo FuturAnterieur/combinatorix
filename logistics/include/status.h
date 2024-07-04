@@ -24,6 +24,7 @@ logistics_API bool get_active_value_for_status(entt::registry &registry, entt::e
 //This is destined to be called by status modifying functions, so it does not commit the change to the registry
 logistics_API bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
 logistics_API bool add_or_set_intrinsic_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value);
+logistics_API parameter get_active_value_for_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash);
 
 void activate_status_change_triggers(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes);
 

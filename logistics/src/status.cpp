@@ -233,10 +233,13 @@ void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_
       //namely, status effects!!!!
       return;
     }
-    std::swap(changes, merged_changes);
+    attributes_info_changes &final_changes = storage.get(entity);
+    final_changes = merged_changes;
+  } else {
+    logistics::commit_changes_to_active_branch(registry, entity, changes);
   }
   
-  logistics::commit_changes_to_active_branch(registry, entity, changes);
+  
   registry.remove<logistics::local_change_tracker>(entity);
 
   if(changes_empty(changes)){

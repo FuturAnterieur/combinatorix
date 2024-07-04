@@ -3,3 +3,6 @@
 #include "graph.h"
 
 
+TEST_CASE("Simple graph"){
+  
+}
