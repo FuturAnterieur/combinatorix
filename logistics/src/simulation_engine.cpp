@@ -1,11 +1,17 @@
 #include "simulation_engine.h"
 #include "entt_utils.h"
+#include <entt/meta/meta.hpp>
 
 namespace logistics {
 
   void start_simulating(entt::registry &registry, entt::entity start){
     simulation_engine &eng = registry.ctx().emplace<simulation_engine>();
-    eng.ActiveBranchHashForStatusChanges = entt::hashed_string::value("branch 0 - status_changes");
+    eng.ActiveBranchName = "branch 0";
+    
+    std::string_view struct_attributes_info_changes = entt::type_name<attributes_info_changes>().value();
+    std::string full_branch_name = eng.ActiveBranchName + " - " + std::string(struct_attributes_info_changes);
+
+    eng.ActiveBranchHashForStatusChanges = entt::hashed_string::value(full_branch_name.data());
     //eng.StartingNode = start;
     eng.CurrentNode = start;
   }
@@ -68,31 +74,6 @@ namespace logistics {
 
     attributes_info_reference ref{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
     paste_attributes_changes(registry, entity, changes, ref, true);
-
-    /*for(const auto &[hash, param_pair] : changes.ModifiedParams){
-      auto &&storage = registry.storage<parameter>(hash);
-      if(param_pair.second.DT == data_type::null){ //deletion
-        attr_info.CurrentParamValues.erase(hash);
-        bool ret = storage.remove(entity);
-        //assert(ret);
-      } else  { //modification
-        attr_info.CurrentParamValues.insert_or_assign(hash, param_pair.second);
-        utils::emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
-      }
-    }
-
-    for(const auto &[hash, smt_val] : changes.ModifiedStatuses){
-      auto &&storage = registry.storage<void>(hash);
-      if(smt_val == smt::removed){
-        attr_info.CurrentStatusHashes.erase(hash);
-        bool ret = storage.remove(entity);
-        //assert(ret);
-      } else {
-        attr_info.CurrentStatusHashes.insert(hash);
-        storage.emplace(entity);
-      }
-    }*/
-
   }
   
   status_changes_storage_t &get_active_branch_status_changes_storage(entt::registry &registry){

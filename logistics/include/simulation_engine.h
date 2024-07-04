@@ -16,9 +16,19 @@ namespace logistics{
       ~simulation_engine() = default;
 
       entt::id_type ActiveBranchHashForStatusChanges;
+      std::string ActiveBranchName;
       graph<entt::entity> DynamicGraph;
       entt::entity StartingNode;
       entt::entity CurrentNode;
+
+      //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
+      std::vector<std::vector<on_status_change_trigger_info>> TriggersPerTimingLevel;
+
+      //Still breadth-first-searching, when executing a trigger, save all the entities 
+      //that will need to be updated (i.e. through update_status_effects) at this speed level.
+      //i.e. don't call their update instantaneously, store them instead and then call them one after the other
+      std::vector<std::vector<entt::entity>> EntitiesToUpdatePerTimingLevel; 
+
   };
 
   void start_simulating(entt::registry &registry, entt::entity start);
