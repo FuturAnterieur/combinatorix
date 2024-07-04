@@ -3,6 +3,7 @@
 #include "effect.h"
 #include "simulation_engine.h"
 #include "local_change_tracker.h"
+#include "change_merger.h"
 #include "entt_utils.h"
 
 //=====================================
@@ -183,6 +184,7 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
   if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
     for(const on_status_change_trigger_info &info : triggers->Triggers){
       if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        logistics::enter_new_entity(registry, entity, info.TriggerOwner);
         info.Func(registry, changes, entity, info.TriggerOwner);
       }
     }
@@ -193,6 +195,7 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
   if(global_triggers){
     for(const on_status_change_trigger_info &info : global_triggers->Triggers){
       if(info.Filter(registry, changes, entity, info.TriggerOwner)){
+        logistics::enter_new_entity(registry, entity, info.TriggerOwner);
         info.Func(registry, changes, entity, info.TriggerOwner);
       }
     }
@@ -204,9 +207,6 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
         logistics::enter_new_entity(registry, entity, target);
-        if(logistics::graph_has_cycle(registry)){ //cycle detected, do not evaluate further
-          continue;
-        }
         update_status_effects(registry, target);
       }
     }
@@ -221,6 +221,20 @@ void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_
   attributes_info_snapshot new_snapshot = local_change_tracker.produce_active_snapshot();
 
   attributes_info_changes changes = compute_diff(snapshot, new_snapshot);
+
+  auto &storage = logistics::get_active_branch_status_changes_storage(registry);
+  if(storage.contains(entity)){
+    attributes_info_changes already_commited_changes = storage.get(entity);
+    attributes_info_changes merged_changes;
+    logistics::simple_change_merger merger;
+    logistics::merge_result ret = merger.merge_changes(already_commited_changes, changes, merged_changes);
+    if(ret == logistics::merge_result::conflict){
+      //TODO : restoration logic in case of conflict
+      //namely, status effects!!!!
+      return;
+    }
+    std::swap(changes, merged_changes);
+  }
   
   logistics::commit_changes_to_active_branch(registry, entity, changes);
   registry.remove<logistics::local_change_tracker>(entity);
