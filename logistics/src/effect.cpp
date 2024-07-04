@@ -9,15 +9,10 @@
 void update_status_effects(entt::registry &registry, entt::entity entity){
   
   /*if(logistics::graph_has_cycle(registry)){ //cycle detected, do not evaluate further
-    return;
+    return; //Too sensitive check if we draw edges from trigger declencheurs to trigger owners.
+            //Works fine (at least with the simple examples I tested) when only drawing edges from status effect owners to affectees.
   }*/
 
-  status_effects* effs = registry.try_get<status_effects>(entity);
-  if(!effs){
-    return;
-  }
-
-  
   registry.emplace<logistics::local_change_tracker>(entity);
   
   //Reset local params and status to their original values
@@ -25,8 +20,11 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   reset_original_status(registry, snapshot, entity);
 
   attributes_info &attr_info = registry.get<attributes_info>(entity);
-  for(const auto &eff_info : effs->Infos){
-    eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
+  status_effects* effs = registry.try_get<status_effects>(entity);
+  if(effs){
+    for(const auto &eff_info : effs->Infos){
+      eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
+    }
   }
 
   commit_attr_info_to_branch(registry, attr_info, snapshot, entity);

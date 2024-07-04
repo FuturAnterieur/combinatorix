@@ -66,12 +66,15 @@ namespace logistics {
     assert(registry.all_of<attributes_info>(entity));
     auto &attr_info = registry.get<attributes_info>(entity);
 
-    for(const auto &[hash, param_pair] : changes.ModifiedParams){
+    attributes_info_reference ref{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
+    paste_attributes_changes(registry, entity, changes, ref, true);
+
+    /*for(const auto &[hash, param_pair] : changes.ModifiedParams){
       auto &&storage = registry.storage<parameter>(hash);
       if(param_pair.second.DT == data_type::null){ //deletion
         attr_info.CurrentParamValues.erase(hash);
         bool ret = storage.remove(entity);
-        assert(ret);
+        //assert(ret);
       } else  { //modification
         attr_info.CurrentParamValues.insert_or_assign(hash, param_pair.second);
         utils::emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
@@ -83,12 +86,12 @@ namespace logistics {
       if(smt_val == smt::removed){
         attr_info.CurrentStatusHashes.erase(hash);
         bool ret = storage.remove(entity);
-        assert(ret);
+        //assert(ret);
       } else {
         attr_info.CurrentStatusHashes.insert(hash);
         storage.emplace(entity);
       }
-    }
+    }*/
 
   }
   

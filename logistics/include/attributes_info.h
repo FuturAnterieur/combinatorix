@@ -32,6 +32,11 @@ struct attributes_info_snapshot {
   std::map<entt::id_type, parameter> ParamValues;
 };
 
+struct attributes_info_reference {
+  std::set<entt::id_type> &StatusHashes;
+  std::map<entt::id_type, parameter> &ParamValues;
+};
+
 //integrating this to attributes_info (with accessor functions) would be more work, but would allow much easier contradicting change detection.
 //so maybe future TO-DO
 enum class smt {
@@ -46,3 +51,6 @@ struct attributes_info_changes{
 
 bool changes_empty(attributes_info_changes &changes);
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
+
+//Isolates what is New in new_changes compared to old_changes
+attributes_info_changes compute_changes_diff(const attributes_info_changes &old_changes, const attributes_info_changes &new_changes);

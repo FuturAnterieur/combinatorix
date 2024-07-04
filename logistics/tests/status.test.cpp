@@ -45,9 +45,9 @@ TEST_CASE("Status effects / simple situation"){
   entt::registry registry;
 
   entt::entity opalescence = registry.create();
-  assign_intrinsic_status(registry, opalescence, k_enchantment_hash, true);
+  init_intrinsic_status(registry, opalescence, k_enchantment_hash, true);
   entt::entity exploration = registry.create();
-  assign_intrinsic_status(registry, exploration, k_enchantment_hash, true);
+  init_intrinsic_status(registry, exploration, k_enchantment_hash, true);
   //entt::entity humility = registry.create();
   //assign_status(registry, humility, "enchantment"_hs);
   
@@ -94,7 +94,9 @@ TEST_CASE("Status effects / simple situation"){
   add_global_on_status_change_trigger(registry, opalescence, opal_on_other_status_change_info);
   
   //trigger the thing!
-  add_or_set_intrinsic_parameter(registry, exploration, k_location, data_type::string, k_location_field);
+  attributes_info_changes exploration_enters_field;
+  exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{data_type::string, "Hand"}, parameter{data_type::string, k_location_field}));
+  assign_intrinsic_attributes_changes(registry, exploration, exploration_enters_field);
 
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
 
@@ -133,7 +135,9 @@ TEST_CASE("Status effects / simple situation"){
 
 
   // Chapter 4 : remove exploration from the field
-  add_or_set_intrinsic_parameter(registry, exploration, k_location, data_type::string, k_location_grave);
+  attributes_info_changes exploration_leaves_field;
+  exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{data_type::string, k_location_field}, parameter{data_type::string, k_location_grave}));
+  assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
 
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
@@ -154,15 +158,15 @@ TEST_CASE("Status effects / diamond pattern"){
   entt::registry registry;
 
   entt::entity sorcerer = registry.create();
-  assign_intrinsic_status(registry, sorcerer, k_creature_hash, true);
+  init_intrinsic_status(registry, sorcerer, k_creature_hash, true);
   entt::entity light = registry.create();
-  assign_intrinsic_status(registry, light, k_object_hash, true);
+  init_intrinsic_status(registry, light, k_object_hash, true);
   entt::entity blue_mirror = registry.create();
-  assign_intrinsic_status(registry, blue_mirror, k_object_hash, true);
-  add_or_set_intrinsic_parameter(registry, blue_mirror, "Color", data_type::string, "Blue");
+  init_intrinsic_status(registry, blue_mirror, k_object_hash, true);
+  init_intrinsic_parameter(registry, blue_mirror, "Color", data_type::string, "Blue");
   entt::entity red_mirror = registry.create();
-  assign_intrinsic_status(registry, red_mirror, k_object_hash, true);
-  add_or_set_intrinsic_parameter(registry, red_mirror, "Color", data_type::string, "Red");
+  init_intrinsic_status(registry, red_mirror, k_object_hash, true);
+  init_intrinsic_parameter(registry, red_mirror, "Color", data_type::string, "Red");
   
   entt::entity two_mirrors = registry.create();
   registry.emplace<multi_target>(two_mirrors, std::vector<entt::entity>{blue_mirror, red_mirror});

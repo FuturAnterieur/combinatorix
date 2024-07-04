@@ -35,3 +35,20 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
 
   return changes;
 }
+
+attributes_info_changes compute_changes_diff(const attributes_info_changes &old_changes, const attributes_info_changes &new_changes){
+  const parameter param_null = parameter{};
+  attributes_info_changes changes;
+  for(const auto &[hash, mod] : new_changes.ModifiedStatuses){
+    if(old_changes.ModifiedStatuses.find(hash) == old_changes.ModifiedStatuses.end()){
+      changes.ModifiedStatuses.emplace(hash, mod);
+    }
+  }
+
+  for(const auto &[hash, mod] : new_changes.ModifiedParams){
+    if(old_changes.ModifiedParams.find(hash) == old_changes.ModifiedParams.end()){
+      changes.ModifiedParams.emplace(hash, mod);
+    }
+  }
+  return changes;
+}
