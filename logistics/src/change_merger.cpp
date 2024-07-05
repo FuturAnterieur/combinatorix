@@ -18,8 +18,8 @@ namespace logistics {
         result.ModifiedParams.emplace(hash, param_pair);
       } else {
         auto &left_param_pair = result.ModifiedParams.at(hash);
-        if(left_param_pair.first.Value != param_pair.first.Value 
-          || left_param_pair.second.Value != param_pair.second.Value){
+        if(left_param_pair.first.value() != param_pair.first.value() 
+          || left_param_pair.second.value() != param_pair.second.value()){
           ret = merge_result::conflict;
         }
       }

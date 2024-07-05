@@ -148,7 +148,7 @@ bool paste_attributes_changes(entt::registry &registry, entt::entity entity, con
 {
   for(const auto &[hash, param_pair] : changes.ModifiedParams){
     auto &&storage = registry.storage<parameter>(hash);
-    if(param_pair.second.DT == data_type::null){ //deletion
+    if(param_pair.second.dt() == data_type::null){ //deletion
       ref.ParamValues.erase(hash);
       if(affect_registry)
         bool ret = storage.remove(entity);

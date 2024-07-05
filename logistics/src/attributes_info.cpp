@@ -1,38 +1,89 @@
 #include "attributes_info.h"
 
-parameter::parameter(){
+
+struct parameter::pimpl{
+  parameter_value_t Value;
+};
+
+parameter::parameter() : _Pimpl(new pimpl()) {
   DT = data_type::null;
-  Value = "";
+  _Pimpl->Value = "";
 }
 
-parameter::parameter(const std::string &val){
+parameter::parameter(const std::string &val) :  _Pimpl(new pimpl()){
   DT = data_type::string;
-  Value = val;
+  _Pimpl->Value = val;
 }
 
-parameter::parameter(const char *val){
+parameter::parameter(const char *val) : _Pimpl(new pimpl()) {
   DT = data_type::string;
-  Value = std::string(val);
+  _Pimpl->Value = std::string(val);
 }
 
-parameter::parameter(float val){
+parameter::parameter(float val) : _Pimpl(new pimpl()){
   DT = data_type::number;
-  Value = val;
+  _Pimpl->Value = val;
 }
 
-parameter::parameter(int64_t val){
+parameter::parameter(int64_t val) :  _Pimpl(new pimpl()){
   DT = data_type::integer;
-  Value = val;
+  _Pimpl->Value = val;
 }
 
-parameter::parameter(bool val){
+parameter::parameter(bool val) : _Pimpl(new pimpl()){
   DT = data_type::boolean;
-  Value = val;
+  _Pimpl->Value = val;
 }
 
-parameter::parameter(const parameter &other){
+parameter::parameter(const parameter &other) : _Pimpl(new pimpl()){
   DT = other.DT;
-  Value = other.Value;
+  _Pimpl->Value = other._Pimpl->Value;
+}
+
+parameter::parameter(parameter &&other) : _Pimpl(other._Pimpl) {
+  other._Pimpl = nullptr;
+  DT = other.DT;
+}
+
+parameter::~parameter(){
+  delete _Pimpl;
+}
+
+parameter &parameter::operator=(const parameter &lhs){
+  _Pimpl->Value = lhs.value();
+  DT = lhs.DT;
+  return *this;
+}
+
+parameter &parameter::operator=(parameter &&lhs){
+  if(_Pimpl){
+    delete _Pimpl;
+  }
+  _Pimpl = lhs._Pimpl;
+  lhs._Pimpl = nullptr;
+  DT = lhs.DT;
+
+  return *this;
+}
+
+data_type parameter::dt() const {
+  return DT;
+}
+
+const parameter_value_t &parameter::value() const {
+  return _Pimpl->Value;
+}
+
+parameter_value_t &parameter::access_value(){
+  return _Pimpl->Value;
+}
+
+void parameter::set_value(const parameter_value_t value) {
+  _Pimpl->Value = value;
+}
+
+data_type &parameter::access_data_type(){
+  return DT;
 }
 
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
@@ -56,7 +107,7 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
       changes.ModifiedParams.emplace(hash, std::make_pair(param_null, param));
     } else {
       parameter previous_value = old_snapshot.ParamValues.at(hash);
-      if(previous_value.Value != param.Value){
+      if(previous_value.value() != param.value()){
         changes.ModifiedParams.emplace(hash, std::make_pair(previous_value, param));
       }
     }

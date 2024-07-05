@@ -27,11 +27,21 @@ struct logistics_API parameter {
   parameter(float val);
   parameter(int64_t val);
   parameter(const parameter &other);
-  
+  parameter(parameter &&other);
 
-  data_type DT{data_type::null};
-  parameter_value_t Value{};
+  parameter &operator=(const parameter &lhs);
+  parameter &operator=(parameter &&lhs);
+
+  virtual ~parameter();
+  
+  const parameter_value_t &value() const;
+  data_type dt() const;
+  void set_value(parameter_value_t value);
+  data_type &access_data_type(); 
+  parameter_value_t &access_value();
+
 private:
+  data_type DT{data_type::null};
   struct pimpl;
   pimpl *_Pimpl;
 };

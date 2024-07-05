@@ -26,8 +26,13 @@ constexpr auto desc_hash = entt::hashed_string::value("description");
 constexpr auto desc_updated_hash = entt::hashed_string::value("description_updated");
 
 template<typename Archive>
-void serialize(Archive &archive, parameter &param){
-  archive(param.DT, param.Value);
+void save(Archive &archive, const parameter &param){
+  archive(param.dt(), param.value());
+}
+
+template<typename Archive>
+void load(Archive &archive, parameter &param){
+  archive(param.access_data_type(), param.access_value());
 }
 
 void serialize_round_trip(entt::registry &registry, entt::continuous_loader &loader){
@@ -64,8 +69,7 @@ void update_wizards(entt::registry &registry, wizards_info &info){
     } else {
       stable_param = &my_stable_storage.emplace(entity);
     }
-    stable_param->DT = update_param.DT;
-    stable_param->Value = update_param.Value;
+    *stable_param = update_param;
   }  
 
   /*for(size_t i = 0; i < my_entity_storage.size(); i++){
@@ -75,7 +79,7 @@ void update_wizards(entt::registry &registry, wizards_info &info){
   for(size_t i = 0; i < my_stable_storage.size(); i++){
     auto entity = my_stable_storage.data()[i];
     parameter &stable_param = my_stable_storage.get(entity);
-    info.push_back(wizard_info{entity, std::get<std::string>(stable_param.Value)});
+    info.push_back(wizard_info{entity, std::get<std::string>(stable_param.value())});
   }
 }
 
@@ -238,7 +242,7 @@ TEST_CASE("Storage sanity"){
   my_update_storage.clear();
 
   auto &&my_stable_storage_2 = registry2.storage<parameter>(desc_hash);
-  std::string hg_desc_on_client = std::get<std::string>(my_stable_storage_2.get(loader.map(hermione_granger)).Value);
+  std::string hg_desc_on_client = std::get<std::string>(my_stable_storage_2.get(loader.map(hermione_granger)).value());
 
   CHECK(hg_desc_on_client == "Hermione Granger MODIFIEE, entity 4 sur le serveur");
 }

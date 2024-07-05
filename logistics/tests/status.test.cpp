@@ -33,12 +33,12 @@ bool changing_location_condition(const attributes_info_changes &changes){
 
 bool entering_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.second.Value) == k_location_field);
+  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.second.value()) == k_location_field);
 }
 
 bool leaving_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.first.Value) == k_location_field;
+  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.first.value()) == k_location_field;
 }
 
 TEST_CASE("Status effects / simple situation"){
@@ -195,9 +195,9 @@ TEST_CASE("Status effects / diamond pattern"){
 
   auto light_changer_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       parameter color = get_active_value_for_parameter(registry, owner, k_color_hash); //utils::get_or_default(registry, entity, k_color_hash, parameter{});
-      if(std::get<std::string>(color.Value) == "Red"){
+      if(std::get<std::string>(color.value()) == "Red"){
         assign_active_status(registry, target, k_red_hash, true); 
-      } else if(std::get<std::string>(color.Value) == "Blue"){
+      } else if(std::get<std::string>(color.value()) == "Blue"){
         assign_active_status(registry, target, k_blue_hash, true);
       }
     };
