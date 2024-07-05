@@ -1,10 +1,13 @@
 #pragma once 
+#include "logistics_export.h"
 
 #include <set>
 #include <list>
 #include <map>
 #include <string>
+#include <variant>
 #include <entt/entity/fwd.hpp>
+
 
 enum class data_type {
   null,
@@ -14,9 +17,23 @@ enum class data_type {
   boolean
 };
 
-struct parameter {
+using parameter_value_t = std::variant<bool, int64_t, float, std::string>;
+
+struct logistics_API parameter {
+  parameter();
+  parameter(const std::string &val);
+  parameter(const char *val);
+  parameter(bool val);
+  parameter(float val);
+  parameter(int64_t val);
+  parameter(const parameter &other);
+  
+
   data_type DT{data_type::null};
-  std::string Value{};
+  parameter_value_t Value{};
+private:
+  struct pimpl;
+  pimpl *_Pimpl;
 };
 
 struct attributes_info {

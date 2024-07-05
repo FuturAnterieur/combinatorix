@@ -33,12 +33,12 @@ bool changing_location_condition(const attributes_info_changes &changes){
 
 bool entering_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end() && it->second.second.Value == k_location_field);
+  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.second.Value) == k_location_field);
 }
 
 bool leaving_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  return it != changes.ModifiedParams.end() && it->second.first.Value == k_location_field;
+  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.first.Value) == k_location_field;
 }
 
 TEST_CASE("Status effects / simple situation"){
@@ -95,7 +95,7 @@ TEST_CASE("Status effects / simple situation"){
   
   //trigger the thing!
   attributes_info_changes exploration_enters_field;
-  exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{data_type::string, "Hand"}, parameter{data_type::string, k_location_field}));
+  exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter("Hand"), parameter(k_location_field)));
   assign_intrinsic_attributes_changes(registry, exploration, exploration_enters_field);
 
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
@@ -136,7 +136,7 @@ TEST_CASE("Status effects / simple situation"){
 
   // Chapter 4 : remove exploration from the field
   attributes_info_changes exploration_leaves_field;
-  exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{data_type::string, k_location_field}, parameter{data_type::string, k_location_grave}));
+  exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter(k_location_field), parameter(k_location_grave)));
   assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
 
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
@@ -195,9 +195,9 @@ TEST_CASE("Status effects / diamond pattern"){
 
   auto light_changer_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       parameter color = get_active_value_for_parameter(registry, owner, k_color_hash); //utils::get_or_default(registry, entity, k_color_hash, parameter{});
-      if(color.Value == "Red"){
+      if(std::get<std::string>(color.Value) == "Red"){
         assign_active_status(registry, target, k_red_hash, true); 
-      } else if(color.Value == "Blue"){
+      } else if(std::get<std::string>(color.Value) == "Blue"){
         assign_active_status(registry, target, k_blue_hash, true);
       }
     };

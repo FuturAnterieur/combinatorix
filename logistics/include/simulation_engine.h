@@ -69,9 +69,12 @@ namespace logistics{
       //that will need to be updated (i.e. through update_status_effects) at this speed level.
       //i.e. don't call their update instantaneously, store them instead and then call them one after the other
       //std::map<entity_updates_on_same_timing_container> EntitiesToUpdateFuncsPerTimingLevel; 
-
+      
       void enqueue_trigger(const on_status_change_trigger_info &info, entt::entity triggering_entity, const attributes_info_changes &changes);
       void enqueue_update(entt::entity entity, timing_t timing);
+      
+      //What timing value should be given to enqueue_update? Up to now I tested with 0 and 1 and both seem to work fine. 1 makes more sense to me.
+
 
       void execute_stuff();
   };

@@ -1,9 +1,44 @@
 #include "attributes_info.h"
 
+parameter::parameter(){
+  DT = data_type::null;
+  Value = "";
+}
+
+parameter::parameter(const std::string &val){
+  DT = data_type::string;
+  Value = val;
+}
+
+parameter::parameter(const char *val){
+  DT = data_type::string;
+  Value = std::string(val);
+}
+
+parameter::parameter(float val){
+  DT = data_type::number;
+  Value = val;
+}
+
+parameter::parameter(int64_t val){
+  DT = data_type::integer;
+  Value = val;
+}
+
+parameter::parameter(bool val){
+  DT = data_type::boolean;
+  Value = val;
+}
+
+parameter::parameter(const parameter &other){
+  DT = other.DT;
+  Value = other.Value;
+}
+
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
   attributes_info_changes changes;
 
-  const parameter param_null = parameter{data_type::null, ""};
+  const parameter param_null = parameter();
   for(const auto &hash : new_snapshot.StatusHashes){
     if(old_snapshot.StatusHashes.find(hash) == old_snapshot.StatusHashes.end()){
       changes.ModifiedStatuses.emplace(hash, smt::added);

@@ -112,7 +112,7 @@ parameter get_active_value_for_parameter(entt::registry &registry, entt::entity 
 bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
   entt::id_type hash = entt::hashed_string::value(param_name.data());
   if(logistics::local_change_tracker *tracker = registry.try_get<logistics::local_change_tracker>(entity); tracker){
-    tracker->apply_param_edit(hash, parameter{dt, value});
+    tracker->apply_param_edit(hash, parameter(value));
   }
   
   return true;
@@ -128,13 +128,13 @@ bool init_intrinsic_parameter(entt::registry &registry, entt::entity entity, con
 
  
   attributes_info &attr_info = registry.get<attributes_info>(entity);
-  attr_info.CurrentParamValues.insert_or_assign(hash, parameter{dt, value});
-  attr_info.IntrinsicParamValues.insert_or_assign(hash, parameter{dt, value}); //also set original values because it isn't edited through a Modifier
+  attr_info.CurrentParamValues.insert_or_assign(hash, parameter(value));
+  attr_info.IntrinsicParamValues.insert_or_assign(hash, parameter(value)); //also set original values because it isn't edited through a Modifier
 
-  parameter new_param{dt,value};
+  parameter new_param(value);
   auto &&specific_storage = registry.storage<parameter>(hash);
   if(!specific_storage.contains(entity)){
-    specific_storage.emplace(entity, dt, value);
+    specific_storage.emplace(entity, new_param);
   } else {
     parameter &old_param = specific_storage.get(entity);
     old_param = new_param;
@@ -252,7 +252,7 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
         logistics::add_edge(registry, entity, target);
-        eng->enqueue_update(target, 3); //WHAT VALUE 2 GIVE
+        eng->enqueue_update(target, 1);
         //update_status_effects(registry, target);
       }
     }

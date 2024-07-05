@@ -18,7 +18,7 @@ struct has_name {
 
 int main(int argc, char *argv[]){
   attributes_info info;
-  info.CurrentParamValues.emplace(1234, parameter{data_type::boolean, "Trueest"});
+  info.CurrentParamValues.emplace(1234, parameter("Trueest"));
   
 
   entt::registry dumbo;
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 
   use(dumbo, ent1, ent2);
 
-  std::cout << dumbo.get<attributes_info>(ent1).CurrentParamValues[1234].Value << "\n";
+  std::cout << std::get<std::string>(dumbo.get<attributes_info>(ent1).CurrentParamValues[1234].Value) << "\n";
 
   thread_pool spa{2};
   spa.launch();

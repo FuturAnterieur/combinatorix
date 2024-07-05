@@ -6,6 +6,7 @@
 #include <entt/entity/snapshot.hpp>
 #include <entt/meta/resolve.hpp>
 #include <cereal/types/memory.hpp>
+#include <cereal/types/variant.hpp>
 #include <cereal/archives/binary.hpp>
 #include "status.h"
 
@@ -74,7 +75,7 @@ void update_wizards(entt::registry &registry, wizards_info &info){
   for(size_t i = 0; i < my_stable_storage.size(); i++){
     auto entity = my_stable_storage.data()[i];
     parameter &stable_param = my_stable_storage.get(entity);
-    info.push_back(wizard_info{entity, stable_param.Value});
+    info.push_back(wizard_info{entity, std::get<std::string>(stable_param.Value)});
   }
 }
 
@@ -139,9 +140,9 @@ TEST_CASE("Storage sanity"){
   //desc_updated_hash is for the pool of items that are to be updated
   //desc_hash is for the pool of commited items
   auto &&my_update_storage = registry.storage<parameter>(desc_updated_hash);
-  my_update_storage.emplace(mermelionos, data_type::string, "Le roi des paranoiaques");
-  my_update_storage.emplace(taliesin, data_type::string, "Celui qui a ecrit le Livre");
-  my_update_storage.emplace(merlin, data_type::string, "en vacances avec viviane");
+  my_update_storage.emplace(mermelionos, "Le roi des paranoiaques");
+  my_update_storage.emplace(taliesin, "Celui qui a ecrit le Livre");
+  my_update_storage.emplace(merlin, "en vacances avec viviane");
   
   wizards_info wizards1;
   update_wizards(registry, wizards1);
@@ -161,7 +162,7 @@ TEST_CASE("Storage sanity"){
   //We create a new wizard in the central registry
   my_update_storage.clear();
   auto sorcier1_only = registry.create();
-  my_update_storage.emplace(sorcier1_only, data_type::string, "Le nouveau-venu");
+  my_update_storage.emplace(sorcier1_only, "Le nouveau-venu");
   
 
 
@@ -174,7 +175,7 @@ TEST_CASE("Storage sanity"){
 
   //We update an existing wizard in the central registry
   my_update_storage.clear();
-  my_update_storage.emplace(taliesin, data_type::string, "Entité 1 avec nouvelle desc");
+  my_update_storage.emplace(taliesin, "Entité 1 avec nouvelle desc");
   update_wizards(registry, wizards1);
 
   serialize_round_trip(registry, loader);
@@ -187,10 +188,10 @@ TEST_CASE("Storage sanity"){
   my_update_storage.clear();
   auto &&my_update_storage2 = registry2.storage<parameter>(desc_updated_hash);
   auto ron_weasley = registry2.create();
-  my_update_storage2.emplace(ron_weasley, data_type::string, "Ron weasley, entite 4 sur le client");
+  my_update_storage2.emplace(ron_weasley,  "Ron weasley, entite 4 sur le client");
 
   auto hermione_granger = registry.create();
-  my_update_storage.emplace(hermione_granger, data_type::string, "Hermione Granger, entity 4 sur le serveur");
+  my_update_storage.emplace(hermione_granger, "Hermione Granger, entity 4 sur le serveur");
 
   update_wizards(registry, wizards1);
 
@@ -227,7 +228,7 @@ TEST_CASE("Storage sanity"){
 
   CHECK(entity_maps_to_null(1));
   my_update_storage.clear();
-  my_update_storage.emplace(hermione_granger, data_type::string, "Hermione Granger MODIFIEE, entity 4 sur le serveur");
+  my_update_storage.emplace(hermione_granger, "Hermione Granger MODIFIEE, entity 4 sur le serveur");
 
   update_wizards(registry, wizards1);
   serialize_round_trip(registry, loader);
@@ -237,7 +238,7 @@ TEST_CASE("Storage sanity"){
   my_update_storage.clear();
 
   auto &&my_stable_storage_2 = registry2.storage<parameter>(desc_hash);
-  std::string hg_desc_on_client = my_stable_storage_2.get(loader.map(hermione_granger)).Value;
+  std::string hg_desc_on_client = std::get<std::string>(my_stable_storage_2.get(loader.map(hermione_granger)).Value);
 
   CHECK(hg_desc_on_client == "Hermione Granger MODIFIEE, entity 4 sur le serveur");
 }
