@@ -192,6 +192,8 @@ bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity 
   paste_attributes_changes(registry, entity, changes, ref_to_intrinsic, false);
   update_status_effects(registry, entity); //assumes this launches commit after calculating status effect consequences
 
+  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+  eng->execute_stuff();
   logistics::merge_active_branch_to_reality(registry);
   
   return true;
@@ -219,11 +221,15 @@ bool changes_empty(attributes_info_changes &changes){
 
 //=========================================
 void activate_status_change_triggers(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes){
+  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+  
+
   if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
     for(const on_status_change_trigger_info &info : triggers->Triggers){
-      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
-        logistics::enter_new_entity(registry, entity, info.TriggerOwner);
-        info.Func(registry, changes, entity, info.TriggerOwner);
+      if(info.Filter(registry, changes, entity, info)){
+        logistics::add_edge(registry, entity, info.TriggerOwner);
+        eng->enqueue_trigger(info, entity, changes);
+        //info.Func(registry, changes, entity, info);
       }
     }
   }
@@ -232,9 +238,10 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
   const on_status_change_triggers *global_triggers = registry.ctx().find<on_status_change_triggers>();
   if(global_triggers){
     for(const on_status_change_trigger_info &info : global_triggers->Triggers){
-      if(info.Filter(registry, changes, entity, info.TriggerOwner)){
-        logistics::enter_new_entity(registry, entity, info.TriggerOwner);
-        info.Func(registry, changes, entity, info.TriggerOwner);
+      if(info.Filter(registry, changes, entity, info)){
+        logistics::add_edge(registry, entity, info.TriggerOwner);
+        eng->enqueue_trigger(info, entity, changes);
+        //info.Func(registry, changes, entity, info);
       }
     }
   }
@@ -244,8 +251,9 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
     for(const auto &[kind, entities] : info.CurrentCombinations){
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
-        logistics::enter_new_entity(registry, entity, target);
-        update_status_effects(registry, target);
+        logistics::add_edge(registry, entity, target);
+        eng->enqueue_update(entity, 1); //WHAT VALUE 2 GIVE
+        //update_status_effects(registry, target);
       }
     }
   }

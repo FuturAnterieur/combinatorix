@@ -42,10 +42,11 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
   }
 
   link(registry, info.OriginatingEntity, entity); 
-  logistics::enter_new_entity(registry, info.OriginatingEntity, entity);
+  logistics::add_edge(registry, info.OriginatingEntity, entity);
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
-  update_status_effects(registry, entity);
+  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+  eng->enqueue_update(entity, 1);
 }
 
 //==================================================
@@ -63,10 +64,11 @@ void remove_status_effects_originating_from(entt::registry &registry, entt::enti
                   effs.Infos.end());
 
   unlink(registry, originating_entity, entity);
-  logistics::enter_new_entity(registry, originating_entity, entity);
+  logistics::add_edge(registry, originating_entity, entity);
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
-  update_status_effects(registry, entity);
+  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+  eng->enqueue_update(entity, 1);
 }
 
 //==================================================
@@ -90,6 +92,8 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
   usable &used = registry.get<usable>(ability);
   used.UseFunc(registry, ability, target);
 
+  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+  eng->execute_stuff();
   logistics::merge_active_branch_to_reality(registry);
 }
 

@@ -4,8 +4,64 @@
 
 namespace logistics {
 
+  simulation_engine::simulation_engine(entt::registry *reg) : registry(reg) {
+    
+  }
+
+  //------------------------------------
+  void simulation_engine::enqueue_trigger(const on_status_change_trigger_info &info, entt::entity triggering_entity, const attributes_info_changes &changes){
+    timing_t absolute_trigger_launch_time = info.TimeDelta + CurrentTiming;
+    status_trigger_executable executable{info, changes, triggering_entity};
+
+    auto &container = ExecutablesPerTimingLevel.emplace(absolute_trigger_launch_time, executables_on_same_timing_container{}).first->second;
+    container.AbsoluteTiming = absolute_trigger_launch_time; //should be no-op if it was found
+    container.Executables.emplace_back(executable_common_data{executable});
+
+    /*for(int64_t i = 0; i < static_cast<int64_t>(TriggersPerTimingLevel.size()); i++){
+      if(TriggersPerTimingLevel.at(i).AbsoluteTiming == absolute_trigger_launch_time){
+        TriggersPerTimingLevel.at(i).Triggers.push_back(info);
+      } else if (i )
+
+      if(it->AbsoluteTiming == absolute_trigger_launch_time){
+        it->Triggers.push_back(info);
+        placed = true;
+      }
+    }*/
+
+  }
+
+  //===================================
+  void simulation_engine::enqueue_update(entt::entity entity, timing_t timing){
+    timing_t absolute_launch_time = timing + CurrentTiming;
+    entity_update_executable executable{entity};
+
+    auto &container = ExecutablesPerTimingLevel.emplace(absolute_launch_time, executables_on_same_timing_container{}).first->second;
+    container.AbsoluteTiming = absolute_launch_time; //should be no-op if it was found
+    container.Executables.emplace_back(executable_common_data{executable});
+  }
+
+  //===================================
+  void simulation_engine::execute_stuff(){
+    while(!ExecutablesPerTimingLevel.empty()){
+      auto it = ExecutablesPerTimingLevel.begin();
+      if(it == ExecutablesPerTimingLevel.end()){
+        return;
+      }
+
+      CurrentTiming = it->first;
+      for(executable_common_data &exec : it->second.Executables){
+        exec.Func(*registry);
+      }
+      
+
+      ExecutablesPerTimingLevel.erase(it);
+    }
+  }
+
+  //====================================================================================
+
   void start_simulating(entt::registry &registry, entt::entity start){
-    simulation_engine &eng = registry.ctx().emplace<simulation_engine>();
+    simulation_engine &eng = registry.ctx().emplace<simulation_engine>(&registry);
     eng.ActiveBranchName = "branch 0";
     
     std::string_view struct_attributes_info_changes = entt::type_name<attributes_info_changes>().value();
@@ -14,10 +70,20 @@ namespace logistics {
     eng.ActiveBranchHashForStatusChanges = entt::hashed_string::value(full_branch_name.data());
     //eng.StartingNode = start;
     eng.CurrentNode = start;
+    eng.CurrentTiming = 0;
   }
 
   //------------------------------------
-  void enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to){
+  simulation_engine *get_simulation_engine(entt::registry &registry){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+    return sim;
+  }
+
+  
+
+  //------------------------------------
+  void add_edge(entt::registry &registry, entt::entity from, entt::entity to){
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
 

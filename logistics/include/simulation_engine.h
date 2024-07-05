@@ -5,35 +5,82 @@
 #include "status.h"
 #include "effect.h"
 #include "graph.h"
+#include <memory>
 
 struct attributes_info_changes;
 struct status_effects;
 
+
+enum class executable_type {
+  status_trigger,
+  update
+};
+
+struct status_trigger_executable  {
+  on_status_change_trigger_info Info;
+  attributes_info_changes Changes;
+  entt::entity TriggeringEntity;
+  void operator()(entt::registry &registry) {
+    Info.Func(registry, Changes, TriggeringEntity, Info);
+  }
+};
+
+struct entity_update_executable {
+  entt::entity EntityToUpdate;
+  void operator()(entt::registry &registry) {
+    update_status_effects(registry, EntityToUpdate);
+  }
+};
+
+struct executable_common_data {
+  std::function<void(entt::registry &)> Func;
+};
+
+struct executables_on_same_timing_container {
+  timing_t AbsoluteTiming;
+  std::vector<executable_common_data> Executables;
+};
+
+
 namespace logistics{
   class simulation_engine{
     public:
-      simulation_engine() = default;
+      simulation_engine(entt::registry *reg);
       ~simulation_engine() = default;
+
+      entt::registry *registry{nullptr};
 
       entt::id_type ActiveBranchHashForStatusChanges;
       std::string ActiveBranchName;
+
+      //graph functionalities are mostly unused right now
       graph<entt::entity> DynamicGraph;
       entt::entity StartingNode;
       entt::entity CurrentNode;
 
+      timing_t CurrentTiming;
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
-      std::vector<std::vector<on_status_change_trigger_info>> TriggersPerTimingLevel;
+      std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
 
       //Still breadth-first-searching, when executing a trigger, save all the entities 
       //that will need to be updated (i.e. through update_status_effects) at this speed level.
       //i.e. don't call their update instantaneously, store them instead and then call them one after the other
-      std::vector<std::vector<entt::entity>> EntitiesToUpdatePerTimingLevel; 
+      //std::map<entity_updates_on_same_timing_container> EntitiesToUpdateFuncsPerTimingLevel; 
 
+      void enqueue_trigger(const on_status_change_trigger_info &info, entt::entity triggering_entity, const attributes_info_changes &changes);
+      void enqueue_update(entt::entity entity, timing_t timing);
+
+      void execute_stuff();
   };
 
   void start_simulating(entt::registry &registry, entt::entity start);
-  void enter_new_entity(entt::registry &registry, entt::entity from, entt::entity to);
+  simulation_engine *get_simulation_engine(entt::registry &registry);
+
+
+  //==================================================
+  void add_edge(entt::registry &registry, entt::entity from, entt::entity to);
   bool graph_has_cycle(entt::registry &registry);
+  //==================================================
 
   void commit_changes_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects &info);

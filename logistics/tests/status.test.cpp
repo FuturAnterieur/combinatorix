@@ -59,8 +59,8 @@ TEST_CASE("Status effects / simple situation"){
   on_status_change_trigger_info opal_on_other_status_change_info;
   opal_on_other_status_change_info.TriggerOwner = opalescence;
   opal_on_other_status_change_info.Filter = 
-    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
-      if(entity == owner){
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &info){
+      if(entity == info.TriggerOwner){
         return false;
       }
       if(!changing_location_condition(changes)){
@@ -70,7 +70,7 @@ TEST_CASE("Status effects / simple situation"){
   };
 
   opal_on_other_status_change_info.Func = 
-    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
       
 
       auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
@@ -83,11 +83,11 @@ TEST_CASE("Status effects / simple situation"){
 
       if(entering_field_condition(changes)){
         status_effect_info info;
-        info.OriginatingEntity = owner;
+        info.OriginatingEntity = trigger_info.TriggerOwner;
         info.ApplyFunc = assign_func;
         add_status_effect(registry, entity, info);
       } else if (leaving_field_condition(changes)){
-        remove_status_effects_originating_from(registry, entity, owner);
+        remove_status_effects_originating_from(registry, entity, trigger_info.TriggerOwner);
       }
   };
 
@@ -188,7 +188,7 @@ TEST_CASE("Status effects / diamond pattern"){
   }, combination_info{});
 
   auto mirror_trigger_filter = 
-    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &info){
       auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
       return it != changes.ModifiedStatuses.end() && it->second == smt::added;
   };
@@ -203,9 +203,9 @@ TEST_CASE("Status effects / diamond pattern"){
     };
   
 
-  auto mirror_trigger_func = [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, entt::entity owner){
+  auto mirror_trigger_func = [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
     status_effect_info info;
-    info.OriginatingEntity = owner;
+    info.OriginatingEntity = trigger_info.TriggerOwner;
     info.ApplyFunc = light_changer_func;
     add_status_effect(registry, light, info);
   };

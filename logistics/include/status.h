@@ -4,6 +4,7 @@
 #include "attributes_info.h"
 #include <entt/entity/registry.hpp>
 
+typedef unsigned int timing_t;
 
 struct type_inheritance_node {
   type_inheritance_node *Parent{nullptr}; //NO! Could have many parents. To be confirmed.
@@ -37,14 +38,15 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
 void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
 void commit_attr_info_to_branch(entt::registry &registry, attributes_info &attr_info, attributes_info_snapshot &snapshot, entt::entity entity);
 
-using status_change_trigger_func_t = std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
-using status_change_trigger_filter_t = std::function<bool(entt::registry &, const attributes_info_changes &, entt::entity, entt::entity)>;
+struct on_status_change_trigger_info;
+using status_change_trigger_func_t = std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, const on_status_change_trigger_info &info)>;
+using status_change_trigger_filter_t = std::function<bool(entt::registry &, const attributes_info_changes &, entt::entity, const on_status_change_trigger_info &info)>;
 struct on_status_change_trigger_info {
   //registry, status changes, entity whose status changed, owning entity of the trigger
   status_change_trigger_func_t Func;
   status_change_trigger_filter_t Filter;
   entt::entity TriggerOwner;
-  unsigned int TimeDelta{1}; //unsigned! Cannot trigger stuff before the thing that triggers it happens!
+  timing_t TimeDelta{1}; //unsigned! Cannot trigger stuff before the thing that triggers it happens!
 };
 
 struct on_status_change_triggers {
