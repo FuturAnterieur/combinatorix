@@ -5,7 +5,7 @@
 #include "status.h"
 #include "effect.h"
 #include "graph.h"
-#include <memory>
+#include <deque>
 
 struct attributes_info_changes;
 struct status_effects;
@@ -33,12 +33,14 @@ struct entity_update_executable {
 };
 
 struct executable_common_data {
+  executable_type ExecType;
+  entt::entity UpdatedEntity;
   std::function<void(entt::registry &)> Func;
 };
 
 struct executables_on_same_timing_container {
   timing_t AbsoluteTiming;
-  std::vector<executable_common_data> Executables;
+  std::deque<executable_common_data> Executables;
 };
 
 
@@ -61,6 +63,7 @@ namespace logistics{
       timing_t CurrentTiming;
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
       std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
+      std::set<entt::entity> UpdateRequestsFromCurrentTiming;
 
       //Still breadth-first-searching, when executing a trigger, save all the entities 
       //that will need to be updated (i.e. through update_status_effects) at this speed level.

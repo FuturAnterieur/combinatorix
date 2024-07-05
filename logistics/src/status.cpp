@@ -252,7 +252,7 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
         logistics::add_edge(registry, entity, target);
-        eng->enqueue_update(entity, 1); //WHAT VALUE 2 GIVE
+        eng->enqueue_update(target, 3); //WHAT VALUE 2 GIVE
         //update_status_effects(registry, target);
       }
     }

@@ -15,7 +15,7 @@ namespace logistics {
 
     auto &container = ExecutablesPerTimingLevel.emplace(absolute_trigger_launch_time, executables_on_same_timing_container{}).first->second;
     container.AbsoluteTiming = absolute_trigger_launch_time; //should be no-op if it was found
-    container.Executables.emplace_back(executable_common_data{executable});
+    container.Executables.emplace_back(executable_common_data{executable_type::status_trigger, info.TriggerOwner, executable});
 
     /*for(int64_t i = 0; i < static_cast<int64_t>(TriggersPerTimingLevel.size()); i++){
       if(TriggersPerTimingLevel.at(i).AbsoluteTiming == absolute_trigger_launch_time){
@@ -32,12 +32,17 @@ namespace logistics {
 
   //===================================
   void simulation_engine::enqueue_update(entt::entity entity, timing_t timing){
+    if(UpdateRequestsFromCurrentTiming.find(entity) != UpdateRequestsFromCurrentTiming.end()){
+      return;
+    }
+    UpdateRequestsFromCurrentTiming.insert(entity);
+
     timing_t absolute_launch_time = timing + CurrentTiming;
     entity_update_executable executable{entity};
-
+    
     auto &container = ExecutablesPerTimingLevel.emplace(absolute_launch_time, executables_on_same_timing_container{}).first->second;
     container.AbsoluteTiming = absolute_launch_time; //should be no-op if it was found
-    container.Executables.emplace_back(executable_common_data{executable});
+    container.Executables.emplace_back(executable_common_data{executable_type::update, entity, executable});
   }
 
   //===================================
@@ -49,7 +54,10 @@ namespace logistics {
       }
 
       CurrentTiming = it->first;
-      for(executable_common_data &exec : it->second.Executables){
+      UpdateRequestsFromCurrentTiming.clear();
+      while(!it->second.Executables.empty()) {
+        auto exec = it->second.Executables.front();
+        it->second.Executables.pop_front();
         exec.Func(*registry);
       }
       
