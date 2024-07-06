@@ -33,4 +33,5 @@ add_cxx_doctest_driver(TestCombine SRCS tests/combine.test.cpp INCLUDES ${TEST_I
 add_cxx_doctest_driver(TestStorageSanity SRCS tests/storage_sanity.test.cpp INCLUDES ${TEST_INCLUDES} ${CEREAL_SOURCE_DIR}/include LINKS logistics TEST_FANCY_NAME storage_demo)
 add_cxx_doctest_driver(TestGraph SRCS tests/graph.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics TEST_FANCY_NAME Shimon!!!)
 add_cxx_doctest_driver(TestStatus SRCS tests/status.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics TEST_FANCY_NAME basic_status)
+add_cxx_doctest_driver(TestStatusLoop SRCS tests/status_loop_1.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics TEST_FANCY_NAME DONOTRUN)
 add_cxx_doctest_driver(TestPaco SRCS tests/PACO.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics TEST_FANCY_NAME pacocito)

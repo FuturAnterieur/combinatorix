@@ -64,7 +64,7 @@ bool get_active_value_for_status(entt::registry &registry, entt::entity entity, 
       auto &history = history_storage.get(entity);
       attributes_info_snapshot snapshot{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
       attributes_info_reference ref{snapshot.StatusHashes, snapshot.ParamValues};
-      history.produce_current_snapshot(ref);
+      history.produce_snapshot(ref, sim->CurrentTiming);
       return snapshot.StatusHashes.find(status_hash) != snapshot.StatusHashes.end();
     }
   }
@@ -90,7 +90,7 @@ parameter get_active_value_for_parameter(entt::registry &registry, entt::entity 
       auto &history = history_storage.get(entity);
       attributes_info_snapshot snapshot{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
       attributes_info_reference ref{snapshot.StatusHashes, snapshot.ParamValues};
-      history.produce_current_snapshot(ref);
+      history.produce_snapshot(ref, sim->CurrentTiming);
       auto it = snapshot.ParamValues.find(param_hash);
       if(it == snapshot.ParamValues.end()){
         return parameter{};
@@ -213,10 +213,11 @@ void reset_original_status(entt::registry &registry, attributes_info_snapshot &s
   snapshot.StatusHashes = entity_attr_info.CurrentStatusHashes;
 
   auto &storage = logistics::get_active_branch_status_changes_storage(registry);
+  logistics::simulation_engine *sim = logistics::get_simulation_engine(registry);
   if(storage.contains(entity)){
     const attributes_info_history &history = storage.get(entity);
     attributes_info_reference ref{snapshot.StatusHashes, snapshot.ParamValues};
-    history.produce_current_snapshot(ref);
+    history.produce_snapshot(ref, sim->CurrentTiming);
   }
   
   local_change_tracker.set_starting_point(attributes_info_snapshot{entity_attr_info.IntrinsicStatusHashes, entity_attr_info.IntrinsicParamValues});
@@ -261,7 +262,6 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
         //We are causing an update on another entity here, so add an edge to the graph.
         logistics::add_edge(registry, entity, target);
         eng->enqueue_update(target, 1);
-        //update_status_effects(registry, target);
       }
     }
   }
@@ -275,29 +275,9 @@ void commit_attr_info_to_branch(entt::registry &registry, attributes_info_snapsh
 
   attributes_info_changes changes = compute_diff(snapshot, new_snapshot);
 
-  //auto &storage = logistics::get_active_branch_status_changes_storage(registry);
-  
-  /*if(storage.contains(entity)){
-    attributes_info_history already_commited_changes = storage.get(entity);
-    attributes_info_changes merged_changes;
-    logistics::simple_change_merger merger;
-    logistics::merge_result ret = merger.merge_changes(already_commited_changes, changes, merged_changes);
-    if(ret == logistics::merge_result::conflict){
-      //TODO : restoration logic in case of conflict
-      //namely, status effects!!!!
-      return;
-    }
-    attributes_info_changes &final_changes = storage.get(entity);
-    final_changes = merged_changes;
-
-    attributes_info_changes difference = compute_changes_diff(already_commited_changes, merged_changes);
-    std::swap(changes, difference);
-  } else {*/
-    logistics::commit_changes_to_active_branch(registry, entity, changes);
-  //}
-  
+  logistics::commit_changes_to_active_branch(registry, entity, changes);
+ 
   registry.remove<logistics::local_change_tracker>(entity);
-
   if(changes_empty(changes)){
     return;
   }

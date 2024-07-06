@@ -116,24 +116,25 @@ bool attributes_info_history::add_changes(timing_t timing, const attributes_info
   assert(History.find(timing) == History.end());
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
   state.Changes = changes;
+  state.Changes.Timing = timing;
   
 
   return true;
 }
 
-void attributes_info_history::produce_current_snapshot(attributes_info_reference &in_out) const{
-  for(const auto &[timing, state] : History){
-    paste_attributes_changes(state.Changes, in_out);
-  }
+void attributes_info_history::produce_snapshot(attributes_info_reference &in_out, timing_t upper_bound) const{
+  attributes_info_changes changes;
+  cumulative_changes(changes, upper_bound);
+  paste_attributes_changes(changes, in_out);
 }
 
-logistics::merge_result attributes_info_history::cumulative_changes(attributes_info_changes &changes) const{
+logistics::merge_result attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{
   using namespace logistics;
   simple_change_merger merger;
   attributes_info_changes temp;
   merge_result result = merge_result::success;
   auto it = History.begin();
-  while(it != History.end()){
+  while(it != History.end() && it->first < upper_bound){
     result = merger.merge_changes(changes, it->second.Changes, changes);
     if(result == merge_result::conflict){
       return result;
