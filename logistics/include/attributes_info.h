@@ -7,7 +7,7 @@
 #include <string>
 #include <variant>
 #include <entt/entity/fwd.hpp>
-
+#include <cereal/access.hpp>
 
 enum class data_type {
   null,
@@ -37,10 +37,17 @@ struct logistics_API parameter {
   const parameter_value_t &value() const;
   data_type dt() const;
   void set_value(parameter_value_t value);
+  
+private:
+  friend class cereal::access;
   data_type &access_data_type(); 
   parameter_value_t &access_value();
 
-private:
+  template<typename Archive>
+  void serialize(Archive &archive){
+    archive(access_data_type(), access_value());
+  }
+
   data_type DT{data_type::null};
   struct pimpl;
   pimpl *_Pimpl;

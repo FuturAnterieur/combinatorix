@@ -25,16 +25,6 @@ using wizards_info = std::vector<wizard_info>;
 constexpr auto desc_hash = entt::hashed_string::value("description");
 constexpr auto desc_updated_hash = entt::hashed_string::value("description_updated");
 
-template<typename Archive>
-void save(Archive &archive, const parameter &param){
-  archive(param.dt(), param.value());
-}
-
-template<typename Archive>
-void load(Archive &archive, parameter &param){
-  archive(param.access_data_type(), param.access_value());
-}
-
 void serialize_round_trip(entt::registry &registry, entt::continuous_loader &loader){
   std::stringstream data_store;
   {
