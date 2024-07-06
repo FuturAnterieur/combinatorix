@@ -1,4 +1,5 @@
 #include "change_merger.h"
+#include "attributes_info.h"
 
 namespace logistics {
 

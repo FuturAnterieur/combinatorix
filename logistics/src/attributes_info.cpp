@@ -1,5 +1,5 @@
 #include "attributes_info.h"
-
+#include "entt_utils.h"
 
 struct parameter::pimpl{
   parameter_value_t Value;
@@ -11,12 +11,12 @@ parameter::parameter() : _Pimpl(new pimpl()) {
 }
 
 parameter::parameter(const std::string &val) :  _Pimpl(new pimpl()){
-  DT = data_type::string;
+  DT = concrete_to_enum_type<std::string>::t;
   _Pimpl->Value = val;
 }
 
 parameter::parameter(const char *val) : _Pimpl(new pimpl()) {
-  DT = data_type::string;
+  DT = concrete_to_enum_type<std::string>::t;
   _Pimpl->Value = std::string(val);
 }
 
@@ -31,7 +31,7 @@ parameter::parameter(int64_t val) :  _Pimpl(new pimpl()){
 }
 
 parameter::parameter(bool val) : _Pimpl(new pimpl()){
-  DT = data_type::boolean;
+  DT = concrete_to_enum_type<bool>::t;
   _Pimpl->Value = val;
 }
 
@@ -84,6 +84,63 @@ void parameter::set_value(const parameter_value_t value) {
 
 data_type &parameter::access_data_type(){
   return DT;
+}
+
+
+
+//=====================================
+bool paste_attributes_changes(const attributes_info_changes &changes, attributes_info_reference &ref)
+{
+  for(const auto &[hash, param_pair] : changes.ModifiedParams){
+    
+    if(param_pair.second.dt() == data_type::null){ //deletion
+      ref.ParamValues.erase(hash);
+      //assert(ret);
+    } else  { //modification
+      ref.ParamValues.insert_or_assign(hash, param_pair.second);
+    }
+  }
+  for(const auto &[hash, smt_val] : changes.ModifiedStatuses){
+    
+    if(smt_val == smt::removed){
+      ref.StatusHashes.erase(hash);
+      //assert(ret);
+    } else {
+      ref.StatusHashes.insert(hash);
+    }
+  }
+  return true;
+}
+
+bool attributes_info_history::add_changes(timing_t timing, const attributes_info_changes &changes){
+  assert(History.find(timing) == History.end());
+  auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
+  state.Changes = changes;
+  
+
+  return true;
+}
+
+void attributes_info_history::produce_current_snapshot(attributes_info_reference &in_out) const{
+  for(const auto &[timing, state] : History){
+    paste_attributes_changes(state.Changes, in_out);
+  }
+}
+
+logistics::merge_result attributes_info_history::cumulative_changes(attributes_info_changes &changes) const{
+  using namespace logistics;
+  simple_change_merger merger;
+  attributes_info_changes temp;
+  merge_result result = merge_result::success;
+  auto it = History.begin();
+  while(it != History.end()){
+    result = merger.merge_changes(changes, it->second.Changes, changes);
+    if(result == merge_result::conflict){
+      return result;
+    }
+    it++;
+  }
+  return result;
 }
 
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){

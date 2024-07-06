@@ -27,7 +27,7 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
     }
   }
 
-  commit_attr_info_to_branch(registry, attr_info, snapshot, entity);
+  commit_attr_info_to_branch(registry, snapshot, entity);
 }
 
 //==================================================

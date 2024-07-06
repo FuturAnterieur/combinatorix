@@ -1,6 +1,7 @@
 #pragma once 
 #include "logistics_export.h"
 
+#include "change_merger.h"
 #include <set>
 #include <list>
 #include <map>
@@ -8,6 +9,8 @@
 #include <variant>
 #include <entt/entity/fwd.hpp>
 #include <cereal/access.hpp>
+
+typedef unsigned int timing_t;
 
 enum class data_type {
   null,
@@ -18,6 +21,16 @@ enum class data_type {
 };
 
 using parameter_value_t = std::variant<bool, int64_t, float, std::string>;
+
+template<typename T>
+struct concrete_to_enum_type{static constexpr data_type t;};
+
+template<>
+struct concrete_to_enum_type<bool>{static constexpr data_type t = data_type::boolean;};
+
+template<>
+struct concrete_to_enum_type<std::string>{static constexpr data_type t = data_type::string;};
+
 
 struct logistics_API parameter {
   parameter();
@@ -83,8 +96,23 @@ struct attributes_info_changes{
   std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
 };
 
+bool paste_attributes_changes(const attributes_info_changes &changes, attributes_info_reference &ref);
+
+struct attributes_info_state_at_timing {
+  attributes_info_changes Changes;
+  //attributes_info_snapshot Snapshot;
+};
+
+struct attributes_info_history {
+  std::map<timing_t, attributes_info_state_at_timing> History;
+  bool add_changes(timing_t timing, const attributes_info_changes &changes);
+  void produce_current_snapshot(attributes_info_reference &in_out) const;
+  logistics::merge_result cumulative_changes(attributes_info_changes &cumul_changes) const;
+};
+
 bool changes_empty(attributes_info_changes &changes);
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
 
 //Isolates what is New in new_changes compared to old_changes
 attributes_info_changes compute_changes_diff(const attributes_info_changes &old_changes, const attributes_info_changes &new_changes);
+

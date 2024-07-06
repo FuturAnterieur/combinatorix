@@ -1,7 +1,7 @@
 #pragma once 
 
-#include "attributes_info.h"
 
+struct attributes_info_changes;
 namespace logistics {
   enum class merge_result {
     success,

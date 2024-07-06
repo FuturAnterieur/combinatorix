@@ -72,8 +72,8 @@ namespace logistics {
     simulation_engine &eng = registry.ctx().emplace<simulation_engine>(&registry);
     eng.ActiveBranchName = "branch 0";
     
-    std::string_view struct_attributes_info_changes = entt::type_name<attributes_info_changes>().value();
-    std::string full_branch_name = eng.ActiveBranchName + " - " + std::string(struct_attributes_info_changes);
+    std::string_view struct_attributes_info_history = entt::type_name<attributes_info_history>().value();
+    std::string full_branch_name = eng.ActiveBranchName + " - " + std::string(struct_attributes_info_history);
 
     eng.ActiveBranchHashForStatusChanges = entt::hashed_string::value(full_branch_name.data());
     //eng.StartingNode = start;
@@ -111,7 +111,15 @@ namespace logistics {
   void commit_changes_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes){
     //TODO  if many changes go to the same entity on the same branch : function to squash changes together
     auto &status_changes_storage = get_active_branch_status_changes_storage(registry);
-    status_changes_storage.emplace(entity, changes);
+    if(!status_changes_storage.contains(entity)){
+      status_changes_storage.emplace(entity);
+    }
+    auto &history = status_changes_storage.get(entity);
+
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+
+    history.add_changes(sim->CurrentTiming, changes);
   }
 
   //=============================
@@ -128,11 +136,11 @@ namespace logistics {
     assert(sim); 
     
     //TODO  if many changes go to the same entity on the same branch : function to squash changes together
-    auto &status_changes_storage = registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
-    auto status_changes_view = entt::view<entt::get_t<attributes_info_changes>>{status_changes_storage};
+    auto &status_changes_storage = get_active_branch_status_changes_storage(registry);
+    auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{status_changes_storage};
 
     for(entt::entity entity : status_changes_view){
-      apply_changes_to_entity(registry, status_changes_view.get<attributes_info_changes>(entity), entity);
+      apply_history_to_entity(registry, status_changes_view.get<attributes_info_history>(entity), entity);
     }
 
     //TODO : status effects and other stuff
@@ -142,19 +150,22 @@ namespace logistics {
   }
 
   //================================
-  void apply_changes_to_entity(entt::registry &registry, const attributes_info_changes &changes, entt::entity entity){
+  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity){
     assert(registry.all_of<attributes_info>(entity));
     auto &attr_info = registry.get<attributes_info>(entity);
 
     attributes_info_reference ref{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
-    paste_attributes_changes(registry, entity, changes, ref, true);
+    attributes_info_changes cumulative_changes;
+    history.cumulative_changes(cumulative_changes);
+
+    paste_attributes_changes(registry, entity, cumulative_changes, ref, true);
   }
   
   status_changes_storage_t &get_active_branch_status_changes_storage(entt::registry &registry){
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
     
-    return registry.storage<attributes_info_changes>(sim->ActiveBranchHashForStatusChanges);
+    return registry.storage<attributes_info_history>(sim->ActiveBranchHashForStatusChanges);
   }
 
 }

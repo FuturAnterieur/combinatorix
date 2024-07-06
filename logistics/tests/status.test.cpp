@@ -193,12 +193,16 @@ TEST_CASE("Status effects / diamond pattern"){
       return it != changes.ModifiedStatuses.end() && it->second == smt::added;
   };
 
-  auto light_changer_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+  int blue_update_counter{0};
+  int red_update_counter{0};
+  auto light_changer_func = [&](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       parameter color = get_active_value_for_parameter(registry, owner, k_color_hash); //utils::get_or_default(registry, entity, k_color_hash, parameter{});
       if(std::get<std::string>(color.value()) == "Red"){
         assign_active_status(registry, target, k_red_hash, true); 
+        red_update_counter++;
       } else if(std::get<std::string>(color.value()) == "Blue"){
         assign_active_status(registry, target, k_blue_hash, true);
+        blue_update_counter++;
       }
     };
   
@@ -227,5 +231,89 @@ TEST_CASE("Status effects / diamond pattern"){
 
   CHECK(has_stable_status(registry, light, k_blue_hash));
   CHECK(has_stable_status(registry, light, k_red_hash));
+  CHECK(blue_update_counter == 1);
+  CHECK(red_update_counter == 1);
+}
+
+bool became_enchant_condition(const attributes_info_changes &changes){
+  auto it = changes.ModifiedStatuses.find(k_enchantment_hash);
+  return (it != changes.ModifiedStatuses.end() && it->second == smt::added);
+}
+
+bool became_creature_condition(const attributes_info_changes &changes){
+  auto it = changes.ModifiedStatuses.find(k_creature_hash);
+  return (it != changes.ModifiedStatuses.end() && it->second == smt::added);
+}
+
+TEST_CASE("Status effects - cyclic case"){
+  entt::registry registry;
+  
+  entt::entity opalescence = registry.create();
+  init_intrinsic_status(registry, opalescence, k_enchantment_hash, true);
+  
+  entt::entity humility = registry.create();
+  registry.emplace<attributes_info>(humility);
+  
+  //when a card becomes an enchantment, make it become a creature instead.
+  on_status_change_trigger_info opal_on_other_status_change_info;
+  opal_on_other_status_change_info.TriggerOwner = opalescence;
+  opal_on_other_status_change_info.Filter = 
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &info){
+      if(entity == info.TriggerOwner){
+        return false;
+      }
       
+      return became_enchant_condition(changes);
+  };
+
+  opal_on_other_status_change_info.Func = 
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
+      
+
+      auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+        assign_active_status(registry, target, k_enchantment_hash, false);
+        assign_active_status(registry, target, k_creature_hash, true);
+      };
+
+      status_effect_info info;
+      info.OriginatingEntity = trigger_info.TriggerOwner;
+      info.ApplyFunc = assign_func;
+      add_status_effect(registry, entity, info);
+  };
+
+  add_global_on_status_change_trigger(registry, opalescence, opal_on_other_status_change_info);
+  
+  on_status_change_trigger_info humility_on_any_become_creature;
+  humility_on_any_become_creature.TriggerOwner = humility;
+  humility_on_any_become_creature.Filter = 
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &info){
+      return became_creature_condition(changes);
+  };
+
+  humility_on_any_become_creature.Func = 
+    [=](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
+      
+
+      /*auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+        assign_active_status(registry, target, k_enchantment_hash, false);
+        assign_active_status(registry, target, k_creature_hash, true);
+      };
+
+      status_effect_info info;
+      info.OriginatingEntity = trigger_info.TriggerOwner;
+      info.ApplyFunc = assign_func;
+      add_status_effect(registry, entity, info);*/
+
+      //here I cheat a little to cause the cycle to happen
+      remove_status_effects_originating_from(registry, entity, opalescence);
+  };
+
+  add_global_on_status_change_trigger(registry, humility, humility_on_any_become_creature);
+
+  attributes_info_changes humility_becomes_enchantment;
+  humility_becomes_enchantment.ModifiedStatuses.emplace(k_enchantment_hash, smt::added);
+  
+  //Uncomment to trigger DA LOOP
+  //assign_intrinsic_attributes_changes(registry, humility, humility_becomes_enchantment);
+
 }
