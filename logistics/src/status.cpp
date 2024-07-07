@@ -13,8 +13,11 @@ bool assign_active_status(entt::registry &registry, entt::entity entity, entt::i
     return false;
   }
 
-  local_change_tracker &tracker = registry.get<local_change_tracker>(entity);
-  tracker.apply_status_edit(status_hash, status_value);
+  auto &storage = logistics::get_active_branch_local_changes_storage(registry);
+  attributes_info_history &history = storage.get(entity);
+  attributes_info_changes changes;
+  changes.ModifiedStatuses.emplace(status_hash, status_value ? smt::added, smt::removed);
+  history.add_changes(0, changes);
   
   
   //TODO : Emplace parent types from the inheritance tree
@@ -52,13 +55,17 @@ bool init_intrinsic_status(entt::registry &registry, entt::entity entity, entt::
 //=====================================
 bool get_active_value_for_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash){
   using namespace logistics;
-  if(local_change_tracker *tracker = registry.try_get<local_change_tracker>(entity); tracker){
-    return tracker->get_active_value_for_status(status_hash);
+  auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
+  if(local_storage.contains(entity)){
+    attributes_info_snapshot working_copy = get_most_recent_intrinsics(registry, entity);
+    auto &history = local_storage.get(entity);
+    history.produce_snapshot(attributes_info_reference(working_copy));
+    return working_copy.StatusHashes.find(status_hash) != working_copy.StatusHashes.end();
   }
 
   //Then check in the current simulation branch
   if(simulation_engine *sim = registry.ctx().find<simulation_engine>(); sim){
-    auto &&history_storage = get_active_branch_status_changes_storage(registry);
+    auto &&history_storage = get_active_branch_current_changes_storage(registry);
     if(history_storage.contains(entity)){
       auto &attr_info = registry.get<attributes_info>(entity);
       auto &history = history_storage.get(entity);
@@ -84,7 +91,7 @@ parameter get_active_value_for_parameter(entt::registry &registry, entt::entity 
 
   //Then check in the current simulation branch
   if(simulation_engine *sim = registry.ctx().find<simulation_engine>(); sim){
-    auto &&history_storage = get_active_branch_status_changes_storage(registry);
+    auto &&history_storage = get_active_branch_current_changes_storage(registry);
     if(history_storage.contains(entity)){
       const auto &attr_info = registry.get<attributes_info>(entity);
       auto &history = history_storage.get(entity);
@@ -110,12 +117,15 @@ parameter get_active_value_for_parameter(entt::registry &registry, entt::entity 
 
 //=====================================
 //To be called from modifiers
-bool add_or_set_parameter(entt::registry &registry, entt::entity entity, const std::string &param_name, data_type dt, const std::string &value){
-  entt::id_type hash = entt::hashed_string::value(param_name.data());
-  if(logistics::local_change_tracker *tracker = registry.try_get<logistics::local_change_tracker>(entity); tracker){
-    tracker->apply_param_edit(hash, parameter(value));
-  }
+bool add_or_set_active_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash, const parameter &param){
+  auto &storage = logistics::get_active_branch_local_changes_storage(registry);
+  auto &history = storage.get(entity);
   
+  parameter previous = get_active_value_for_parameter(registry, entity, param_hash); //hmm, might be redundant if the status effect code already fetched this value
+  attributes_info_changes changes; 
+  changes.ModifiedParams.emplace(param_hash, std::make_pair(previous, param));
+  history.add_changes(0, changes);
+
   return true;
 }
 
@@ -206,21 +216,19 @@ void reset_original_status(entt::registry &registry, attributes_info_snapshot &s
   //assert(registry.all_of<attributes_info, logistics::local_change_tracker>(entity));
   
   auto &entity_attr_info = registry.get<attributes_info>(entity);
-  auto &local_change_tracker = registry.get<logistics::local_change_tracker>(entity);
+  
 
   //won't need to worry about status inheritance here because ALL statuses are impacted
   snapshot.ParamValues = entity_attr_info.CurrentParamValues;
   snapshot.StatusHashes = entity_attr_info.CurrentStatusHashes;
 
-  auto &storage = logistics::get_active_branch_status_changes_storage(registry);
+  auto &storage = logistics::get_active_branch_current_changes_storage(registry);
   logistics::simulation_engine *sim = logistics::get_simulation_engine(registry);
   if(storage.contains(entity)){
     const attributes_info_history &history = storage.get(entity);
     attributes_info_reference ref{snapshot.StatusHashes, snapshot.ParamValues};
     history.produce_snapshot(ref, sim->CurrentTiming);
   }
-  
-  local_change_tracker.set_starting_point(attributes_info_snapshot{entity_attr_info.IntrinsicStatusHashes, entity_attr_info.IntrinsicParamValues});
 }
 
 //=========================================
@@ -269,15 +277,24 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
 
 //=========================================
 void commit_attr_info_to_branch(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity){
+  auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
+  auto &status_effects_history = local_storage.get(entity);
 
-  auto &local_change_tracker = registry.get<logistics::local_change_tracker>(entity);
-  attributes_info_snapshot new_snapshot = local_change_tracker.produce_active_snapshot();
+  auto &intrinsics_storage = logistics::get_active_branch_intrinsics_changes_storage(registry);
 
-  attributes_info_changes changes = compute_diff(snapshot, new_snapshot);
+  //get most recent version of intrinsics - ask the intrinsics storage if needed. 
+  //Needs to be the same as when the snapshot (of current) was produced, i.e. in reset_original_status
+  attributes_info_snapshot working_copy = logistics::get_most_recent_intrinsics(registry, entity);
+  attributes_info_reference ref(working_copy);
+  status_effects_history.produce_snapshot(ref);
 
-  logistics::commit_changes_to_active_branch(registry, entity, changes);
+  attributes_info_changes changes = compute_diff(snapshot, working_copy);
+
+  logistics::commit_changes_for_current_to_active_branch(registry, entity, changes);
  
-  registry.remove<logistics::local_change_tracker>(entity);
+  
+  local_storage.remove(entity);
+
   if(changes_empty(changes)){
     return;
   }

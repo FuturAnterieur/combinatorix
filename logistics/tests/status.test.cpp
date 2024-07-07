@@ -163,10 +163,10 @@ TEST_CASE("Status effects / diamond pattern"){
   init_intrinsic_status(registry, light, k_object_hash, true);
   entt::entity blue_mirror = registry.create();
   init_intrinsic_status(registry, blue_mirror, k_object_hash, true);
-  init_intrinsic_parameter(registry, blue_mirror, "Color", data_type::string, "Blue");
+  init_intrinsic_parameter(registry, blue_mirror, k_color_hash, "Blue");
   entt::entity red_mirror = registry.create();
   init_intrinsic_status(registry, red_mirror, k_object_hash, true);
-  init_intrinsic_parameter(registry, red_mirror, "Color", data_type::string, "Red");
+  init_intrinsic_parameter(registry, red_mirror, k_color_hash, "Red");
   
   entt::entity two_mirrors = registry.create();
   registry.emplace<multi_target>(two_mirrors, std::vector<entt::entity>{blue_mirror, red_mirror});

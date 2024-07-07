@@ -108,9 +108,9 @@ namespace logistics {
   }
 
   //------------------------------------
-  void commit_changes_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes){
+  void commit_changes_for_current_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes){
     //TODO  if many changes go to the same entity on the same branch : function to squash changes together
-    auto &status_changes_storage = get_active_branch_status_changes_storage(registry);
+    auto &status_changes_storage = get_active_branch_current_changes_storage(registry);
     if(!status_changes_storage.contains(entity)){
       status_changes_storage.emplace(entity);
     }
@@ -136,7 +136,7 @@ namespace logistics {
     assert(sim); 
     
     //TODO  if many changes go to the same entity on the same branch : function to squash changes together
-    auto &status_changes_storage = get_active_branch_status_changes_storage(registry);
+    auto &status_changes_storage = get_active_branch_current_changes_storage(registry);
     auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{status_changes_storage};
 
     for(entt::entity entity : status_changes_view){
@@ -161,11 +161,31 @@ namespace logistics {
     paste_attributes_changes(registry, entity, cumulative_changes, ref, true);
   }
   
-  status_changes_storage_t &get_active_branch_status_changes_storage(entt::registry &registry){
+  status_changes_storage_t &get_active_branch_current_changes_storage(entt::registry &registry){
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
     
     return registry.storage<attributes_info_history>(sim->ActiveBranchHashForStatusChanges);
   }
 
+  attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity){
+    attributes_info_snapshot stable_values;
+    auto &info = registry.get<attributes_info>(entity);
+    stable_values.StatusHashes = info.IntrinsicStatusHashes;
+    stable_values.ParamValues = info.IntrinsicParamValues;
+    
+    
+
+    auto &storage = logistics::get_active_branch_intrinsics_changes_storage(registry);
+    if(storage.contains(entity)){
+      simulation_engine *sim = registry.ctx().find<simulation_engine>();
+      assert(sim); 
+      
+      auto &intrinsic_history = storage.get(entity);
+      attributes_info_reference ref(stable_values);
+      intrinsic_history.produce_snapshot(ref, sim->CurrentTiming); 
+    }
+
+    return stable_values;
+  }
 }

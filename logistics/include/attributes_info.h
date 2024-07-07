@@ -81,6 +81,8 @@ struct attributes_info_snapshot {
 };
 
 struct attributes_info_reference {
+  attributes_info_reference(std::set<entt::id_type> &stat, std::map<entt::id_type, parameter> &params) : StatusHashes(stat), ParamValues(params) {}
+  attributes_info_reference(attributes_info_snapshot &snapshot) : StatusHashes(snapshot.StatusHashes), ParamValues(snapshot.ParamValues) {}
   std::set<entt::id_type> &StatusHashes;
   std::map<entt::id_type, parameter> &ParamValues;
 };
