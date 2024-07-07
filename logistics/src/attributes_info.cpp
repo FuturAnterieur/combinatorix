@@ -117,9 +117,12 @@ bool attributes_info_history::add_changes(timing_t timing, const attributes_info
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
   
   simple_change_merger merger;
-  merger.merge_changes(state.Changes, changes, state.Changes);
+  auto result = merger.merge_changes(state.Changes, changes, state.Changes);
+  if(result == merge_result::conflict){
+    return false;
+  }
   state.Changes.Timing = timing;
-  
+
   return true;
 }
 

@@ -158,7 +158,8 @@ bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity 
   }
 
   logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, changes);
-  update_status_effects(registry, entity); //assumes this launches commit after calculating status effect consequences
+  logistics::simulation_engine *sim = registry.ctx().find<logistics::simulation_engine>();
+  sim->enqueue_update(entity, entity, DEFAULT_TIMING_DELTA);
 
   return true;
 }
