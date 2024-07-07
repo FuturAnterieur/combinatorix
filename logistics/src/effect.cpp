@@ -13,12 +13,10 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
             //Works fine (at least with the simple examples I tested) when only drawing edges from status effect owners to affectees.
   }*/
 
-  auto &storage = logistics::get_active_branch_local_changes_storage(registry);
-  storage.emplace(entity);
   
   //Reset local params and status to their original values
   attributes_info_snapshot snapshot;
-  reset_original_status(registry, snapshot, entity);
+  init_history_for_local_changes(registry, entity);
 
   attributes_info &attr_info = registry.get<attributes_info>(entity);
   status_effects* effs = registry.try_get<status_effects>(entity);
@@ -28,7 +26,7 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
     }
   }
 
-  commit_attr_info_to_branch(registry, snapshot, entity);
+  commit_attr_info_to_branch(registry, entity);
 }
 
 //==================================================

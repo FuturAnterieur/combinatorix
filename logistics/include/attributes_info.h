@@ -109,9 +109,10 @@ struct attributes_info_state_at_timing {
 };
 
 struct attributes_info_history {
+  const attributes_info_snapshot StartingPoint;
   std::map<timing_t, attributes_info_state_at_timing> History;
   bool add_changes(timing_t timing, const attributes_info_changes &changes);
-  void produce_snapshot(attributes_info_reference &in_out, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
+  attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   logistics::merge_result cumulative_changes(attributes_info_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
 };
 
@@ -121,3 +122,8 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
 //Isolates what is New in new_changes compared to old_changes
 attributes_info_changes compute_changes_diff(const attributes_info_changes &old_changes, const attributes_info_changes &new_changes);
 
+enum class changes_category {
+  current,
+  intrinsics,
+  local //during status effects application
+};

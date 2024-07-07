@@ -33,8 +33,8 @@ logistics_API bool assign_intrinsic_attributes_changes(entt::registry &registry,
 
 void activate_status_change_triggers(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes);
 
-void reset_original_status(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
-void commit_attr_info_to_branch(entt::registry &registry, attributes_info_snapshot &snapshot, entt::entity entity);
+void init_history_for_local_changes(entt::registry &registry, entt::entity entity);
+void commit_attr_info_to_branch(entt::registry &registry, entt::entity entity);
 
 struct on_status_change_trigger_info;
 using status_change_trigger_func_t = std::function<void(entt::registry &, const attributes_info_changes &, entt::entity, const on_status_change_trigger_info &info)>;

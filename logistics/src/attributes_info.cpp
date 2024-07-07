@@ -113,19 +113,23 @@ bool paste_attributes_changes(const attributes_info_changes &changes, attributes
 }
 
 bool attributes_info_history::add_changes(timing_t timing, const attributes_info_changes &changes){
-  assert(History.find(timing) == History.end());
+  using namespace logistics;
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
-  state.Changes = changes;
+  
+  simple_change_merger merger;
+  merger.merge_changes(state.Changes, changes, state.Changes);
   state.Changes.Timing = timing;
   
-
   return true;
 }
 
-void attributes_info_history::produce_snapshot(attributes_info_reference &in_out, timing_t upper_bound) const{
+attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t upper_bound) const{
+  attributes_info_snapshot snapshot = StartingPoint;
   attributes_info_changes changes;
+  attributes_info_reference ref(snapshot);
   cumulative_changes(changes, upper_bound);
-  paste_attributes_changes(changes, in_out);
+  paste_attributes_changes(changes, ref);
+  return snapshot;
 }
 
 logistics::merge_result attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{

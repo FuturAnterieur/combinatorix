@@ -52,7 +52,9 @@ namespace logistics{
 
       entt::registry *registry{nullptr};
 
-      entt::id_type ActiveBranchHashForStatusChanges;
+      entt::id_type ActiveBranchHashForCurrentStatusChanges;
+      entt::id_type ActiveBranchHashForIntrinsicStatusChanges;
+      entt::id_type ActiveBranchHashForLocalStatusChanges; //i.e. during status effect calculation
       std::string ActiveBranchName;
 
       //graph functionalities are mostly unused right now
@@ -95,7 +97,7 @@ namespace logistics{
   void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects &info);
   void merge_active_branch_to_reality(entt::registry &registry);
 
-  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity);
+  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category);
 
   using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
   status_changes_storage_t &get_active_branch_current_changes_storage(entt::registry &registry);
@@ -103,4 +105,5 @@ namespace logistics{
   status_changes_storage_t &get_active_branch_local_changes_storage(entt::registry &registry);
 
   attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity);
+  attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity);
 }
