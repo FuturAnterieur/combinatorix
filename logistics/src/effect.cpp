@@ -45,7 +45,7 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->enqueue_update(entity, DEFAULT_TIMING_DELTA); 
+  eng->enqueue_update(entity, info.OriginatingEntity, DEFAULT_TIMING_DELTA); 
 }
 
 //==================================================
@@ -67,7 +67,7 @@ void remove_status_effects_originating_from(entt::registry &registry, entt::enti
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->enqueue_update(entity, DEFAULT_TIMING_DELTA);
+  eng->enqueue_update(entity, originating_entity, DEFAULT_TIMING_DELTA);
 }
 
 //==================================================

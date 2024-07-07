@@ -31,18 +31,20 @@ namespace logistics {
   }
 
   //===================================
-  void simulation_engine::enqueue_update(entt::entity entity, timing_t timing){
-    if(UpdateRequestsFromCurrentTiming.find(entity) != UpdateRequestsFromCurrentTiming.end()){
+  void simulation_engine::enqueue_update(entt::entity entity_to_update, entt::entity update_requester, timing_t timing){
+    auto entity_already_to_be_updated_it = UpdateRequestsFromCurrentTiming.find(entity_to_update);
+    if(entity_already_to_be_updated_it != UpdateRequestsFromCurrentTiming.end()
+      && update_requester != entity_already_to_be_updated_it->second){
       return;
     }
-    UpdateRequestsFromCurrentTiming.insert(entity);
+    UpdateRequestsFromCurrentTiming.emplace(entity_to_update, update_requester);
 
     timing_t absolute_launch_time = timing + CurrentTiming;
-    entity_update_executable executable{entity};
+    entity_update_executable executable{entity_to_update};
     
     auto &container = ExecutablesPerTimingLevel.emplace(absolute_launch_time, executables_on_same_timing_container{}).first->second;
     container.AbsoluteTiming = absolute_launch_time; //should be no-op if it was found
-    container.Executables.emplace_back(executable_common_data{executable_type::update, entity, executable});
+    container.Executables.emplace_back(executable_common_data{executable_type::update, entity_to_update, executable});
   }
 
   //===================================
@@ -127,6 +129,7 @@ namespace logistics {
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
 
+    //TODO handle merge conflict
     history.add_changes(sim->CurrentTiming, changes);
   }
 
@@ -147,6 +150,7 @@ namespace logistics {
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
 
+    //TODO handle merge conflict
     history.add_changes(sim->CurrentTiming, changes);
   }
 

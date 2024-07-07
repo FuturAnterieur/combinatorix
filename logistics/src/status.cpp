@@ -210,7 +210,7 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
         logistics::add_edge(registry, entity, target);
-        eng->enqueue_update(target, DEFAULT_TIMING_DELTA);
+        eng->enqueue_update(target, entity, DEFAULT_TIMING_DELTA);
       }
     }
   }
@@ -224,7 +224,7 @@ void commit_attr_info_to_branch(entt::registry &registry, entt::entity entity){
   //get most recent version of intrinsics - ask the intrinsics storage if needed. 
   //Needs to be the same as when the snapshot (of current) was produced, i.e. in init_history_for_local_changes
   attributes_info_snapshot working_copy = status_effects_history.produce_snapshot();
-  attributes_info_snapshot previous_current = logistics::get_most_recent_currents(registry, entity, logistics::changes_request::last_committed);
+  attributes_info_snapshot previous_current = logistics::get_most_recent_currents(registry, entity, logistics::changes_request::working_copy);
 
   attributes_info_changes changes = compute_diff(previous_current, working_copy);
 

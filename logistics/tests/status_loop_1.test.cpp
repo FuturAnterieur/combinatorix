@@ -73,7 +73,7 @@ TEST_CASE("Status effects - cyclic case"){
   add_global_on_status_change_trigger(registry, opalescence, opal_on_other_status_change_info);
   
   on_status_change_trigger_info humility_on_any_become_creature;
-  humility_on_any_become_creature.TimeDelta = 1;
+  humility_on_any_become_creature.TimeDelta = DEFAULT_TIMING_DELTA;
   humility_on_any_become_creature.TriggerOwner = humility;
   humility_on_any_become_creature.Filter = 
     [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &info){
