@@ -68,7 +68,7 @@ namespace logistics {
 
   //====================================================================================
 
-  void start_simulating(entt::registry &registry, entt::entity start){
+  void start_simulating(entt::registry &registry){
     simulation_engine &eng = registry.ctx().emplace<simulation_engine>(&registry);
     eng.ActiveBranchName = "branch 0";
     
@@ -81,8 +81,6 @@ namespace logistics {
     std::string local_branch_name = eng.ActiveBranchName + " - local " + std::string(struct_attributes_info_history);
     eng.ActiveBranchHashForLocalStatusChanges = entt::hashed_string::value(local_branch_name.data());
 
-    //eng.StartingNode = start;
-    eng.CurrentNode = start;
     eng.CurrentTiming = 0;
   }
 
@@ -101,7 +99,6 @@ namespace logistics {
     assert(sim);
 
     sim->DynamicGraph.add_edge(from, to);
-    sim->CurrentNode = to;
   }
 
   //-----------------------------------
@@ -183,6 +180,7 @@ namespace logistics {
 
     //TODO : status effects and other stuff
     current_changes_storage.clear();
+    intrinsic_changes_storage.clear();
     registry.ctx().erase<simulation_engine>();
   }
 
@@ -229,7 +227,7 @@ namespace logistics {
   }
 
   //===============================================
-  attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity){
+  attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity, changes_request req){
     attributes_info_snapshot stable_values;
     auto &info = registry.get<attributes_info>(entity);
     stable_values.StatusHashes = info.IntrinsicStatusHashes;
@@ -241,14 +239,15 @@ namespace logistics {
       assert(sim); 
       
       auto &intrinsic_history = storage.get(entity);
-      return intrinsic_history.produce_snapshot(sim->CurrentTiming); 
+      timing_t increment = req == changes_request::last_committed ? 0 : 1;
+      return intrinsic_history.produce_snapshot(sim->CurrentTiming + increment); 
     }
 
     return stable_values;
   }
 
   //===============================================
-  attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity){
+  attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity, changes_request req){
     attributes_info_snapshot stable_values;
     auto &info = registry.get<attributes_info>(entity);
     stable_values.StatusHashes = info.CurrentStatusHashes;
@@ -260,9 +259,30 @@ namespace logistics {
       assert(sim); 
       
       auto &current_history = storage.get(entity);
-      return current_history.produce_snapshot(sim->CurrentTiming); 
+      timing_t increment = req == changes_request::last_committed ? 0 : 1;
+      return current_history.produce_snapshot(sim->CurrentTiming + increment); 
     }
 
     return stable_values;
+  }
+
+  attributes_info_snapshot get_active_snapshot(entt::registry &registry, entt::entity entity){
+    auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
+    if(local_storage.contains(entity)){
+      auto &history = local_storage.get(entity);
+      return history.produce_snapshot(); //most recent
+    }
+    return get_most_recent_currents(registry, entity, changes_request::working_copy);
+  }
+
+  void run_calculation(entt::registry &registry, const std::function<void()> &command){
+    start_simulating(registry);
+    
+    logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+    
+    command(); 
+
+    eng->execute_stuff();
+    logistics::merge_active_branch_to_reality(registry);
   }
 }

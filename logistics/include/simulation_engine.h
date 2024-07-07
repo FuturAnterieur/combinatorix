@@ -2,6 +2,7 @@
 
 #include <entt/entity/registry.hpp>
 
+#include "logistics_export.h"
 #include "status.h"
 #include "effect.h"
 #include "graph.h"
@@ -45,6 +46,11 @@ struct executables_on_same_timing_container {
 
 
 namespace logistics{
+  enum class changes_request {
+    last_committed,
+    working_copy
+  };
+
   class simulation_engine{
     public:
       simulation_engine(entt::registry *reg);
@@ -59,8 +65,6 @@ namespace logistics{
 
       //graph functionalities are mostly unused right now
       graph<entt::entity> DynamicGraph;
-      entt::entity StartingNode;
-      entt::entity CurrentNode;
 
       timing_t CurrentTiming;
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
@@ -81,7 +85,7 @@ namespace logistics{
       void execute_stuff();
   };
 
-  void start_simulating(entt::registry &registry, entt::entity start);
+  void start_simulating(entt::registry &registry);
   simulation_engine *get_simulation_engine(entt::registry &registry);
 
 
@@ -104,6 +108,9 @@ namespace logistics{
   status_changes_storage_t &get_active_branch_intrinsics_changes_storage(entt::registry &registry);
   status_changes_storage_t &get_active_branch_local_changes_storage(entt::registry &registry);
 
-  attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity);
-  attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity);
+  attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity, changes_request req);
+  attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity, changes_request req);
+  attributes_info_snapshot get_active_snapshot(entt::registry &registry, entt::entity entity);
+
+  logistics_API void run_calculation(entt::registry &registry, const std::function<void()> &command);
 }

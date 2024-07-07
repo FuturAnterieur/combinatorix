@@ -52,16 +52,11 @@ bool init_intrinsic_status(entt::registry &registry, entt::entity entity, entt::
 //=====================================
 bool get_active_value_for_status(entt::registry &registry, entt::entity entity, entt::id_type status_hash){
   using namespace logistics;
-  auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
-  if(local_storage.contains(entity)){
-    auto &history = local_storage.get(entity);
-    attributes_info_snapshot working_copy = history.produce_snapshot();
-    return working_copy.StatusHashes.find(status_hash) != working_copy.StatusHashes.end();
-  }
+  
 
   //Then check in the current simulation branch
-  attributes_info_snapshot commited_currents = get_most_recent_currents(registry, entity);
-  return commited_currents.StatusHashes.find(status_hash) != commited_currents.StatusHashes.end();
+  attributes_info_snapshot snapshot = get_active_snapshot(registry, entity);
+  return snapshot.StatusHashes.find(status_hash) != snapshot.StatusHashes.end();
    
 
   //If we are not actively changing nor even running a simulation, that means we can fall back on the current value.
@@ -73,17 +68,8 @@ bool get_active_value_for_status(entt::registry &registry, entt::entity entity, 
 //=====================================
 parameter get_active_value_for_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash){
   using namespace logistics;
-  auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
-  attributes_info_snapshot snapshot_to_use;
-
-  if(local_storage.contains(entity)){
-    auto &history = local_storage.get(entity);
-    snapshot_to_use = history.produce_snapshot();
-  } else {
-    snapshot_to_use = get_most_recent_currents(registry, entity);
-  }
-
-  
+ 
+  attributes_info_snapshot snapshot_to_use = get_active_snapshot(registry, entity);
   auto it = snapshot_to_use.ParamValues.find(param_hash);
   if(it == snapshot_to_use.ParamValues.end()){
     return parameter{};
@@ -165,46 +151,30 @@ bool paste_attributes_changes(entt::registry &registry, entt::entity entity, con
 }
 
 //====================================
+//To be called from outside status effect modifier functions
 bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes){
   if(!registry.any_of<attributes_info>(entity)){
     return false;
   }
 
-  logistics::start_simulating(registry, entity);
-
   attributes_info &stable_info = registry.get<attributes_info>(entity);
-
-  //attributes_info_snapshot snapshot_of_current{stable_info.CurrentStatusHashes, stable_info.CurrentParamValues};
-  attributes_info_reference ref_to_intrinsic{stable_info.IntrinsicStatusHashes, stable_info.IntrinsicParamValues};
-
+  attributes_info_snapshot intrinsics_snapshot = get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
+  attributes_info_snapshot candidate = intrinsics_snapshot;
+  attributes_info_reference ref_to_intrinsic(candidate);
   paste_attributes_changes(changes, ref_to_intrinsic);
+
+  attributes_info_changes actual_changes = compute_diff(intrinsics_snapshot, candidate);
+  logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, actual_changes);
+
   update_status_effects(registry, entity); //assumes this launches commit after calculating status effect consequences
 
-  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->execute_stuff();
-  logistics::merge_active_branch_to_reality(registry);
-  
   return true;
 }
 
 //=====================================
 void init_history_for_local_changes(entt::registry &registry, entt::entity entity){
-  //assert(registry.all_of<attributes_info, logistics::local_change_tracker>(entity));
   
-  //auto &entity_attr_info = registry.get<attributes_info>(entity);
-  //won't need to worry about status inheritance here because ALL statuses are impacted
-  /*snapshot.ParamValues = entity_attr_info.CurrentParamValues;
-  snapshot.StatusHashes = entity_attr_info.CurrentStatusHashes;
-
-  auto &storage = logistics::get_active_branch_current_changes_storage(registry);
-  logistics::simulation_engine *sim = logistics::get_simulation_engine(registry);
-  if(storage.contains(entity)){
-    const attributes_info_history &history = storage.get(entity);
-    attributes_info_reference ref{snapshot.StatusHashes, snapshot.ParamValues};
-    history.produce_snapshot(ref, sim->CurrentTiming);
-  }*/
-
-  attributes_info_snapshot intrinsics = logistics::get_most_recent_intrinsics(registry, entity);
+  attributes_info_snapshot intrinsics = logistics::get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
 
   auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
   local_storage.emplace(entity, intrinsics);
@@ -248,7 +218,7 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
         logistics::add_edge(registry, entity, target);
-        eng->enqueue_update(target, 1);
+        eng->enqueue_update(target, DEFAULT_TIMING_DELTA);
       }
     }
   }
@@ -262,7 +232,7 @@ void commit_attr_info_to_branch(entt::registry &registry, entt::entity entity){
   //get most recent version of intrinsics - ask the intrinsics storage if needed. 
   //Needs to be the same as when the snapshot (of current) was produced, i.e. in init_history_for_local_changes
   attributes_info_snapshot working_copy = status_effects_history.produce_snapshot();
-  attributes_info_snapshot previous_current = logistics::get_most_recent_currents(registry, entity);
+  attributes_info_snapshot previous_current = logistics::get_most_recent_currents(registry, entity, logistics::changes_request::last_committed);
 
   attributes_info_changes changes = compute_diff(previous_current, working_copy);
 

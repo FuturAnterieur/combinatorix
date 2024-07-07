@@ -3,6 +3,7 @@
 #include "status.h"
 #include "effect.h"
 #include "combine.h"
+#include "simulation_engine.h"
 #include "entt_utils.h"
 #include <string_view>
 
@@ -94,9 +95,12 @@ TEST_CASE("Status effects / simple situation"){
   add_global_on_status_change_trigger(registry, opalescence, opal_on_other_status_change_info);
   
   //trigger the thing!
-  attributes_info_changes exploration_enters_field;
-  exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter("Hand"), parameter(k_location_field)));
-  assign_intrinsic_attributes_changes(registry, exploration, exploration_enters_field);
+  logistics::run_calculation(registry, [&](){
+    attributes_info_changes exploration_enters_field;
+    exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter("Hand"), parameter(k_location_field)));
+    assign_intrinsic_attributes_changes(registry, exploration, exploration_enters_field);
+  });
+  
 
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
 
@@ -121,23 +125,30 @@ TEST_CASE("Status effects / simple situation"){
     }, combination_info{});
 
 
+  logistics::run_calculation(registry, [&](){
+    use(registry, negater_adding_ability, opalescence);
+  });
   
-  use(registry, negater_adding_ability, opalescence);
-
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 
   // Chapter 3 : un-negate opalescence
-  use(registry, negater_removal_ability, opalescence);
+  logistics::run_calculation(registry, [&]() {
+    use(registry, negater_removal_ability, opalescence);
+  });
+  
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 
   // Chapter 4 : remove exploration from the field
-  attributes_info_changes exploration_leaves_field;
-  exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter(k_location_field), parameter(k_location_grave)));
-  assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
+  logistics::run_calculation( registry, [&]() {
+    attributes_info_changes exploration_leaves_field;
+    exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter(k_location_field), parameter(k_location_grave)));
+    assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
+  });
+  
 
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
@@ -227,8 +238,10 @@ TEST_CASE("Status effects / diamond pattern"){
   add_on_status_change_trigger(registry, blue_mirror, blue_mirror_on_illuminated);
   add_on_status_change_trigger(registry, red_mirror, red_mirror_on_illuminated);
 
-  use(registry, spell, two_mirrors);
-
+  logistics::run_calculation(registry, [&](){
+    use(registry, spell, two_mirrors);
+  });
+  
   CHECK(has_stable_status(registry, light, k_blue_hash));
   CHECK(has_stable_status(registry, light, k_red_hash));
   CHECK(blue_update_counter == 1);

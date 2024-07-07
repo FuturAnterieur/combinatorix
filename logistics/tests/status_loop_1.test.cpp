@@ -4,6 +4,7 @@
 #include "effect.h"
 #include "combine.h"
 #include "entt_utils.h"
+#include "simulation_engine.h"
 #include <string_view>
 
 using namespace std::string_view_literals;
@@ -99,12 +100,14 @@ TEST_CASE("Status effects - cyclic case"){
 
   add_global_on_status_change_trigger(registry, humility, humility_on_any_become_creature);
 
-  attributes_info_changes humility_becomes_enchantment;
-  humility_becomes_enchantment.ModifiedStatuses.emplace(k_enchantment_hash, smt::added);
   
   //Uncomment to trigger DA LOOP
-  assign_intrinsic_attributes_changes(registry, humility, humility_becomes_enchantment);
+  logistics::run_calculation(registry, [&](){
+    attributes_info_changes humility_becomes_enchantment;
+    humility_becomes_enchantment.ModifiedStatuses.emplace(k_enchantment_hash, smt::added);
+    assign_intrinsic_attributes_changes(registry, humility, humility_becomes_enchantment);
+  });
+  
 
   CHECK(loop_counter < MAX_LOOPS);
-
 }

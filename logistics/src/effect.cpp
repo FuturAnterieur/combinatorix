@@ -45,7 +45,7 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->enqueue_update(entity, 1); 
+  eng->enqueue_update(entity, DEFAULT_TIMING_DELTA); 
 }
 
 //==================================================
@@ -67,7 +67,7 @@ void remove_status_effects_originating_from(entt::registry &registry, entt::enti
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->enqueue_update(entity, 1);
+  eng->enqueue_update(entity, DEFAULT_TIMING_DELTA);
 }
 
 //==================================================
@@ -75,9 +75,6 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
   if(!registry.any_of<usable>(ability)){
     return;
   }
-
-  //TODO : Start simulation here I think (as long as this was called from outside)
-  logistics::start_simulating(registry, ability);
 
   auto view = registry.view<on_use_trigger>();
   view.each([&](auto trigger_owner, on_use_trigger &trig_group){
@@ -91,9 +88,6 @@ void use(entt::registry &registry, entt::entity ability, entt::entity target){
   usable &used = registry.get<usable>(ability);
   used.UseFunc(registry, ability, target);
 
-  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->execute_stuff();
-  logistics::merge_active_branch_to_reality(registry);
 }
 
 //====================================================

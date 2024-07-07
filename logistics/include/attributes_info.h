@@ -11,7 +11,9 @@
 #include <cereal/access.hpp>
 
 typedef unsigned int timing_t;
+#define DEFAULT_TIMING_DELTA 1
 typedef size_t priority_t;
+
 
 enum class data_type {
   null,

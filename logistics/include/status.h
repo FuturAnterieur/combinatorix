@@ -44,7 +44,7 @@ struct on_status_change_trigger_info {
   status_change_trigger_func_t Func;
   status_change_trigger_filter_t Filter;
   entt::entity TriggerOwner;
-  timing_t TimeDelta{1}; //unsigned! Cannot trigger stuff before the thing that triggers it happens!
+  timing_t TimeDelta{DEFAULT_TIMING_DELTA}; //unsigned! Cannot trigger stuff before the thing that triggers it happens!
 };
 
 struct on_status_change_triggers {
