@@ -157,15 +157,7 @@ bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity 
     return false;
   }
 
-  attributes_info &stable_info = registry.get<attributes_info>(entity);
-  attributes_info_snapshot intrinsics_snapshot = get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
-  attributes_info_snapshot candidate = intrinsics_snapshot;
-  attributes_info_reference ref_to_intrinsic(candidate);
-  paste_attributes_changes(changes, ref_to_intrinsic);
-
-  attributes_info_changes actual_changes = compute_diff(intrinsics_snapshot, candidate);
-  logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, actual_changes);
-
+  logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, changes);
   update_status_effects(registry, entity); //assumes this launches commit after calculating status effect consequences
 
   return true;
