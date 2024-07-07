@@ -69,8 +69,7 @@ namespace logistics{
       timing_t CurrentTiming;
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
       std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
-      std::map<entt::entity, entt::entity> UpdateRequestsFromCurrentTiming;
-      //entity to be updated, entity that has requested the update
+      std::set<entt::entity> UpdateRequestsFromCurrentTiming;
 
       //Still breadth-first-searching, when executing a trigger, save all the entities 
       //that will need to be updated (i.e. through update_status_effects) at this speed level.
