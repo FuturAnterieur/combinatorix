@@ -113,7 +113,8 @@ TEST_CASE("Storage sanity"){
   CHECK(result.size() == 1);
   CHECK(result[0] == "Mermelionos");
   
-  auto yes_view = entt::view<entt::get_t<void>>{wizzy_storage};
+  //Doesn't seem to compile with July 3rd master EnTT
+  /*auto yes_view = entt::view<entt::get_t<void>>{wizzy_storage};
   auto yes_view_2 = entt::view<entt::get_t<has_name>>(registry.storage<has_name>());
   auto no_view = entt::view<entt::get_t<>, entt::exclude_t<void>>{roby_storage};
 
@@ -123,7 +124,7 @@ TEST_CASE("Storage sanity"){
     result.push_back(hn.Name);
   }
   CHECK(result.size() == 1);
-  CHECK(result[0] == "Taliesin");
+  CHECK(result[0] == "Taliesin");*/
 
   //This launches an assert. Cannot have the same name assigned to pools of different types.
   //auto &&my_param_storage = registry.storage<parameter>(entt::hashed_string::value("has_robe"));

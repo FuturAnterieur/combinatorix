@@ -114,7 +114,7 @@ struct attributes_info_history {
 };
 
 bool changes_empty(attributes_info_changes &changes);
-attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
+logistics_API attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
 
 enum class changes_category {
   current,

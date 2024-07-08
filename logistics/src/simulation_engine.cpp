@@ -119,8 +119,50 @@ namespace logistics {
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim);
 
-    //TODO handle merge conflict
+    //TODO handle merge conflict (would have to revert changes to registry at least)
     history.add_changes(sim->CurrentTiming, changes);
+    sync_current_with_registry_for_views(registry, entity);
+  }
+
+  //================================================================
+  void sync_current_with_registry_for_views(entt::registry &registry, entt::entity entity){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim); 
+    
+    //TODO : refactor with smth like a branch_changes_storage class
+    auto &current_changes_storage = get_active_branch_current_changes_storage(registry);
+    
+    auto &history = current_changes_storage.get(entity);
+    attributes_info_changes cumulative_changes;
+    history.cumulative_changes(cumulative_changes);
+    attributes_info_snapshot null_snapshot;
+    attributes_info_reference ref(null_snapshot);
+    paste_attributes_changes(registry, entity, cumulative_changes, ref, true, false);
+  }
+
+  //================================================================
+  void undo_changes_to_registry(entt::registry &registry){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim); 
+    
+    //TODO : refactor with smth like a branch_changes_storage class
+    auto &current_changes_storage = get_active_branch_current_changes_storage(registry);
+    auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{current_changes_storage};
+
+    for(entt::entity entity : status_changes_view){
+      auto &attr_info = registry.get<attributes_info>(entity);
+      attributes_info_snapshot stable_snapshot{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
+
+      auto &history = current_changes_storage.get(entity);
+      attributes_info_changes cumulative_changes;
+      attributes_info_snapshot current_snapshot = history.produce_snapshot();
+
+      attributes_info_changes reverse_changes = compute_diff(current_snapshot, stable_snapshot);
+
+      attributes_info_snapshot null_snapshot;
+      attributes_info_reference ref(null_snapshot);
+      paste_attributes_changes(registry, entity, reverse_changes, ref, true, false);
+    }
   }
 
   //=================================================================
@@ -189,10 +231,10 @@ namespace logistics {
 
     if(category == changes_category::current){
       attributes_info_reference ref{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
-      paste_attributes_changes(registry, entity, cumulative_changes, ref, true);
+      paste_attributes_changes(registry, entity, cumulative_changes, ref, true, true);
     } else if (category == changes_category::intrinsics){
       attributes_info_reference ref{attr_info.IntrinsicStatusHashes, attr_info.IntrinsicParamValues};
-      paste_attributes_changes(registry, entity, cumulative_changes, ref, false);
+      paste_attributes_changes(registry, entity, cumulative_changes, ref, false, true);
     }
   }
   

@@ -117,33 +117,28 @@ bool init_intrinsic_parameter(entt::registry &registry, entt::entity entity, ent
 
 
 //=====================================
-bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry)
+bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry, bool affect_attr_info)
 {
   for(const auto &[hash, param_pair] : changes.ModifiedParams){
     auto &&storage = registry.storage<parameter>(hash);
     if(param_pair.second.dt() == data_type::null){ //deletion
-      ref.ParamValues.erase(hash);
-      if(affect_registry)
-        bool ret = storage.remove(entity);
-      //assert(ret);
+      if(affect_attr_info) ref.ParamValues.erase(hash);
+      if(affect_registry) storage.remove(entity);
+      
     } else  { //modification
-      ref.ParamValues.insert_or_assign(hash, param_pair.second);
-      if(affect_registry)
-        utils::emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
+      if(affect_attr_info) ref.ParamValues.insert_or_assign(hash, param_pair.second);
+      if(affect_registry) utils::emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
     }
   }
 
   for(const auto &[hash, smt_val] : changes.ModifiedStatuses){
     auto &&storage = registry.storage<void>(hash);
     if(smt_val == smt::removed){
-      ref.StatusHashes.erase(hash);
-      if(affect_registry)
-        storage.remove(entity);
-      //assert(ret);
+      if(affect_attr_info) ref.StatusHashes.erase(hash);
+      if(affect_registry) storage.remove(entity);
     } else {
-      ref.StatusHashes.insert(hash);
-      if(affect_registry && !storage.contains(entity))
-        storage.emplace(entity);
+      if(affect_attr_info) ref.StatusHashes.insert(hash);
+      if(affect_registry && !storage.contains(entity)) storage.emplace(entity);
     }
   }
   return true;

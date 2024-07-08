@@ -25,7 +25,7 @@ logistics_API bool add_or_set_active_parameter(entt::registry &registry, entt::e
 logistics_API bool init_intrinsic_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash, const parameter &value);
 logistics_API parameter get_active_value_for_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash);
 
-bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry = false);
+bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry = false, bool affect_attr_info = true);
 
 //Outside of simulation for now
 //Changing intrinsics from inside a simulation will require better timing management
