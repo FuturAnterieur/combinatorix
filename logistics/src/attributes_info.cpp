@@ -1,3 +1,4 @@
+#include "change_merger.h"
 #include "attributes_info.h"
 #include "entt_utils.h"
 
@@ -116,13 +117,16 @@ bool attributes_info_history::add_changes(timing_t timing, const attributes_info
   using namespace logistics;
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
   
+  attributes_info_changes copy = state.Changes;
+  attributes_info_changes_comparable left{copy, timing, 0};
+  attributes_info_changes_comparable right{changes, timing, 0};
+
   simple_change_merger merger;
-  auto result = merger.merge_changes(state.Changes, changes, state.Changes);
+  auto result = merger.merge_changes(left, right, state.Changes);
   if(result == merge_result::conflict){
     return false;
   }
-  state.Changes.Timing = timing;
-
+  
   return true;
 }
 
@@ -135,20 +139,26 @@ attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t uppe
   return snapshot;
 }
 
-logistics::merge_result attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{
+bool attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{
   using namespace logistics;
   simple_change_merger merger;
   attributes_info_changes temp;
   merge_result result = merge_result::success;
   auto it = History.begin();
+  timing_t time_tracker = 0;
   while(it != History.end() && it->first < upper_bound){
-    result = merger.merge_changes(changes, it->second.Changes, changes);
+    attributes_info_changes copy = changes;
+    attributes_info_changes_comparable left{copy, time_tracker, 0};
+    attributes_info_changes_comparable right{it->second.Changes, it->first, 0};
+
+    result = merger.merge_changes(left, right, changes);
     if(result == merge_result::conflict){
-      return result;
+      return false;
     }
+    time_tracker = it->first;
     it++;
   }
-  return result;
+  return true;
 }
 
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){

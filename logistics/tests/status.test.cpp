@@ -247,3 +247,80 @@ TEST_CASE("Status effects / diamond pattern"){
   CHECK(blue_update_counter == 1);
   CHECK(red_update_counter == 1);
 }
+
+
+
+TEST_CASE("diamond pattern without status effects, triggers only"){
+  entt::registry registry;
+
+  entt::entity sorcerer = registry.create();
+  init_intrinsic_status(registry, sorcerer, k_creature_hash, true);
+  entt::entity light = registry.create();
+  init_intrinsic_status(registry, light, k_object_hash, true);
+  entt::entity blue_mirror = registry.create();
+  init_intrinsic_status(registry, blue_mirror, k_object_hash, true);
+  init_intrinsic_parameter(registry, blue_mirror, k_color_hash, "Blue");
+  entt::entity red_mirror = registry.create();
+  init_intrinsic_status(registry, red_mirror, k_object_hash, true);
+  init_intrinsic_parameter(registry, red_mirror, k_color_hash, "Red");
+  
+  entt::entity two_mirrors = registry.create();
+  registry.emplace<multi_target>(two_mirrors, std::vector<entt::entity>{blue_mirror, red_mirror});
+
+  
+  entt::entity spell = add_ability(registry, sorcerer, 
+  [](entt::registry &registry, entt::entity ability, entt::entity target){
+    const multi_target &targets = registry.get<multi_target>(target);
+    attributes_info_changes changes;
+    changes.ModifiedStatuses.emplace(k_illuminated_hash, smt::added);
+    for(const entt::entity &target : targets.Targets){
+      assign_intrinsic_attributes_changes(registry, target, changes);
+    }
+  }, combination_info{});
+
+  auto mirror_trigger_filter = 
+    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &info){
+      auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
+      return it != changes.ModifiedStatuses.end() && it->second == smt::added;
+  };
+
+  int blue_update_counter{0};
+  int red_update_counter{0};
+  auto mirror_trigger_func = [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
+    parameter color = get_active_value_for_parameter(registry, trigger_info.TriggerOwner, k_color_hash); //utils::get_or_default(registry, entity, k_color_hash, parameter{});
+    
+    if(std::get<std::string>(color.value()) == "Red"){
+      attributes_info_changes target_changes;
+      target_changes.ModifiedStatuses.emplace(k_red_hash, smt::added);
+      assign_intrinsic_attributes_changes(registry, light, target_changes); 
+      red_update_counter++;
+    } else if(std::get<std::string>(color.value()) == "Blue"){
+      attributes_info_changes target_changes;
+      target_changes.ModifiedStatuses.emplace(k_blue_hash, smt::added);
+      assign_intrinsic_attributes_changes(registry, light, target_changes); 
+      blue_update_counter++;
+    }
+  };
+
+  on_status_change_trigger_info blue_mirror_on_illuminated;
+  blue_mirror_on_illuminated.TriggerOwner = blue_mirror;
+  on_status_change_trigger_info red_mirror_on_illuminated;
+  red_mirror_on_illuminated.TriggerOwner = red_mirror;
+
+  blue_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  blue_mirror_on_illuminated.Func = mirror_trigger_func;
+  red_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  red_mirror_on_illuminated.Func = mirror_trigger_func;
+
+  add_on_status_change_trigger(registry, blue_mirror, blue_mirror_on_illuminated);
+  add_on_status_change_trigger(registry, red_mirror, red_mirror_on_illuminated);
+
+  logistics::run_calculation(registry, [&](){
+    use(registry, spell, two_mirrors);
+  });
+  
+  CHECK(has_stable_status(registry, light, k_blue_hash));
+  CHECK(has_stable_status(registry, light, k_red_hash));
+  CHECK(blue_update_counter == 1);
+  CHECK(red_update_counter == 1);
+}

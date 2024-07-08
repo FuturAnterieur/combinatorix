@@ -1,7 +1,6 @@
 #pragma once 
 #include "logistics_export.h"
 
-#include "change_merger.h"
 #include <set>
 #include <list>
 #include <map>
@@ -13,7 +12,6 @@
 typedef unsigned int timing_t;
 #define DEFAULT_TIMING_DELTA 1
 typedef size_t priority_t;
-
 
 enum class data_type {
   null,
@@ -99,15 +97,12 @@ enum class smt {
 struct attributes_info_changes{ 
   std::map<entt::id_type, smt> ModifiedStatuses; 
   std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
-  timing_t Timing{0}; //Used only sparingly for now.
-  priority_t Priority{0}; //Used only sparingly for now. This is not the final priority mechanic. The real one should be based on customizable game rules.
 };
 
 bool paste_attributes_changes(const attributes_info_changes &changes, attributes_info_reference &ref);
 
 struct attributes_info_state_at_timing {
   attributes_info_changes Changes;
-  //attributes_info_snapshot Snapshot;
 };
 
 struct attributes_info_history {
@@ -115,7 +110,7 @@ struct attributes_info_history {
   std::map<timing_t, attributes_info_state_at_timing> History;
   bool add_changes(timing_t timing, const attributes_info_changes &changes);
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
-  logistics::merge_result cumulative_changes(attributes_info_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
+  bool cumulative_changes(attributes_info_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
 };
 
 bool changes_empty(attributes_info_changes &changes);

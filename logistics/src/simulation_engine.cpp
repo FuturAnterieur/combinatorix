@@ -192,7 +192,7 @@ namespace logistics {
       paste_attributes_changes(registry, entity, cumulative_changes, ref, true);
     } else if (category == changes_category::intrinsics){
       attributes_info_reference ref{attr_info.IntrinsicStatusHashes, attr_info.IntrinsicParamValues};
-      paste_attributes_changes(registry, entity, cumulative_changes, ref, true);
+      paste_attributes_changes(registry, entity, cumulative_changes, ref, false);
     }
   }
   
