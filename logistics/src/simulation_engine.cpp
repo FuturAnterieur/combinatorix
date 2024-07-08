@@ -121,27 +121,13 @@ namespace logistics {
 
     //TODO handle merge conflict (would have to revert changes to registry at least)
     history.add_changes(sim->CurrentTiming, changes);
-    sync_current_with_registry_for_views(registry, entity);
-  }
-
-  //================================================================
-  void sync_current_with_registry_for_views(entt::registry &registry, entt::entity entity){
-    simulation_engine *sim = registry.ctx().find<simulation_engine>();
-    assert(sim); 
-    
-    //TODO : refactor with smth like a branch_changes_storage class
-    auto &current_changes_storage = get_active_branch_current_changes_storage(registry);
-    
-    auto &history = current_changes_storage.get(entity);
-    attributes_info_changes cumulative_changes;
-    history.cumulative_changes(cumulative_changes);
     attributes_info_snapshot null_snapshot;
     attributes_info_reference ref(null_snapshot);
-    paste_attributes_changes(registry, entity, cumulative_changes, ref, true, false);
+    paste_attributes_changes(registry, entity, changes, ref, true, false);
   }
 
   //================================================================
-  void undo_changes_to_registry(entt::registry &registry){
+  void undo_changes_to_registry(entt::registry &registry){ //not used for now
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim); 
     

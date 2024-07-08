@@ -95,7 +95,6 @@ namespace logistics{
   //==================================================
 
   void commit_changes_for_current_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
-  void sync_current_with_registry_for_views(entt::registry &registry, entt::entity entity);
   void undo_changes_to_registry(entt::registry &registry);
   void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   
