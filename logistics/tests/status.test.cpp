@@ -97,7 +97,7 @@ TEST_CASE("Status effects / simple situation"){
   //trigger the thing!
   logistics::run_calculation(registry, [&](){
     attributes_info_changes exploration_enters_field;
-    exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter("Hand"), parameter(k_location_field)));
+    exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{}, parameter(k_location_field)));
     assign_intrinsic_attributes_changes(registry, exploration, exploration_enters_field);
   });
   
@@ -145,7 +145,7 @@ TEST_CASE("Status effects / simple situation"){
   // Chapter 4 : remove exploration from the field
   logistics::run_calculation( registry, [&]() {
     attributes_info_changes exploration_leaves_field;
-    exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter(k_location_field), parameter(k_location_grave)));
+    exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{}, parameter(k_location_grave)));
     assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
   });
   
@@ -242,6 +242,8 @@ TEST_CASE("Status effects / diamond pattern"){
     use(registry, spell, two_mirrors);
   });
   
+  CHECK(has_stable_status(registry, blue_mirror, k_illuminated_hash));
+  CHECK(has_stable_status(registry, red_mirror, k_illuminated_hash));
   CHECK(has_stable_status(registry, light, k_blue_hash));
   CHECK(has_stable_status(registry, light, k_red_hash));
   CHECK(blue_update_counter == 1);
@@ -319,6 +321,8 @@ TEST_CASE("diamond pattern without status effects, triggers only"){
     use(registry, spell, two_mirrors);
   });
   
+  CHECK(has_stable_status(registry, blue_mirror, k_illuminated_hash));
+  CHECK(has_stable_status(registry, red_mirror, k_illuminated_hash));
   CHECK(has_stable_status(registry, light, k_blue_hash));
   CHECK(has_stable_status(registry, light, k_red_hash));
   CHECK(blue_update_counter == 1);

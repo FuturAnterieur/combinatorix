@@ -27,9 +27,10 @@ logistics_API parameter get_active_value_for_parameter(entt::registry &registry,
 
 bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry = false, bool affect_attr_info = true);
 
-//Outside of simulation for now
-//Changing intrinsics from inside a simulation will require better timing management
-logistics_API bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes);
+//can be called outside and inside a simulation
+//for parameters, don't need to provide an exact starting value
+//they will be filled out with the existing ones.
+logistics_API bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, attributes_info_changes &changes);
 
 void activate_status_change_triggers(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes);
 
@@ -55,3 +56,4 @@ logistics_API void add_on_status_change_trigger(entt::registry &registry, entt::
 logistics_API void add_global_on_status_change_trigger(entt::registry &registry, entt::entity entity, on_status_change_trigger_info &info);
 void add_on_status_change_trigger(entt::registry &registry, on_status_change_triggers &triggers, on_status_change_trigger_info &info);
 
+//TODO : rules triggers - they are entities we can get thru views

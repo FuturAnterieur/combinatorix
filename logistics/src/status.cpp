@@ -146,9 +146,18 @@ bool paste_attributes_changes(entt::registry &registry, entt::entity entity, con
 
 //====================================
 //To be called from outside status effect modifier functions
-bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes){
+bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, attributes_info_changes &changes){
   if(!registry.any_of<attributes_info>(entity)){
     return false;
+  }
+
+  auto &snapshot = logistics::get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
+  for(auto &[hash, param_pair] : changes.ModifiedParams){
+    auto snap_it = snapshot.ParamValues.find(hash);
+    if(snap_it != snapshot.ParamValues.end()){
+      //disregard whatever was given as the param starting point
+      param_pair.first = snap_it->second;
+    }
   }
 
   logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, changes);
