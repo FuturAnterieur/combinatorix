@@ -1,18 +1,11 @@
 #include "effect.h"
 #include "combine.h"
 #include "status.h"
-#include "local_change_tracker.h"
 #include "simulation_engine.h"
 #include <algorithm>
 
 //=================================================
 void update_status_effects(entt::registry &registry, entt::entity entity){
-  
-  /*if(logistics::graph_has_cycle(registry)){ //cycle detected, do not evaluate further
-    return; //Too sensitive check if we draw edges from trigger declencheurs to trigger owners.
-            //Works fine (at least with the simple examples I tested) when only drawing edges from status effect owners to affectees.
-  }*/
-
   
   //Reset local params and status to their original values
   attributes_info_snapshot snapshot;

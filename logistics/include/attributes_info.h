@@ -116,9 +116,6 @@ struct attributes_info_history {
 bool changes_empty(attributes_info_changes &changes);
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
 
-//Isolates what is New in new_changes compared to old_changes
-attributes_info_changes compute_changes_diff(const attributes_info_changes &old_changes, const attributes_info_changes &new_changes);
-
 enum class changes_category {
   current,
   intrinsics,

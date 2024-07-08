@@ -113,6 +113,7 @@ bool paste_attributes_changes(const attributes_info_changes &changes, attributes
   return true;
 }
 
+//=====================================
 bool attributes_info_history::add_changes(timing_t timing, const attributes_info_changes &changes){
   using namespace logistics;
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
@@ -130,6 +131,7 @@ bool attributes_info_history::add_changes(timing_t timing, const attributes_info
   return true;
 }
 
+//=====================================
 attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t upper_bound) const{
   attributes_info_snapshot snapshot = StartingPoint;
   attributes_info_changes changes;
@@ -139,6 +141,7 @@ attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t uppe
   return snapshot;
 }
 
+//=====================================
 bool attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{
   using namespace logistics;
   simple_change_merger merger;
@@ -161,6 +164,7 @@ bool attributes_info_history::cumulative_changes(attributes_info_changes &change
   return true;
 }
 
+//=====================================
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
   attributes_info_changes changes;
 
@@ -194,22 +198,5 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
     } 
   }
 
-  return changes;
-}
-
-attributes_info_changes compute_changes_diff(const attributes_info_changes &old_changes, const attributes_info_changes &new_changes){
-  const parameter param_null = parameter{};
-  attributes_info_changes changes;
-  for(const auto &[hash, mod] : new_changes.ModifiedStatuses){
-    if(old_changes.ModifiedStatuses.find(hash) == old_changes.ModifiedStatuses.end()){
-      changes.ModifiedStatuses.emplace(hash, mod);
-    }
-  }
-
-  for(const auto &[hash, mod] : new_changes.ModifiedParams){
-    if(old_changes.ModifiedParams.find(hash) == old_changes.ModifiedParams.end()){
-      changes.ModifiedParams.emplace(hash, mod);
-    }
-  }
   return changes;
 }
