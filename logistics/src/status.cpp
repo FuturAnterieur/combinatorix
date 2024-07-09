@@ -101,7 +101,7 @@ bool init_intrinsic_parameter(entt::registry &registry, entt::entity entity, ent
   
   attributes_info &attr_info = registry.get_or_emplace<attributes_info>(entity);
   attr_info.CurrentParamValues.insert_or_assign(hash, parameter(value));
-  attr_info.IntrinsicParamValues.insert_or_assign(hash, parameter(value)); //also set original values because it isn't edited through a Modifier
+  attr_info.IntrinsicParamValues.insert_or_assign(hash, parameter(value)); //also set intrinsic values because it isn't edited through a Modifier
 
   parameter new_param(value);
   auto &&specific_storage = registry.storage<parameter>(hash);
@@ -151,16 +151,16 @@ bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity 
     return false;
   }
 
-  auto &snapshot = logistics::get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
-  for(auto &[hash, param_pair] : changes.ModifiedParams){
-    auto snap_it = snapshot.ParamValues.find(hash);
-    if(snap_it != snapshot.ParamValues.end()){
-      //disregard whatever was given as the param starting point
-      param_pair.first = snap_it->second;
-    }
+  auto snapshot = logistics::get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
+  auto candidate = snapshot;
+  paste_attributes_changes(changes, attributes_info_reference{candidate});
+  attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
+  
+  if(changes_empty(actual_changes)) {
+    return false;
   }
 
-  logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, changes);
+  logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, actual_changes);
   logistics::simulation_engine *sim = registry.ctx().find<logistics::simulation_engine>();
   sim->enqueue_update(entity, entity, DEFAULT_TIMING_DELTA);
 

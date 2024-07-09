@@ -12,23 +12,23 @@ namespace floyd {
     }
     
     
-    size_t tortoise = x0;
-    size_t hare = x0 + 1;
-    while (hare < size && tortoise < size){
+    int64_t tortoise = static_cast<int64_t>(size) - 1;
+    int64_t hare = static_cast<int64_t>(size) - 2;
+    while (hare >= 0 && tortoise >= 0){
       if(vec[hare] == vec[tortoise]){
         would_be_cycle = true;
         break;
       }
 
-      tortoise += 1;
-      hare += 2;
+      tortoise -= 1;
+      hare -= 2;
     }
     
     if(!would_be_cycle){
       return false;
     }
 
-    size_t would_be_cycle_len = hare - tortoise;
+    size_t would_be_cycle_len = tortoise - hare;
     size_t mu = 0;
     while(mu < size && mu + would_be_cycle_len < size){
       if(vec[mu] == vec[mu + would_be_cycle_len]) {

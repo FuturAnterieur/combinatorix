@@ -23,5 +23,11 @@ namespace logistics {
     public:
       virtual merge_result merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result);
   };
+
+  class timing_less_merger : public change_merger {
+    public:
+      virtual merge_result merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result);
+  };
 }
+
 
