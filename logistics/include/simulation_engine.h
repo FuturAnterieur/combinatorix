@@ -63,13 +63,13 @@ namespace logistics{
       entt::id_type ActiveBranchHashForLocalStatusChanges; //i.e. during status effect calculation
       std::string ActiveBranchName;
 
-      //graph functionalities are mostly unused right now
       graph<entt::entity> DynamicGraph;
 
       timing_t CurrentTiming;
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
       std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
       std::set<entt::entity> UpdateRequestsFromCurrentTiming;
+      std::vector<entt::entity> UpdateSequence;
 
       //Still breadth-first-searching, when executing a trigger, save all the entities 
       //that will need to be updated (i.e. through update_status_effects) at this speed level.
@@ -81,6 +81,7 @@ namespace logistics{
       
       //What timing value should be given to enqueue_update? Up to now I tested with 0 and 1 and both seem to work fine. 1 makes more sense to me.
 
+      bool update_sequence_has_cycle(size_t &cycle_start, size_t &cycle_end);
 
       void execute_stuff();
   };
@@ -92,6 +93,8 @@ namespace logistics{
   //==================================================
   void add_edge(entt::registry &registry, entt::entity from, entt::entity to);
   bool graph_has_cycle(entt::registry &registry);
+
+ 
   //==================================================
 
   void commit_changes_for_current_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);

@@ -34,7 +34,6 @@ void add_status_effect(entt::registry &registry, entt::entity entity, const stat
   }
 
   link(registry, info.OriginatingEntity, entity); 
-  logistics::add_edge(registry, info.OriginatingEntity, entity);
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
@@ -56,7 +55,6 @@ void remove_status_effects_originating_from(entt::registry &registry, entt::enti
                   effs.Infos.end());
 
   unlink(registry, originating_entity, entity);
-  logistics::add_edge(registry, originating_entity, entity);
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);

@@ -1,5 +1,6 @@
 #include "simulation_engine.h"
 #include "entt_utils.h"
+#include "floyd.h"
 #include <entt/meta/meta.hpp>
 
 namespace logistics {
@@ -25,6 +26,7 @@ namespace logistics {
       return;
     }
     UpdateRequestsFromCurrentTiming.insert(entity_to_update);
+    UpdateSequence.push_back(entity_to_update);
     
     timing_t absolute_launch_time = timing + CurrentTiming;
     entity_update_executable executable{entity_to_update};
@@ -32,6 +34,12 @@ namespace logistics {
     auto &container = ExecutablesPerTimingLevel.emplace(absolute_launch_time, executables_on_same_timing_container{}).first->second;
     container.AbsoluteTiming = absolute_launch_time; //should be no-op if it was found
     container.Executables.emplace_back(executable_common_data{executable_type::update, entity_to_update, executable});
+  }
+
+  //===================================
+  bool simulation_engine::update_sequence_has_cycle(size_t &start, size_t &end){
+    //Floyd's tortoise and hare!
+    return floyd::find_cycle(UpdateSequence, 0, start, end);
   }
 
   //===================================
@@ -51,9 +59,13 @@ namespace logistics {
         if(exec.ExecType == executable_type::update){
           UpdateRequestsFromCurrentTiming.erase(exec.UpdatedEntity);
         }
+
+        size_t start, end;
+        if(update_sequence_has_cycle(start,end)){
+          return;
+        }
       }
       
-
       ExecutablesPerTimingLevel.erase(it);
     }
   }

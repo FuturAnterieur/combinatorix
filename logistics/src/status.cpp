@@ -189,7 +189,6 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
   if(on_status_change_triggers *triggers = registry.try_get<on_status_change_triggers>(entity); triggers){
     for(const on_status_change_trigger_info &info : triggers->Triggers){
       if(info.Filter(registry, changes, entity, info)){
-        logistics::add_edge(registry, entity, info.TriggerOwner);
         eng->enqueue_trigger(info, entity, changes);
         //info.Func(registry, changes, entity, info);
       }
@@ -201,7 +200,6 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
   if(global_triggers){
     for(const on_status_change_trigger_info &info : global_triggers->Triggers){
       if(info.Filter(registry, changes, entity, info)){
-        logistics::add_edge(registry, entity, info.TriggerOwner);
         eng->enqueue_trigger(info, entity, changes);
         //info.Func(registry, changes, entity, info);
       }
@@ -213,7 +211,6 @@ void activate_status_change_triggers(entt::registry &registry, entt::entity enti
     for(const auto &[kind, entities] : info.CurrentCombinations){
       for(entt::entity target : entities){
         //We are causing an update on another entity here, so add an edge to the graph.
-        logistics::add_edge(registry, entity, target);
         eng->enqueue_update(target, entity, DEFAULT_TIMING_DELTA);
       }
     }
