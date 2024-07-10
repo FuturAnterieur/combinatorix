@@ -113,18 +113,30 @@ namespace logistics {
     return sim->DynamicGraph.find_cycle_simple();
   }
 
+  //====================================
+  void init_starting_point(entt::registry &registry, status_changes_storage_t &storage, entt::entity entity, changes_category category){
+    if(!storage.contains(entity)){
+      attributes_info_snapshot starting_point;
+      auto &stable_info = registry.get<attributes_info>(entity);
+      
+      if(category == changes_category::intrinsics) {
+        starting_point.StatusHashes = stable_info.IntrinsicStatusHashes;
+        starting_point.ParamValues = stable_info.IntrinsicParamValues;
+      } else if (category == changes_category::current){
+        starting_point.StatusHashes = stable_info.CurrentStatusHashes;
+        starting_point.ParamValues = stable_info.CurrentParamValues;
+      }
+
+      storage.emplace(entity, starting_point);
+    }
+
+  }
+
   //------------------------------------
   void commit_changes_for_current_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes){
     //TODO  if many changes go to the same entity on the same branch : function to squash changes together
     auto &status_changes_storage = get_active_branch_current_changes_storage(registry);
-    if(!status_changes_storage.contains(entity)){
-      attributes_info_snapshot starting_point;
-      auto &stable_info = registry.get<attributes_info>(entity);
-      starting_point.StatusHashes = stable_info.CurrentStatusHashes;
-      starting_point.ParamValues = stable_info.CurrentParamValues;
-
-      status_changes_storage.emplace(entity, starting_point);
-    }
+    init_starting_point(registry, status_changes_storage, entity, changes_category::current);
 
     auto &history = status_changes_storage.get(entity);
 
@@ -166,14 +178,7 @@ namespace logistics {
   //=================================================================
   void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes){
     auto &status_changes_storage = get_active_branch_intrinsics_changes_storage(registry);
-    if(!status_changes_storage.contains(entity)){
-      attributes_info_snapshot starting_point;
-      auto &stable_info = registry.get<attributes_info>(entity);
-      starting_point.StatusHashes = stable_info.IntrinsicStatusHashes;
-      starting_point.ParamValues = stable_info.IntrinsicParamValues;
-
-      status_changes_storage.emplace(entity, starting_point);
-    }
+    init_starting_point(registry, status_changes_storage, entity, changes_category::intrinsics);
 
     auto &history = status_changes_storage.get(entity);
 

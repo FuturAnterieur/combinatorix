@@ -86,6 +86,7 @@ namespace logistics{
       void execute_stuff();
   };
 
+  using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
   void start_simulating(entt::registry &registry);
   simulation_engine *get_simulation_engine(entt::registry &registry);
 
@@ -97,6 +98,7 @@ namespace logistics{
  
   //==================================================
 
+  void init_starting_point(entt::registry &registry, status_changes_storage_t &storage, entt::entity entity, changes_category category);
   void commit_changes_for_current_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   void undo_changes_to_registry(entt::registry &registry);
   void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
@@ -107,7 +109,7 @@ namespace logistics{
 
   void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category);
 
-  using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
+  
   status_changes_storage_t &get_active_branch_current_changes_storage(entt::registry &registry);
   status_changes_storage_t &get_active_branch_intrinsics_changes_storage(entt::registry &registry);
   status_changes_storage_t &get_active_branch_local_changes_storage(entt::registry &registry);
