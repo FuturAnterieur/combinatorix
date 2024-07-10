@@ -99,10 +99,16 @@ struct attributes_info_changes{
   std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
 };
 
-bool paste_attributes_changes(const attributes_info_changes &changes, attributes_info_reference &ref);
+struct attributes_info_short_changes {
+  std::map<entt::id_type, smt> ModifiedStatuses; 
+  std::map<entt::id_type, parameter> ModifiedParams;
+};
+
+attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes);
+bool paste_attributes_changes(const attributes_info_short_changes &changes, attributes_info_reference &ref);
 
 struct attributes_info_state_at_timing {
-  attributes_info_changes Changes;
+  attributes_info_short_changes Changes;
 };
 
 namespace logistics{
@@ -112,11 +118,11 @@ namespace logistics{
 struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
   std::map<timing_t, attributes_info_state_at_timing> History;
-  bool add_changes(timing_t timing, const attributes_info_changes &changes);
+  bool add_changes(timing_t timing, const attributes_info_short_changes &changes);
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
-  bool cumulative_changes(attributes_info_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
-  bool cumulative_changes_disregarding_timing(attributes_info_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;
-  bool cumulative_changes_swiss_knife(attributes_info_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const;
+  bool cumulative_changes(attributes_info_short_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
+  bool cumulative_changes_disregarding_timing(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;
+  bool cumulative_changes_swiss_knife(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const;
 };
 
 bool changes_empty(attributes_info_changes &changes);

@@ -25,12 +25,12 @@ logistics_API bool add_or_set_active_parameter(entt::registry &registry, entt::e
 logistics_API bool init_intrinsic_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash, const parameter &value);
 logistics_API parameter get_active_value_for_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash);
 
-bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry = false, bool affect_attr_info = true);
+bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_short_changes &changes, attributes_info_reference &ref, bool affect_registry = false, bool affect_attr_info = true);
 
 //can be called outside and inside a simulation
 //for parameters, don't need to provide an exact starting value
 //they will be filled out with the existing ones.
-logistics_API bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, attributes_info_changes &changes);
+logistics_API bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, attributes_info_short_changes &changes);
 
 void activate_status_change_triggers(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes);
 

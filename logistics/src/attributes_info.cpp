@@ -87,18 +87,27 @@ data_type &parameter::access_data_type(){
   return DT;
 }
 
+//=================================================
+attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes){
+  attributes_info_short_changes result;
+  result.ModifiedStatuses = changes.ModifiedStatuses;
+  for(const auto &[hash, param_pair] : changes.ModifiedParams){
+    result.ModifiedParams.emplace(hash, param_pair.second);
+  }
+  return result;
+}
 
 
 //=====================================
-bool paste_attributes_changes(const attributes_info_changes &changes, attributes_info_reference &ref)
+bool paste_attributes_changes(const attributes_info_short_changes &changes, attributes_info_reference &ref)
 {
-  for(const auto &[hash, param_pair] : changes.ModifiedParams){
+  for(const auto &[hash, param] : changes.ModifiedParams){
     
-    if(param_pair.second.dt() == data_type::null){ //deletion
+    if(param.dt() == data_type::null){ //deletion
       ref.ParamValues.erase(hash);
       //assert(ret);
     } else  { //modification
-      ref.ParamValues.insert_or_assign(hash, param_pair.second);
+      ref.ParamValues.insert_or_assign(hash, param);
     }
   }
   for(const auto &[hash, smt_val] : changes.ModifiedStatuses){
@@ -114,11 +123,11 @@ bool paste_attributes_changes(const attributes_info_changes &changes, attributes
 }
 
 //=====================================
-bool attributes_info_history::add_changes(timing_t timing, const attributes_info_changes &changes){
+bool attributes_info_history::add_changes(timing_t timing, const attributes_info_short_changes &changes){
   using namespace logistics;
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
   
-  attributes_info_changes copy = state.Changes;
+  attributes_info_short_changes copy = state.Changes;
   attributes_info_changes_comparable left{copy, timing, 0};
   attributes_info_changes_comparable right{changes, timing, 0};
 
@@ -134,7 +143,7 @@ bool attributes_info_history::add_changes(timing_t timing, const attributes_info
 //=====================================
 attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t upper_bound) const{
   attributes_info_snapshot snapshot = StartingPoint;
-  attributes_info_changes changes;
+  attributes_info_short_changes changes;
   attributes_info_reference ref(snapshot);
   cumulative_changes(changes, upper_bound);
   paste_attributes_changes(changes, ref);
@@ -142,21 +151,21 @@ attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t uppe
 }
 
 //=====================================
-bool attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{
+bool attributes_info_history::cumulative_changes(attributes_info_short_changes &changes, timing_t upper_bound) const{
   using namespace logistics;
   simple_change_merger merger;
   return cumulative_changes_swiss_knife(changes, 0, upper_bound, &merger);
 }
 
 //=====================================
-bool attributes_info_history::cumulative_changes_disregarding_timing(attributes_info_changes &changes, timing_t lower_bound, timing_t upper_bound) const{
+bool attributes_info_history::cumulative_changes_disregarding_timing(attributes_info_short_changes &changes, timing_t lower_bound, timing_t upper_bound) const{
   using namespace logistics;
   timing_less_merger merger;
   return cumulative_changes_swiss_knife(changes, lower_bound, upper_bound, &merger);
 }
 
 //=====================================
-bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_changes &changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const {
+bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_short_changes &changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const {
   using namespace logistics;
   attributes_info_changes temp;
   merge_result result = merge_result::success;
@@ -169,7 +178,7 @@ bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_cha
 
   timing_t time_tracker = lower_bound;
   while(it != History.end() && it->first < upper_bound){
-    attributes_info_changes copy = changes;
+    attributes_info_short_changes copy = changes;
     attributes_info_changes_comparable left{copy, time_tracker, 0};
     attributes_info_changes_comparable right{it->second.Changes, it->first, 0};
     result = merger->merge_changes(left, right, changes);

@@ -144,10 +144,11 @@ namespace logistics {
     assert(sim);
 
     //TODO handle merge conflict (would have to revert changes to registry at least)
-    history.add_changes(sim->CurrentTiming, changes);
+    attributes_info_short_changes short_changes = short_changes_from_changes(changes);
+    history.add_changes(sim->CurrentTiming, short_changes);
     attributes_info_snapshot null_snapshot;
     attributes_info_reference ref(null_snapshot);
-    paste_attributes_changes(registry, entity, changes, ref, true, false);
+    paste_attributes_changes(registry, entity, short_changes, ref, true, false);
   }
 
   //================================================================
@@ -169,9 +170,10 @@ namespace logistics {
 
       attributes_info_changes reverse_changes = compute_diff(current_snapshot, stable_snapshot);
 
+      attributes_info_short_changes sr_changes = short_changes_from_changes(reverse_changes);
       attributes_info_snapshot null_snapshot;
       attributes_info_reference ref(null_snapshot);
-      paste_attributes_changes(registry, entity, reverse_changes, ref, true, false);
+      paste_attributes_changes(registry, entity, sr_changes, ref, true, false);
     }
   }
 
@@ -186,7 +188,7 @@ namespace logistics {
     assert(sim);
 
     //TODO handle merge conflict
-    history.add_changes(sim->CurrentTiming, changes);
+    history.add_changes(sim->CurrentTiming, short_changes_from_changes(changes));
   }
 
   //=============================
@@ -229,7 +231,7 @@ namespace logistics {
     auto &attr_info = registry.get<attributes_info>(entity);
 
   
-    attributes_info_changes cumulative_changes;
+    attributes_info_short_changes cumulative_changes;
     history.cumulative_changes(cumulative_changes);
 
     if(category == changes_category::current){

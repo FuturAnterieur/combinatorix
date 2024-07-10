@@ -11,7 +11,7 @@ bool assign_active_status(entt::registry &registry, entt::entity entity, entt::i
   auto &storage = logistics::get_active_branch_local_changes_storage(registry);
   assert(storage.contains(entity));
   attributes_info_history &history = storage.get(entity);
-  attributes_info_changes changes;
+  attributes_info_short_changes changes;
   changes.ModifiedStatuses.emplace(status_hash, status_value ? smt::added : smt::removed);
   history.add_changes(0, changes);
   
@@ -87,9 +87,8 @@ bool add_or_set_active_parameter(entt::registry &registry, entt::entity entity, 
   assert(storage.contains(entity));
   auto &history = storage.get(entity);
   
-  parameter previous = get_active_value_for_parameter(registry, entity, param_hash); //hmm, might be redundant if the status effect code already fetched this value
-  attributes_info_changes changes; 
-  changes.ModifiedParams.emplace(param_hash, std::make_pair(previous, param));
+  attributes_info_short_changes changes; 
+  changes.ModifiedParams.emplace(param_hash, param);
   history.add_changes(0, changes);
 
   return true;
@@ -117,17 +116,17 @@ bool init_intrinsic_parameter(entt::registry &registry, entt::entity entity, ent
 
 
 //=====================================
-bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_changes &changes, attributes_info_reference &ref, bool affect_registry, bool affect_attr_info)
+bool paste_attributes_changes(entt::registry &registry, entt::entity entity, const attributes_info_short_changes &changes, attributes_info_reference &ref, bool affect_registry, bool affect_attr_info)
 {
-  for(const auto &[hash, param_pair] : changes.ModifiedParams){
+  for(const auto &[hash, param] : changes.ModifiedParams){
     auto &&storage = registry.storage<parameter>(hash);
-    if(param_pair.second.dt() == data_type::null){ //deletion
+    if(param.dt() == data_type::null){ //deletion
       if(affect_attr_info) ref.ParamValues.erase(hash);
       if(affect_registry) storage.remove(entity);
       
     } else  { //modification
-      if(affect_attr_info) ref.ParamValues.insert_or_assign(hash, param_pair.second);
-      if(affect_registry) utils::emplace_or_replace<parameter>(registry, entity, hash, param_pair.second);
+      if(affect_attr_info) ref.ParamValues.insert_or_assign(hash, param);
+      if(affect_registry) utils::emplace_or_replace<parameter>(registry, entity, hash, param);
     }
   }
 
@@ -146,7 +145,7 @@ bool paste_attributes_changes(entt::registry &registry, entt::entity entity, con
 
 //====================================
 //To be called from outside status effect modifier functions
-bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, attributes_info_changes &changes){
+bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity entity, attributes_info_short_changes &changes){
   if(!registry.any_of<attributes_info>(entity)){
     return false;
   }

@@ -96,8 +96,8 @@ TEST_CASE("Status effects / simple situation"){
   
   //trigger the thing!
   logistics::run_calculation(registry, [&](){
-    attributes_info_changes exploration_enters_field;
-    exploration_enters_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{}, parameter(k_location_field)));
+    attributes_info_short_changes exploration_enters_field;
+    exploration_enters_field.ModifiedParams.emplace(k_location_hash, parameter(k_location_field));
     assign_intrinsic_attributes_changes(registry, exploration, exploration_enters_field);
   });
   
@@ -144,8 +144,8 @@ TEST_CASE("Status effects / simple situation"){
 
   // Chapter 4 : remove exploration from the field
   logistics::run_calculation( registry, [&]() {
-    attributes_info_changes exploration_leaves_field;
-    exploration_leaves_field.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{}, parameter(k_location_grave)));
+    attributes_info_short_changes exploration_leaves_field;
+    exploration_leaves_field.ModifiedParams.emplace(k_location_hash, parameter(k_location_grave));
     assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
   });
   
@@ -273,7 +273,7 @@ TEST_CASE("diamond pattern without status effects, triggers only"){
   entt::entity spell = add_ability(registry, sorcerer, 
   [](entt::registry &registry, entt::entity ability, entt::entity target){
     const multi_target &targets = registry.get<multi_target>(target);
-    attributes_info_changes changes;
+    attributes_info_short_changes changes;
     changes.ModifiedStatuses.emplace(k_illuminated_hash, smt::added);
     for(const entt::entity &target : targets.Targets){
       assign_intrinsic_attributes_changes(registry, target, changes);
@@ -292,12 +292,12 @@ TEST_CASE("diamond pattern without status effects, triggers only"){
     parameter color = get_active_value_for_parameter(registry, trigger_info.TriggerOwner, k_color_hash); //utils::get_or_default(registry, entity, k_color_hash, parameter{});
     
     if(std::get<std::string>(color.value()) == "Red"){
-      attributes_info_changes target_changes;
+      attributes_info_short_changes target_changes;
       target_changes.ModifiedStatuses.emplace(k_red_hash, smt::added);
       assign_intrinsic_attributes_changes(registry, light, target_changes); 
       red_update_counter++;
     } else if(std::get<std::string>(color.value()) == "Blue"){
-      attributes_info_changes target_changes;
+      attributes_info_short_changes target_changes;
       target_changes.ModifiedStatuses.emplace(k_blue_hash, smt::added);
       assign_intrinsic_attributes_changes(registry, light, target_changes); 
       blue_update_counter++;

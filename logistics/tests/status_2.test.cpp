@@ -95,8 +95,8 @@ TEST_CASE("Status effects / simple situation"){
       }
       auto location = get_active_value_for_parameter(registry, other_entity, k_location_hash);
       if(std::get<std::string>(location.value()) == k_location_field){
-        attributes_info_changes changes;
-        changes.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{}, k_location_grave));
+        attributes_info_short_changes changes;
+        changes.ModifiedParams.emplace(k_location_hash, k_location_grave);
         assign_intrinsic_attributes_changes(registry, other_entity, changes);
       }
     }
@@ -108,8 +108,8 @@ TEST_CASE("Status effects / simple situation"){
   add_global_on_status_change_trigger(registry, torrential_tribute, tt_info);
 
   logistics::run_calculation(registry, [&](){
-    attributes_info_changes changes;
-    changes.ModifiedParams.emplace(k_location_hash, std::make_pair(parameter{}, k_location_field));
+    attributes_info_short_changes changes;
+    changes.ModifiedParams.emplace(k_location_hash, k_location_field);
     assign_intrinsic_attributes_changes(registry, declencheur, changes);
   });
 

@@ -103,7 +103,7 @@ TEST_CASE("Status effects - cyclic case"){
   
   //Uncomment to trigger DA LOOP
   logistics::run_calculation(registry, [&](){
-    attributes_info_changes humility_becomes_enchantment;
+    attributes_info_short_changes humility_becomes_enchantment;
     humility_becomes_enchantment.ModifiedStatuses.emplace(k_enchantment_hash, smt::added);
     assign_intrinsic_attributes_changes(registry, humility, humility_becomes_enchantment);
   });
