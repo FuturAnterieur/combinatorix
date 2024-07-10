@@ -145,16 +145,34 @@ attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t uppe
 bool attributes_info_history::cumulative_changes(attributes_info_changes &changes, timing_t upper_bound) const{
   using namespace logistics;
   simple_change_merger merger;
+  return cumulative_changes_swiss_knife(changes, 0, upper_bound, &merger);
+}
+
+//=====================================
+bool attributes_info_history::cumulative_changes_disregarding_timing(attributes_info_changes &changes, timing_t lower_bound, timing_t upper_bound) const{
+  using namespace logistics;
+  timing_less_merger merger;
+  return cumulative_changes_swiss_knife(changes, lower_bound, upper_bound, &merger);
+}
+
+//=====================================
+bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_changes &changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const {
+  using namespace logistics;
   attributes_info_changes temp;
   merge_result result = merge_result::success;
+
+
   auto it = History.begin();
-  timing_t time_tracker = 0;
+  while(it != History.end() && it->first < lower_bound){
+    it++;
+  }
+
+  timing_t time_tracker = lower_bound;
   while(it != History.end() && it->first < upper_bound){
     attributes_info_changes copy = changes;
     attributes_info_changes_comparable left{copy, time_tracker, 0};
     attributes_info_changes_comparable right{it->second.Changes, it->first, 0};
-
-    result = merger.merge_changes(left, right, changes);
+    result = merger->merge_changes(left, right, changes);
     if(result == merge_result::conflict){
       return false;
     }
@@ -162,7 +180,9 @@ bool attributes_info_history::cumulative_changes(attributes_info_changes &change
     it++;
   }
   return true;
+
 }
+
 
 //=====================================
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){

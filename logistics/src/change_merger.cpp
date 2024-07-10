@@ -3,7 +3,7 @@
 
 namespace logistics {
 
-  merge_result simple_change_merger::merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result){
+  merge_result simple_change_merger::merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result) const{
     assert(left.Timing <= right.Timing);
     
     merge_result ret = merge_result::success;
@@ -39,7 +39,7 @@ namespace logistics {
     return ret;
   }
 
-  merge_result timing_less_merger::merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result){
+  merge_result timing_less_merger::merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result) const{
    
     merge_result ret = merge_result::success;
     result = left.Changes;

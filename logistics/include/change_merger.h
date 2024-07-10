@@ -16,17 +16,17 @@ namespace logistics {
 
   class change_merger {
     public:
-      virtual merge_result merge_changes(const attributes_info_changes_comparable &left, const attributes_info_changes_comparable &right, attributes_info_changes &result) = 0;
+      virtual merge_result merge_changes(const attributes_info_changes_comparable &left, const attributes_info_changes_comparable &right, attributes_info_changes &result) const = 0;
   };
 
   class simple_change_merger : public change_merger {
     public:
-      virtual merge_result merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result);
+      virtual merge_result merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result) const;
   };
 
   class timing_less_merger : public change_merger {
     public:
-      virtual merge_result merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result);
+      virtual merge_result merge_changes(const attributes_info_changes_comparable & left, const attributes_info_changes_comparable &right, attributes_info_changes &result) const;
   };
 }
 
