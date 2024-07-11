@@ -55,7 +55,7 @@ namespace logistics {
       while(!it->second.Executables.empty()) {
         auto exec = it->second.Executables.front();
         it->second.Executables.pop_front();
-        exec.Func(*registry);
+        exec.Func(*registry, this);
         if(exec.ExecType == executable_type::update){
           UpdateRequestsFromCurrentTiming.erase(exec.UpdatedEntity);
         }

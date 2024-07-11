@@ -6,49 +6,25 @@
 #include "status.h"
 #include "effect.h"
 #include "graph.h"
+#include "simulation_executable.h"
 #include <deque>
 
 struct attributes_info_changes;
 struct status_effects;
 
-
-enum class executable_type {
-  status_trigger,
-  update
-};
-
-struct status_trigger_executable  {
-  on_status_change_trigger_info Info;
-  attributes_info_changes Changes;
-  entt::entity TriggeringEntity;
-  void operator()(entt::registry &registry) {
-    Info.Func(registry, Changes, TriggeringEntity, Info);
-  }
-};
-
-struct entity_update_executable {
-  entt::entity EntityToUpdate;
-  void operator()(entt::registry &registry) {
-    update_status_effects(registry, EntityToUpdate);
-  }
-};
-
-struct executable_common_data {
-  executable_type ExecType;
-  entt::entity UpdatedEntity;
-  std::function<void(entt::registry &)> Func;
-};
-
-struct executables_on_same_timing_container {
-  timing_t AbsoluteTiming;
-  std::deque<executable_common_data> Executables;
-};
-
-
 namespace logistics{
   enum class changes_request {
     last_committed,
     working_copy
+  };
+
+  struct executables_on_same_timing_container {
+    timing_t AbsoluteTiming;
+    std::deque<executable_common_data> Executables;
+  };
+
+  struct changes_context{
+    entt::entity OriginatingEntity;
   };
 
   class simulation_engine{
@@ -70,6 +46,7 @@ namespace logistics{
       std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
       std::set<entt::entity> UpdateRequestsFromCurrentTiming;
       std::vector<entt::entity> UpdateSequence;
+      changes_context ChangesContext;
 
       //Still breadth-first-searching, when executing a trigger, save all the entities 
       //that will need to be updated (i.e. through update_status_effects) at this speed level.
