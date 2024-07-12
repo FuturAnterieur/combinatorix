@@ -11,9 +11,14 @@ bool assign_active_status(entt::registry &registry, entt::entity entity, entt::i
   auto &storage = logistics::get_active_branch_local_changes_storage(registry);
   assert(storage.contains(entity));
   attributes_info_history &history = storage.get(entity);
-  attributes_info_short_changes changes;
-  changes.ModifiedStatuses.emplace(status_hash, status_value ? smt::added : smt::removed);
-  history.add_changes(0, changes);
+  attributes_info_state_at_timing state;
+  state.Changes.ModifiedStatuses.emplace(status_hash, status_value ? smt::added : smt::removed);
+  
+  simulation_engine *eng = registry.ctx().find<simulation_engine>();
+  assert(eng);
+
+  state.OriginatingEntity = eng->ChangesContext.OriginatingEntity;
+  history.add_changes(0, state);
   
   
   //TODO : Emplace parent types from the inheritance tree

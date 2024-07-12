@@ -307,6 +307,7 @@ namespace logistics {
     return stable_values;
   }
 
+  //===============================================
   attributes_info_snapshot get_active_snapshot(entt::registry &registry, entt::entity entity){
     auto &local_storage = logistics::get_active_branch_local_changes_storage(registry);
     if(local_storage.contains(entity)){

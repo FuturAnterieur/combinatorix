@@ -6,8 +6,11 @@
 
 //=================================================
 void update_status_effects(entt::registry &registry, entt::entity entity){
-  
+  using namespace logistics;
   //Reset local params and status to their original values
+  simulation_engine *sim = registry.ctx().find<simulation_engine>();
+  assert(sim);
+
   attributes_info_snapshot snapshot;
   init_history_for_local_changes(registry, entity);
 
@@ -15,9 +18,12 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   status_effects* effs = registry.try_get<status_effects>(entity);
   if(effs){
     for(const auto &eff_info : effs->Infos){
+      sim->ChangesContext.OriginatingEntity = eff_info.OriginatingEntity;
       eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
     }
   }
+
+  sim->ChangesContext.OriginatingEntity = entt::null;
 
   commit_attr_info_to_branch(registry, entity);
 }

@@ -5,6 +5,7 @@ namespace logistics{
   void status_trigger_executable::operator()(entt::registry &registry, simulation_engine *eng){
     eng->ChangesContext.OriginatingEntity = Info.TriggerOwner;
     Info.Func(registry, Changes, TriggeringEntity, Info);
+    eng->ChangesContext.OriginatingEntity = entt::null;
   }
 
 
