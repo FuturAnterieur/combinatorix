@@ -27,6 +27,22 @@ namespace logistics{
     entt::entity OriginatingEntity;
   };
 
+  enum class event_type {
+    change_intrinsics,
+    change_status_effects,
+    update
+  };
+
+  struct timeline_event {
+    event_type Type;
+    entt::entity OriginatingEntity;
+    entt::entity AffectedEntity;
+  };
+
+  struct timeline {
+    std::map<timing_t, std::vector<timeline_event>> Events;
+  };
+
   class simulation_engine{
     public:
       simulation_engine(entt::registry *reg);
@@ -44,8 +60,10 @@ namespace logistics{
       timing_t CurrentTiming;
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
       std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
-      std::set<entt::entity> UpdateRequestsFromCurrentTiming;
-      std::vector<entt::entity> UpdateSequence;
+      std::map<timing_t, std::set<entt::entity>> UpdateRequestsPerTiming;
+      std::vector<entt::entity> UpdateSequence; //To be deprecated in favor of the Timeline.
+      timeline Timeline;
+
       changes_context ChangesContext;
 
       //Still breadth-first-searching, when executing a trigger, save all the entities 
