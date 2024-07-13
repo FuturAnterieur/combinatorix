@@ -173,6 +173,7 @@ bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity 
 
   logistics::commit_changes_for_intrinsics_to_active_branch(registry, entity, actual_changes);
   logistics::simulation_engine *sim = registry.ctx().find<logistics::simulation_engine>();
+  sim->record_intrinsic_attrs_change(entity);
   sim->enqueue_update(entity, entity, DEFAULT_TIMING_DELTA);
 
   return true;
@@ -240,14 +241,12 @@ void commit_attr_info_to_branch(entt::registry &registry, entt::entity entity){
 
   attributes_info_changes changes = compute_diff(previous_current, working_copy);
 
-  logistics::commit_changes_for_current_to_active_branch(registry, entity, changes);
- 
   local_storage.remove(entity);
-
   if(changes_empty(changes)){
     return;
   }
 
+  logistics::commit_changes_for_current_to_active_branch(registry, entity, changes);
   activate_status_change_triggers(registry, entity, changes);
 }
 

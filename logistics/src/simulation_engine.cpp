@@ -5,6 +5,14 @@
 
 namespace logistics {
 
+  bool timeline_event::operator==(const timeline_event &rhs) const {
+    return Type == rhs.Type && OriginatingEntity == rhs.OriginatingEntity && AffectedEntity == rhs.AffectedEntity;
+  }
+
+  bool timeline_event::operator!=(const timeline_event &rhs) const {
+    return Type != rhs.Type || OriginatingEntity != rhs.OriginatingEntity || AffectedEntity != rhs.AffectedEntity;
+  }
+
   simulation_engine::simulation_engine(entt::registry *reg) : registry(reg) {
     
   }
@@ -29,8 +37,6 @@ namespace logistics {
       return;
     }
     requests.insert(entity_to_update);
-    UpdateSequence.push_back(entity_to_update);
-    
     
     entity_update_executable executable{entity_to_update};
     
@@ -40,9 +46,19 @@ namespace logistics {
   }
 
   //===================================
+  void simulation_engine::record_status_effect_change(entt::entity affected_entity){
+    Timeline.Events.push_back(timeline_event{event_type::change_status_effects, ChangesContext.OriginatingEntity, affected_entity, CurrentTiming});
+  }
+
+  //===================================
+  void simulation_engine::record_intrinsic_attrs_change(entt::entity affected_entity){
+    Timeline.Events.push_back(timeline_event{event_type::change_intrinsics, ChangesContext.OriginatingEntity, affected_entity, CurrentTiming});
+  }
+
+  //===================================
   bool simulation_engine::update_sequence_has_cycle(size_t &start, size_t &end){
     //Floyd's tortoise and hare!
-    return floyd::find_cycle(UpdateSequence, 0, start, end);
+    return floyd::find_cycle(Timeline.Events, 0, start, end);
   }
 
   //===================================
@@ -60,6 +76,7 @@ namespace logistics {
         exec.Func(*registry, this);
         if(exec.ExecType == executable_type::update){
           UpdateRequestsPerTiming.at(CurrentTiming).erase(exec.UpdatedEntity);
+          Timeline.Events.push_back(timeline_event{event_type::update, exec.UpdatedEntity, exec.UpdatedEntity, CurrentTiming});
         }
 
         size_t start, end;

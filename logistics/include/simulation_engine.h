@@ -37,10 +37,13 @@ namespace logistics{
     event_type Type;
     entt::entity OriginatingEntity;
     entt::entity AffectedEntity;
+    timing_t Timing;
+    bool operator==(const timeline_event &rhs) const;
+    bool operator!=(const timeline_event &rhs) const;
   };
 
   struct timeline {
-    std::map<timing_t, std::vector<timeline_event>> Events;
+    std::vector<timeline_event> Events;
   };
 
   class simulation_engine{
@@ -61,7 +64,6 @@ namespace logistics{
       //Do breadth-first search instead of depth-first and register all triggers at each level; sort them by speed of triggering
       std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
       std::map<timing_t, std::set<entt::entity>> UpdateRequestsPerTiming;
-      std::vector<entt::entity> UpdateSequence; //To be deprecated in favor of the Timeline.
       timeline Timeline;
 
       changes_context ChangesContext;
@@ -74,7 +76,8 @@ namespace logistics{
       void enqueue_trigger(const on_status_change_trigger_info &info, entt::entity triggering_entity, const attributes_info_changes &changes);
       void enqueue_update(entt::entity entity_to_update, entt::entity entity_requesting_update, timing_t timing);
       
-      //What timing value should be given to enqueue_update? Up to now I tested with 0 and 1 and both seem to work fine. 1 makes more sense to me.
+      void record_status_effect_change(entt::entity affected_entity);
+      void record_intrinsic_attrs_change(entt::entity affected_entity);
 
       bool update_sequence_has_cycle(size_t &cycle_start, size_t &cycle_end);
 
