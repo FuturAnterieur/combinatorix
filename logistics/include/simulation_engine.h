@@ -10,7 +10,7 @@
 #include <deque>
 
 struct attributes_info_changes;
-struct status_effects;
+struct status_effects_affecting;
 
 namespace logistics{
   enum class changes_request {
@@ -79,7 +79,7 @@ namespace logistics{
       void record_status_effect_change(entt::entity affected_entity);
       void record_intrinsic_attrs_change(entt::entity affected_entity);
 
-      bool update_sequence_has_cycle(size_t &cycle_start, size_t &cycle_end);
+      bool timeline_has_cycle(size_t &cycle_start, size_t &cycle_end);
 
       void execute_stuff();
   };
@@ -102,7 +102,7 @@ namespace logistics{
   void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   
   
-  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects &info);
+  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects_affecting &info);
   void merge_active_branch_to_reality(entt::registry &registry);
 
   void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category);

@@ -15,10 +15,12 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   init_history_for_local_changes(registry, entity);
 
   attributes_info &attr_info = registry.get<attributes_info>(entity);
-  status_effects* effs = registry.try_get<status_effects>(entity);
+  status_effects_affecting* effs = registry.try_get<status_effects_affecting>(entity);
   if(effs){
-    for(const auto &eff_info : effs->Infos){
-      sim->ChangesContext.OriginatingEntity = eff_info.OriginatingEntity;
+    for(const auto &eff_entity : effs->EffectEntities){
+      status_effect_info &eff_info = registry.get<status_effect_info>(eff_entity);
+
+      sim->ChangesContext.OriginatingEntity = eff_entity;
       eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
     }
   }
@@ -28,45 +30,68 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   commit_attr_info_to_branch(registry, entity);
 }
 
-//==================================================
-//Update in my thinking : this will be invokable outside of an on_combined_trigger
-//Like, directly by the causating entity
-void add_status_effect(entt::registry &registry, entt::entity entity, const status_effect_info &info){
-  if(!registry.any_of<status_effects>(entity)){
-    registry.emplace<status_effects>(entity, std::list<status_effect_info>({info}));
-  } else {
-    status_effects &effs = registry.get<status_effects>(entity);
-    effs.Infos.push_back(info);
-  }
+entt::entity create_status_effect(entt::registry &registry, entt::entity originating_entity, const status_effect_apply_func_t &apply_func){
+  auto eff_ent = registry.create();
+  auto &eff_info = registry.emplace<status_effect_info>(eff_ent);
+  eff_info.ApplyFunc = apply_func;
+  eff_info.OriginatingEntity = originating_entity;
+  auto &owned_effs = registry.get_or_emplace<status_effects_owned>(originating_entity);
+  owned_effs.EffectEntities.push_back(eff_ent);
 
-  link(registry, info.OriginatingEntity, entity); 
-  
-  //Sort Infos according to the current rules about Status Effect Modification priority, then
-  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
-  eng->record_status_effect_change(entity);
-  eng->enqueue_update(entity, info.OriginatingEntity, DEFAULT_TIMING_DELTA); 
+  return eff_ent;
 }
 
 //==================================================
-void remove_status_effects_originating_from(entt::registry &registry, entt::entity entity, entt::entity originating_entity){
-  if(!registry.any_of<status_effects>(entity)){
+//Update in my thinking : this will be invokable outside of an on_combined_trigger
+//Like, directly by the causating entity
+void add_status_effect(entt::registry &registry, entt::entity affected_entity, entt::entity eff_entity){
+  if(!registry.any_of<status_effect_info>(eff_entity)){
+    return;
+  }
+  
+  if(!registry.any_of<status_effects_affecting>(affected_entity)){
+    registry.emplace<status_effects_affecting>(affected_entity, std::list<entt::entity>({eff_entity}));
+  } else {
+    status_effects_affecting &effs = registry.get<status_effects_affecting>(affected_entity);
+    effs.EffectEntities.push_back(eff_entity);
+  }
+
+  auto &eff_info = registry.get<status_effect_info>(eff_entity);
+
+  link(registry, eff_info.OriginatingEntity, affected_entity); 
+  
+  //Sort Infos according to the current rules about Status Effect Modification priority, then
+  logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
+  eng->record_status_effect_change(affected_entity);
+  eng->enqueue_update(affected_entity, eff_info.OriginatingEntity, DEFAULT_TIMING_DELTA); 
+}
+
+//==================================================
+void remove_status_effect(entt::registry &registry, entt::entity entity, entt::entity the_eff_entity){
+  if(!registry.any_of<status_effect_info>(the_eff_entity)){
+    return;
+  }
+  
+  if(!registry.any_of<status_effects_affecting>(entity)){
     return;
   }
 
-  status_effects &effs = registry.get<status_effects>(entity);
+  status_effects_affecting &effs = registry.get<status_effects_affecting>(entity);
   
-  effs.Infos.erase(std::remove_if(effs.Infos.begin(),
-                                  effs.Infos.end(),
-                                  [=](const status_effect_info &info)-> bool 
-                                  { return info.OriginatingEntity == originating_entity; }), 
-                  effs.Infos.end());
+  effs.EffectEntities.erase(std::remove_if(effs.EffectEntities.begin(),
+                                  effs.EffectEntities.end(),
+                                  [=](const entt::entity eff_entity)-> bool 
+                                  { return eff_entity == the_eff_entity; }), 
+                  effs.EffectEntities.end());
 
-  unlink(registry, originating_entity, entity);
+  auto &eff_info = registry.get<status_effect_info>(the_eff_entity);
+
+  unlink(registry, eff_info.OriginatingEntity, entity);
   
   //Sort Infos according to the current rules about Status Effect Modification priority, then
   logistics::simulation_engine *eng = logistics::get_simulation_engine(registry);
   eng->record_status_effect_change(entity);
-  eng->enqueue_update(entity, originating_entity, DEFAULT_TIMING_DELTA);
+  eng->enqueue_update(entity, eng->ChangesContext.OriginatingEntity, DEFAULT_TIMING_DELTA);
 }
 
 //==================================================

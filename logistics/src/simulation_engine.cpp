@@ -56,7 +56,7 @@ namespace logistics {
   }
 
   //===================================
-  bool simulation_engine::update_sequence_has_cycle(size_t &start, size_t &end){
+  bool simulation_engine::timeline_has_cycle(size_t &start, size_t &end){
     //Floyd's tortoise and hare!
     return floyd::find_cycle(Timeline.Events, 0, start, end);
   }
@@ -80,7 +80,7 @@ namespace logistics {
         }
 
         size_t start, end;
-        if(update_sequence_has_cycle(start,end)){
+        if(timeline_has_cycle(start,end)){
           return;
         }
       }
@@ -219,7 +219,7 @@ namespace logistics {
   }
 
   //=============================
-  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects &info){
+  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects_affecting &info){
     //TODO
     //For now, status effects modifiers are always commited to the reality
     //This should change in the future.

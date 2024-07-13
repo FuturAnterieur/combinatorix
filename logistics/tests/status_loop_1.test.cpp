@@ -52,21 +52,20 @@ TEST_CASE("Status effects - cyclic case"){
 
   #define MAX_LOOPS 10
   int loop_counter = 0;
-  opal_on_other_status_change_info.Func = 
-    [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
-      loop_counter++;
 
-      auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+  auto opal_status_effect_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
         assign_active_status(registry, target, k_enchantment_hash, false);
         assign_active_status(registry, target, k_creature_hash, true);
       };
 
-      status_effect_info info;
-      info.OriginatingEntity = trigger_info.TriggerOwner;
-      info.ApplyFunc = assign_func;
-      
+  entt::entity opal_status_effect = create_status_effect(registry, opalescence, opal_status_effect_func);
+
+  opal_on_other_status_change_info.Func = 
+    [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
+      loop_counter++;
+
       if(loop_counter < MAX_LOOPS) {
-        add_status_effect(registry, entity, info);
+        add_status_effect(registry, entity, opal_status_effect);
       }
   };
 
@@ -82,20 +81,8 @@ TEST_CASE("Status effects - cyclic case"){
 
   humility_on_any_become_creature.Func = 
     [=](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
-      
-
-      /*auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-        assign_active_status(registry, target, k_enchantment_hash, false);
-        assign_active_status(registry, target, k_creature_hash, true);
-      };
-
-      status_effect_info info;
-      info.OriginatingEntity = trigger_info.TriggerOwner;
-      info.ApplyFunc = assign_func;
-      add_status_effect(registry, entity, info);*/
-
       //here I cheat a little to cause the cycle to happen
-      remove_status_effects_originating_from(registry, entity, opalescence);
+      remove_status_effect(registry, entity, opal_status_effect);
   };
 
   add_global_on_status_change_trigger(registry, humility, humility_on_any_become_creature);

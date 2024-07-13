@@ -57,6 +57,17 @@ TEST_CASE("Status effects / simple situation"){
 
   //FUTURE : still have to cover the fact of opalescence entering the field.
   //COULD do it in the same trigger, adding clauses and a registry view applier.
+
+  auto opal_stat_eff_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+        if(get_active_value_for_status(registry, owner, k_negated_hash) || !get_active_value_for_status(registry, target, k_enchantment_hash)){
+          return;
+        }
+        
+        assign_active_status(registry, target, k_creature_hash, true); //variant to examine : removing its enchantment status
+      };
+
+  entt::entity opal_stat_eff = create_status_effect(registry, opalescence, opal_stat_eff_func);
+
   on_status_change_trigger_info opal_on_other_status_change_info;
   opal_on_other_status_change_info.TriggerOwner = opalescence;
   opal_on_other_status_change_info.Filter = 
@@ -71,24 +82,11 @@ TEST_CASE("Status effects / simple situation"){
   };
 
   opal_on_other_status_change_info.Func = 
-    [](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
-      
-
-      auto assign_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-        if(get_active_value_for_status(registry, owner, k_negated_hash) || !get_active_value_for_status(registry, target, k_enchantment_hash)){
-          return;
-        }
-        
-        assign_active_status(registry, target, k_creature_hash, true); //variant to examine : removing its enchantment status
-      };
-
+    [=](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
       if(entering_field_condition(changes)){
-        status_effect_info info;
-        info.OriginatingEntity = trigger_info.TriggerOwner;
-        info.ApplyFunc = assign_func;
-        add_status_effect(registry, entity, info);
+        add_status_effect(registry, entity, opal_stat_eff);
       } else if (leaving_field_condition(changes)){
-        remove_status_effects_originating_from(registry, entity, trigger_info.TriggerOwner);
+        remove_status_effect(registry, entity, opal_stat_eff);
       }
   };
 
@@ -106,22 +104,22 @@ TEST_CASE("Status effects / simple situation"){
 
   //Chapter 2 : opalescence becomes negated
   entt::entity negater = registry.create();
-  status_effect_info neg_info;
-  neg_info.OriginatingEntity = negater;
-  neg_info.ApplyFunc = 
-    [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+   
+  auto neg_stat_eff_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       assign_active_status(registry, target, k_negated_hash, true);
     };
+
+  entt::entity neg_stat_eff = create_status_effect(registry, negater, neg_stat_eff_func);
 
 
   entt::entity negater_adding_ability = add_ability(registry, negater, 
     [=](entt::registry &registry, entt::entity ability, entt::entity target){
-      add_status_effect(registry, target, neg_info);
+      add_status_effect(registry, target, neg_stat_eff);
     }, combination_info{});
 
   entt::entity negater_removal_ability = add_ability(registry, negater,
     [=](entt::registry &registry, entt::entity ability, entt::entity target){
-      remove_status_effects_originating_from(registry, target, negater);
+      remove_status_effect(registry, target, neg_stat_eff);
     }, combination_info{});
 
 
@@ -182,19 +180,18 @@ TEST_CASE("Status effects / diamond pattern"){
   entt::entity two_mirrors = registry.create();
   registry.emplace<multi_target>(two_mirrors, std::vector<entt::entity>{blue_mirror, red_mirror});
 
-  status_effect_info lighter;
-  lighter.OriginatingEntity = sorcerer;
-  lighter.ApplyFunc = 
-    [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+  
+  auto &illuminate = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       assign_active_status(registry, target, k_illuminated_hash, true);
     };
 
+  entt::entity illuminate_eff = create_status_effect(registry, sorcerer, illuminate);
 
   entt::entity spell = add_ability(registry, sorcerer, 
   [=](entt::registry &registry, entt::entity ability, entt::entity target){
     const multi_target &targets = registry.get<multi_target>(target);
     for(const entt::entity &target : targets.Targets){
-      add_status_effect(registry, target, lighter);
+      add_status_effect(registry, target, illuminate_eff);
     }
   }, combination_info{});
 
@@ -216,13 +213,15 @@ TEST_CASE("Status effects / diamond pattern"){
         blue_update_counter++;
       }
     };
-  
 
+  entt::entity light_changer_blue = create_status_effect(registry, blue_mirror, light_changer_func);
+  entt::entity light_changer_red = create_status_effect(registry, red_mirror, light_changer_func);
+  
   auto mirror_trigger_func = [&](entt::registry &registry, const attributes_info_changes &changes, entt::entity entity, const on_status_change_trigger_info &trigger_info){
-    status_effect_info info;
-    info.OriginatingEntity = trigger_info.TriggerOwner;
-    info.ApplyFunc = light_changer_func;
-    add_status_effect(registry, light, info);
+    
+    //use combination to get 'light' from 'entity'
+    //in this trigger 'entity' is equivalent to trigger_info.Owner
+    add_status_effect(registry, light, registry.get<status_effects_owned>(entity).EffectEntities.front());
   };
 
   on_status_change_trigger_info blue_mirror_on_illuminated;
