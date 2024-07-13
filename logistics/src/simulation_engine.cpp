@@ -144,11 +144,15 @@ namespace logistics {
     assert(sim);
 
     //TODO handle merge conflict (would have to revert changes to registry at least)
-    attributes_info_short_changes short_changes = short_changes_from_changes(changes);
-    history.add_changes(sim->CurrentTiming, short_changes);
+    attributes_info_state_at_timing state;
+    state.Changes = short_changes_from_changes(changes);
+    state.OriginatingEntity = sim->ChangesContext.OriginatingEntity;
+    //In the only use case for this function, OriginatingEntity will always be Null, and that is on purpose for now.
+
+    history.add_changes(registry, sim->CurrentTiming, state);
     attributes_info_snapshot null_snapshot;
     attributes_info_reference ref(null_snapshot);
-    paste_attributes_changes(registry, entity, short_changes, ref, true, false);
+    paste_attributes_changes(registry, entity, state.Changes, ref, true, false);
   }
 
   //================================================================
@@ -188,7 +192,11 @@ namespace logistics {
     assert(sim);
 
     //TODO handle merge conflict
-    history.add_changes(sim->CurrentTiming, short_changes_from_changes(changes));
+    attributes_info_state_at_timing state;
+    state.Changes = short_changes_from_changes(changes);
+    state.OriginatingEntity = sim->ChangesContext.OriginatingEntity;
+
+    history.add_changes(registry, sim->CurrentTiming, state);
   }
 
   //=============================

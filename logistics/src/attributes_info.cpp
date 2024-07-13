@@ -123,13 +123,15 @@ bool paste_attributes_changes(const attributes_info_short_changes &changes, attr
 }
 
 //=====================================
-bool attributes_info_history::add_changes(timing_t timing, const attributes_info_state_at_timing &changes){
+bool attributes_info_history::add_changes(entt::registry &registry, timing_t timing, const attributes_info_state_at_timing &changes){
   using namespace logistics;
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
   
   attributes_info_short_changes copy = state.Changes;
-  attributes_info_changes_comparable left{copy, timing, state.CalculatedPriorityValue};
-  attributes_info_changes_comparable right{changes.Changes, timing, changes.CalculatedPriorityValue};
+  attributes_info_changes_comparable left{copy, timing};
+  attributes_info_changes_comparable right{changes.Changes, timing};
+
+  calculate_priority(registry, state.OriginatingEntity, changes.OriginatingEntity, left.Priority, right.Priority);
 
   simple_change_merger merger;
   auto result = merger.merge_changes(left, right, state.Changes);
@@ -145,6 +147,7 @@ attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t uppe
   attributes_info_snapshot snapshot = StartingPoint;
   attributes_info_short_changes changes;
   attributes_info_reference ref(snapshot);
+  //calculate priority here too!
   cumulative_changes(changes, upper_bound);
   paste_attributes_changes(changes, ref);
   return snapshot;

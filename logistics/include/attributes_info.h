@@ -1,6 +1,7 @@
 #pragma once 
 #include "logistics_export.h"
 
+#include "priority.h"
 #include <set>
 #include <list>
 #include <map>
@@ -11,7 +12,6 @@
 
 typedef unsigned int timing_t;
 #define DEFAULT_TIMING_DELTA 1
-typedef size_t priority_t;
 
 enum class data_type {
   null,
@@ -119,7 +119,7 @@ namespace logistics{
 struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
   std::map<timing_t, attributes_info_state_at_timing> History;
-  bool add_changes(timing_t timing, const attributes_info_state_at_timing &changes);
+  bool add_changes(entt::registry &registry, timing_t timing, const attributes_info_state_at_timing &changes);
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes(attributes_info_short_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes_disregarding_timing(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;

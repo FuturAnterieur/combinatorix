@@ -13,12 +13,13 @@ bool assign_active_status(entt::registry &registry, entt::entity entity, entt::i
   attributes_info_history &history = storage.get(entity);
   attributes_info_state_at_timing state;
   state.Changes.ModifiedStatuses.emplace(status_hash, status_value ? smt::added : smt::removed);
-  
+
   simulation_engine *eng = registry.ctx().find<simulation_engine>();
   assert(eng);
 
+  
   state.OriginatingEntity = eng->ChangesContext.OriginatingEntity;
-  history.add_changes(0, state);
+  history.add_changes(registry, 0, state);
   
   
   //TODO : Emplace parent types from the inheritance tree
@@ -88,13 +89,19 @@ parameter get_active_value_for_parameter(entt::registry &registry, entt::entity 
 //=====================================
 //To be called from modifiers
 bool add_or_set_active_parameter(entt::registry &registry, entt::entity entity, entt::id_type param_hash, const parameter &param){
+  using namespace logistics;
   auto &storage = logistics::get_active_branch_local_changes_storage(registry);
   assert(storage.contains(entity));
   auto &history = storage.get(entity);
   
-  attributes_info_short_changes changes; 
-  changes.ModifiedParams.emplace(param_hash, param);
-  history.add_changes(0, changes);
+  attributes_info_state_at_timing state; 
+  state.Changes.ModifiedParams.emplace(param_hash, param);
+
+  simulation_engine *eng = registry.ctx().find<simulation_engine>();
+  assert(eng);
+
+  state.OriginatingEntity = eng->ChangesContext.OriginatingEntity;
+  history.add_changes(registry, 0, state);
 
   return true;
 }

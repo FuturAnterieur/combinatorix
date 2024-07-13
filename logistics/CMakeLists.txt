@@ -4,6 +4,7 @@ set(CORE_LOGISTICS_SRCS
   src/change_merger.cpp
   src/combine.cpp
   src/effect.cpp
+  src/priority.cpp
   src/simulation_engine.cpp
   src/simulation_executable.cpp
   src/split.cpp
