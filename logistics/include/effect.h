@@ -1,12 +1,13 @@
 #pragma once
 
 #include "logistics_export.h"
+#include "attributes_info.h"
 #include <entt/entity/registry.hpp>
 #include <functional>
 #include <list>
 #include <set>
+#include <map>
 
-struct attributes_info;
 using status_effect_apply_func_t = std::function<void(entt::registry&, attributes_info&, entt::entity, entt::entity)>;
 struct status_effect_info {
   entt::entity OriginatingEntity;
@@ -16,6 +17,11 @@ struct status_effect_info {
 struct status_effects_affecting { //i.e. generally status effects currently applying to the parent entity
   std::list<entt::entity> EffectEntities;
   //entt::constness_as_t<entt::storage_type_t<effect_info, entt::entity, std::allocator<effect_info>>, effect_info> InfosOnSteroids;
+};
+using sea_state_at_timing = status_effects_affecting;
+
+struct status_effects_affecting_history {
+  std::map<timing_t, sea_state_at_timing> History;
 };
 
 struct status_effects_owned{

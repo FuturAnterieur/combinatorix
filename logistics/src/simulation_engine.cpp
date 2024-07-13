@@ -96,13 +96,16 @@ namespace logistics {
     eng.ActiveBranchName = "branch 0";
     
     std::string_view struct_attributes_info_history = entt::type_name<attributes_info_history>().value();
-    
+    std::string_view struct_sea_history = entt::type_name<status_effects_affecting_history>().value();
+
     std::string current_branch_name = eng.ActiveBranchName + " - current " + std::string(struct_attributes_info_history);
     eng.ActiveBranchHashForCurrentStatusChanges = entt::hashed_string::value(current_branch_name.data());
     std::string intrinsic_branch_name =  eng.ActiveBranchName + " - intrinsic " + std::string(struct_attributes_info_history);
     eng.ActiveBranchHashForIntrinsicStatusChanges = entt::hashed_string::value(intrinsic_branch_name.data());
     std::string local_branch_name = eng.ActiveBranchName + " - local " + std::string(struct_attributes_info_history);
     eng.ActiveBranchHashForLocalStatusChanges = entt::hashed_string::value(local_branch_name.data());
+    std::string se_branch_name = eng.ActiveBranchName + " -se" + std::string();
+    eng.ActiveBranchHashForStatusEffects = entt::hashed_string::value(se_branch_name.data());
 
     eng.CurrentTiming = 0;
   }
@@ -219,11 +222,19 @@ namespace logistics {
   }
 
   //=============================
-  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects_affecting &info){
-    //TODO
-    //For now, status effects modifiers are always commited to the reality
+  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const sea_state_at_timing &info){
     //This should change in the future.
     //But this also entails keeping track of combination_info, triggers, etc... on the side branch. Lots of boilerplate.
+    auto &storage = get_active_branch_status_effects_changes_storage(registry);
+    if(!storage.contains(entity)){
+      storage.emplace(entity);
+    }
+
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+
+    auto &history = storage.get(entity);
+    history.History.insert_or_assign(sim->CurrentTiming, info);
   }
 
   //=============================
@@ -246,9 +257,19 @@ namespace logistics {
       apply_history_to_entity(registry, view.get<attributes_info_history>(entity), entity, changes_category::intrinsics);
     }
 
-    //TODO : status effects and other stuff
+    auto& se_storage = get_active_branch_status_effects_changes_storage(registry);
+    auto se_view = entt::view<entt::get_t<status_effects_affecting_history>>{se_storage};
+
+    for(entt::entity entity : se_view){
+      auto &new_se = se_view.get<status_effects_affecting_history>(entity);
+      auto &real_se = registry.get_or_emplace<status_effects_affecting>(entity);
+      real_se.EffectEntities = new_se.History.rbegin()->second.EffectEntities;
+    }
+  
+    //TODO : other stuff
     current_changes_storage.clear();
     intrinsic_changes_storage.clear();
+    se_storage.clear();
     registry.ctx().erase<simulation_engine>();
   }
 
@@ -292,6 +313,14 @@ namespace logistics {
     assert(sim);
     
     return registry.storage<attributes_info_history>(sim->ActiveBranchHashForLocalStatusChanges);
+  }
+
+  //==================================================================
+  status_effect_changes_storage_t &get_active_branch_status_effects_changes_storage(entt::registry &registry){
+    simulation_engine *sim = registry.ctx().find<simulation_engine>();
+    assert(sim);
+
+    return registry.storage<status_effects_affecting_history>(sim->ActiveBranchHashForStatusEffects);
   }
 
   //===============================================
@@ -354,4 +383,23 @@ namespace logistics {
     eng->execute_stuff();
     logistics::merge_active_branch_to_reality(registry);
   }
+
+  //===============================================
+  status_effects_affecting get_most_recent_status_effects(entt::registry &registry, entt::entity entity){
+    auto &storage = logistics::get_active_branch_status_effects_changes_storage(registry);
+    if(storage.contains(entity)){
+      simulation_engine *sim = registry.ctx().find<simulation_engine>();
+      assert(sim); 
+      
+      auto &current_history = storage.get(entity);
+      return current_history.History.rbegin()->second;
+    }
+    
+    status_effects_affecting stable_values;
+    auto &info = registry.get_or_emplace<status_effects_affecting>(entity);
+    stable_values.EffectEntities = info.EffectEntities;
+    
+    return stable_values;
+  }
+
 }

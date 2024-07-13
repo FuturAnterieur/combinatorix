@@ -55,7 +55,8 @@ namespace logistics{
 
       entt::id_type ActiveBranchHashForCurrentStatusChanges;
       entt::id_type ActiveBranchHashForIntrinsicStatusChanges;
-      entt::id_type ActiveBranchHashForLocalStatusChanges; //i.e. during status effect calculation
+      entt::id_type ActiveBranchHashForLocalStatusChanges; //i.e. during status effect calculatio
+      entt::id_type ActiveBranchHashForStatusEffects;
       std::string ActiveBranchName;
 
       graph<entt::entity> DynamicGraph;
@@ -85,6 +86,7 @@ namespace logistics{
   };
 
   using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
+  using status_effect_changes_storage_t = entt::constness_as_t<entt::storage_type_t<status_effects_affecting_history, entt::entity, std::allocator<status_effects_affecting_history>>, status_effects_affecting_history>;
   void start_simulating(entt::registry &registry);
   simulation_engine *get_simulation_engine(entt::registry &registry);
 
@@ -101,8 +103,7 @@ namespace logistics{
   void undo_changes_to_registry(entt::registry &registry);
   void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   
-  
-  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const status_effects_affecting &info);
+  void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const sea_state_at_timing &info);
   void merge_active_branch_to_reality(entt::registry &registry);
 
   void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category);
@@ -111,10 +112,14 @@ namespace logistics{
   status_changes_storage_t &get_active_branch_current_changes_storage(entt::registry &registry);
   status_changes_storage_t &get_active_branch_intrinsics_changes_storage(entt::registry &registry);
   status_changes_storage_t &get_active_branch_local_changes_storage(entt::registry &registry);
+  status_effect_changes_storage_t &get_active_branch_status_effects_changes_storage(entt::registry &registry);
+
 
   attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity, changes_request req);
   attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity, changes_request req);
   attributes_info_snapshot get_active_snapshot(entt::registry &registry, entt::entity entity);
+
+  status_effects_affecting get_most_recent_status_effects(entt::registry &registry, entt::entity entity);
 
   logistics_API void run_calculation(entt::registry &registry, const std::function<void()> &command);
 }
