@@ -63,58 +63,55 @@ namespace logistics {
   }
 
   //===================================
-  void simulation_engine::execute_stuff(){
-    timing_t end_timing = std::numeric_limits<timing_t>::max();
+  void simulation_engine::run_one_timing(){
     bool cycle_found = false;
-    while(!ExecutablesPerTimingLevel.empty()){
-      auto it = ExecutablesPerTimingLevel.begin();
-      if(it == ExecutablesPerTimingLevel.end()){
-        return;
+
+    auto it = ExecutablesPerTimingLevel.find(CurrentTiming);
+    if(it == ExecutablesPerTimingLevel.end()){
+      CurrentTiming++;
+      return;
+    }
+
+    while(!it->second.Executables.empty()) {
+      auto exec = it->second.Executables.front();
+      it->second.Executables.pop_front();
+      exec.Func(*registry, this);
+      if(exec.ExecType == executable_type::update){
+        UpdateRequestsPerTiming.at(CurrentTiming).erase(exec.UpdatedEntity);
+        Timeline.Events.push_back(timeline_event{event_type::update, exec.UpdatedEntity, exec.UpdatedEntity, CurrentTiming});
       }
 
       
-      CurrentTiming = it->first;
-      while(!it->second.Executables.empty()) {
-        auto exec = it->second.Executables.front();
-        it->second.Executables.pop_front();
-        exec.Func(*registry, this);
-        if(exec.ExecType == executable_type::update){
-          UpdateRequestsPerTiming.at(CurrentTiming).erase(exec.UpdatedEntity);
-          Timeline.Events.push_back(timeline_event{event_type::update, exec.UpdatedEntity, exec.UpdatedEntity, CurrentTiming});
-        }
+      size_t start, end;
+      if(timeline_has_cycle(start,end)){
+        cycle_found = true;
+        std::vector<entt::entity> competing_entities;
+        std::vector<timing_t> timings;
+        std::vector<priority_t> priorities;
 
-        
-        size_t start, end;
-        if(timeline_has_cycle(start,end)){
-          cycle_found = true;
-          std::vector<entt::entity> competing_entities;
-          std::vector<timing_t> timings;
-          std::vector<priority_t> priorities;
-
-          for(size_t i = start; i < end; i++){
-            if(Timeline.Events[i].Type != event_type::update){
-              competing_entities.push_back(Timeline.Events[i].OriginatingEntity);
-              priorities.push_back(0);
-              timings.push_back(Timeline.Events[i].Timing);
-            }
+        for(size_t i = start; i < end; i++){
+          if(Timeline.Events[i].Type != event_type::update){
+            competing_entities.push_back(Timeline.Events[i].OriginatingEntity);
+            priorities.push_back(0);
+            timings.push_back(Timeline.Events[i].Timing);
           }
-          assert(competing_entities.size() == 2);
-          calculate_priority(*registry, competing_entities.front(), competing_entities.back(), priorities.front(), priorities.back());
-          if(priorities.front() > priorities.back()){
-            end_timing = timings.front() + 2;
-          } else {
-            end_timing = timings.back() + 2;
-          }
-          break;
         }
-      }
-
-      ExecutablesPerTimingLevel.erase(it);
-      if(cycle_found){
+        assert(competing_entities.size() == 2);
+        calculate_priority(*registry, competing_entities.front(), competing_entities.back(), priorities.front(), priorities.back());
+        if(priorities.front() > priorities.back()){
+          EndTiming = timings.front() + 2;
+        } else {
+          EndTiming = timings.back() + 2;
+        }
         break;
       }
     }
-    logistics::merge_active_branch_to_reality(*registry, end_timing);
+
+    ExecutablesPerTimingLevel.erase(it);
+    if(cycle_found || ExecutablesPerTimingLevel.empty()){
+      Finished = true;
+    }
+    CurrentTiming++;
   }
 
   //====================================================================================
@@ -419,7 +416,12 @@ namespace logistics {
     
     command(); 
 
-    eng->execute_stuff();
+    eng->EndTiming = std::numeric_limits<timing_t>::max();
+    eng->Finished = false;
+    while(!eng->Finished){
+      eng->run_one_timing();
+    }
+    logistics::merge_active_branch_to_reality(registry, eng->EndTiming);
   }
 
   //===============================================

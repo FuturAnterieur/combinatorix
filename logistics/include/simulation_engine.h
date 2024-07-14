@@ -69,6 +69,9 @@ namespace logistics{
 
       changes_context ChangesContext;
 
+      bool Finished{false};
+      timing_t EndTiming;
+
       //Still breadth-first-searching, when executing a trigger, save all the entities 
       //that will need to be updated (i.e. through update_status_effects) at this speed level.
       //i.e. don't call their update instantaneously, store them instead and then call them one after the other
@@ -82,7 +85,7 @@ namespace logistics{
 
       bool timeline_has_cycle(size_t &cycle_start, size_t &cycle_end);
 
-      void execute_stuff();
+      void run_one_timing();
   };
 
   using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
