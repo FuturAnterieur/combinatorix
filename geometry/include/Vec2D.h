@@ -14,33 +14,33 @@ namespace geometry {
     Vec2D<T>(const T &x, const T &y);
     Vec2D<T>(const Vec2D<T> &other);
 
-    Vec2D<T> operator+(const Vec2D<T> &rhs);
-    Vec2D<T> operator-(const Vec2D<T> &rhs);
+    Vec2D<T> operator+(const Vec2D<T> &rhs) const;
+    Vec2D<T> operator-(const Vec2D<T> &rhs) const;
 
     Vec2D<T> &operator+=(const Vec2D<T> &rhs);
     Vec2D<T> &operator-=(const Vec2D<T> &rhs);
   };
 
   template<typename T>
-  Vec2D<T>::Vec2D<T>(){
+  Vec2D<T>::Vec2D(){
     x = 0.f;
     y = 0.f;
   }
 
   template<typename T>
-  Vec2D<T>::Vec2D<T>(const T &a, const T &b){
+  Vec2D<T>::Vec2D(const T &a, const T &b){
     x = a;
     y = b;
   }
 
   template<typename T>
-  Vec2D<T>::Vec2D<T>(const Vec2D<T> &other){
+  Vec2D<T>::Vec2D(const Vec2D<T> &other){
     x = other.x;
     y = other.y;
   }
 
   template<typename T>
-  Vec2D<T> Vec2D<T>::operator+(const Vec2D<T> &rhs){
+  Vec2D<T> Vec2D<T>::operator+(const Vec2D<T> &rhs) const{
     Vec2D<T> result;
     result.x = x + rhs.x;
     result.y = y + rhs.y;
@@ -48,7 +48,7 @@ namespace geometry {
   }
 
   template<typename T>
-  Vec2D<T> Vec2D<T>::operator-(const Vec2D<T> &rhs){
+  Vec2D<T> Vec2D<T>::operator-(const Vec2D<T> &rhs) const{
     Vec2D<T> result;
     result.x = x - rhs.x;
     result.y = y - rhs.y;

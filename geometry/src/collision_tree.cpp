@@ -6,8 +6,11 @@ namespace geometry {
     Parent = entt::null;
     Child1 = entt::null;
     Child2 = entt::null;
-    Owner = entt::null;
     Height = 0;
+  }
+
+  tree_node::~tree_node() {
+
   }
 
   bool tree_node::is_leaf(){
@@ -16,12 +19,11 @@ namespace geometry {
 
 
   void create_proxy(entt::registry &registry, const aabb &tight_fitting_aabb, entt::entity owner){
-    entt::entity node = registry.create();
-    auto &node_data = registry.emplace<tree_node>(node);
-    node_data.Owner = owner;
+    
+    auto &node_data = registry.emplace<tree_node>(owner);
     node_data.AABB.Min = tight_fitting_aabb.Min - Vec2D<ftype>(0.1f, 0.1f);
     node_data.AABB.Max = tight_fitting_aabb.Max + Vec2D<ftype>(0.1f, 0.1f);  
-    insert_leaf(registry, node);
+    insert_leaf(registry, owner);
   }
 
   void insert_leaf(entt::registry &registry, entt::entity leaf){
@@ -35,7 +37,7 @@ namespace geometry {
     tree_node &leaf_data = registry.get<tree_node>(leaf);
 
     entt::entity index = root_view.front(); //there can only be one root at a time
-    tree_node &index_data = registry.get<tree_node>(index);
+    tree_node index_data = registry.get<tree_node>(index);
     while(!index_data.is_leaf()){
       entt::entity child1 = index_data.Child1;
       entt::entity child2 = index_data.Child2;
@@ -124,5 +126,76 @@ namespace geometry {
 
       index = index_data.Parent;
     }
+  }
+
+  // Perform a left or right rotation if node A is imbalanced.
+  // Returns the new root index.
+  entt::entity balance(entt::registry &registry, entt::entity a){
+    auto &a_data = registry.get<tree_node>(a);
+    if(a_data.is_leaf() || a_data.Height < 2){
+      return a;
+    }
+
+    entt::entity b = a_data.Child1; auto &b_data = registry.get<tree_node>(b);
+    entt::entity c = a_data.Child2; auto &c_data = registry.get<tree_node>(c);
+
+    int balance = c_data.Height - b_data.Height;
+
+    auto swap_a_with = [&](entt::entity x, tree_node &x_data){
+      x_data.Child1 = a;
+      x_data.Parent = a_data.Parent;
+      a_data.Parent = x;
+      
+
+      if(x_data.Parent != entt::null){
+        auto &xp_data = registry.get<tree_node>(x_data.Parent);
+        if(xp_data.Child1 == a){
+          xp_data.Child1 = x;
+        } else {
+          assert(xp_data.Child2 == a);
+          xp_data.Child2 = x;
+        }
+      } else {
+        registry.remove<is_root>(a);
+        registry.emplace<is_root>(x);
+      }
+    };
+
+    auto rotate = [&](entt::entity x, tree_node &x_data, entt::entity y, tree_node &y_data){
+
+      entt::entity w = x_data.Child1; auto &w_data = registry.get<tree_node>(w);
+      entt::entity z = x_data.Child2; auto &z_data = registry.get<tree_node>(z);
+
+      auto rotate_one_side = [&](entt::entity side, entt::entity other){
+        auto &side_data = registry.get<tree_node>(side);
+        auto &other_data = registry.get<tree_node>(other);
+
+        x_data.Child2 = side;
+        a_data.Child2 = other;
+        other_data.Parent = a;
+        a_data.AABB = combine(y_data.AABB, other_data.AABB);
+        x_data.AABB = combine(a_data.AABB, side_data.AABB);
+
+        a_data.Height = 1 + std::max(y_data.Height, other_data.Height);
+        x_data.Height = 1 + std::max(a_data.Height, side_data.Height);
+      };
+
+      if(w_data.Height > z_data.Height){
+        rotate_one_side(w, z);
+      } else {
+        rotate_one_side(z, w);
+      }
+    };
+
+    if(balance > 1){
+      swap_a_with(c, c_data);
+      rotate(c, c_data, b, b_data);
+      return c;
+    } else if (balance < -1) {
+      swap_a_with(b, b_data);
+      rotate(b, b_data, c, c_data);
+      return b;
+    }
+    return a;
   }
 }
