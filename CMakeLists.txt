@@ -12,5 +12,6 @@ set(DOCTEST_INCLUDE_DIR "${EXTERNAL_LIBS_DIR}/doctest/doctest")
 
 
 add_subdirectory(logistics)
+add_subdirectory(geometry)
 add_subdirectory(engine)
 add_subdirectory(thread_pool)
