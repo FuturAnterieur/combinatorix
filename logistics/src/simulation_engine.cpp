@@ -1,5 +1,6 @@
 #include "simulation_engine.h"
 #include "entt_utils.h"
+#include "priority.h"
 #include "floyd.h"
 #include <entt/meta/meta.hpp>
 
@@ -63,12 +64,15 @@ namespace logistics {
 
   //===================================
   void simulation_engine::execute_stuff(){
+    timing_t end_timing = std::numeric_limits<timing_t>::max();
+    bool cycle_found = false;
     while(!ExecutablesPerTimingLevel.empty()){
       auto it = ExecutablesPerTimingLevel.begin();
       if(it == ExecutablesPerTimingLevel.end()){
         return;
       }
 
+      
       CurrentTiming = it->first;
       while(!it->second.Executables.empty()) {
         auto exec = it->second.Executables.front();
@@ -79,14 +83,38 @@ namespace logistics {
           Timeline.Events.push_back(timeline_event{event_type::update, exec.UpdatedEntity, exec.UpdatedEntity, CurrentTiming});
         }
 
+        
         size_t start, end;
         if(timeline_has_cycle(start,end)){
-          return;
+          cycle_found = true;
+          std::vector<entt::entity> competing_entities;
+          std::vector<timing_t> timings;
+          std::vector<priority_t> priorities;
+
+          for(size_t i = start; i < end; i++){
+            if(Timeline.Events[i].Type != event_type::update){
+              competing_entities.push_back(Timeline.Events[i].OriginatingEntity);
+              priorities.push_back(0);
+              timings.push_back(Timeline.Events[i].Timing);
+            }
+          }
+          assert(competing_entities.size() == 2);
+          calculate_priority(*registry, competing_entities.front(), competing_entities.back(), priorities.front(), priorities.back());
+          if(priorities.front() > priorities.back()){
+            end_timing = timings.front() + 2;
+          } else {
+            end_timing = timings.back() + 2;
+          }
+          break;
         }
       }
-      
+
       ExecutablesPerTimingLevel.erase(it);
+      if(cycle_found){
+        break;
+      }
     }
+    logistics::merge_active_branch_to_reality(*registry, end_timing);
   }
 
   //====================================================================================
@@ -216,7 +244,13 @@ namespace logistics {
     //TODO handle merge conflict
     attributes_info_state_at_timing state;
     state.Changes = short_changes_from_changes(changes);
-    state.OriginatingEntity = sim->ChangesContext.OriginatingEntity;
+    //in the future : put player in ChangesContext for case of starting a simulation
+    if(!registry.valid(sim->ChangesContext.OriginatingEntity)){
+      state.OriginatingEntity = entity;
+    } else {
+      state.OriginatingEntity = sim->ChangesContext.OriginatingEntity;
+    }
+    
 
     history.add_changes(registry, sim->CurrentTiming, state);
   }
@@ -238,7 +272,7 @@ namespace logistics {
   }
 
   //=============================
-  void merge_active_branch_to_reality(entt::registry &registry){
+  void merge_active_branch_to_reality(entt::registry &registry, timing_t upper_bound){
     simulation_engine *sim = registry.ctx().find<simulation_engine>();
     assert(sim); 
     
@@ -247,14 +281,14 @@ namespace logistics {
     auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{current_changes_storage};
 
     for(entt::entity entity : status_changes_view){
-      apply_history_to_entity(registry, status_changes_view.get<attributes_info_history>(entity), entity, changes_category::current);
+      apply_history_to_entity(registry, status_changes_view.get<attributes_info_history>(entity), entity, changes_category::current, upper_bound);
     }
 
     auto &intrinsic_changes_storage = get_active_branch_intrinsics_changes_storage(registry);
     auto view = entt::view<entt::get_t<attributes_info_history>>{intrinsic_changes_storage};
 
     for(entt::entity entity : view){
-      apply_history_to_entity(registry, view.get<attributes_info_history>(entity), entity, changes_category::intrinsics);
+      apply_history_to_entity(registry, view.get<attributes_info_history>(entity), entity, changes_category::intrinsics, upper_bound);
     }
 
     auto& se_storage = get_active_branch_status_effects_changes_storage(registry);
@@ -263,7 +297,12 @@ namespace logistics {
     for(entt::entity entity : se_view){
       auto &new_se = se_view.get<status_effects_affecting_history>(entity);
       auto &real_se = registry.get_or_emplace<status_effects_affecting>(entity);
-      real_se.EffectEntities = new_se.History.rbegin()->second.EffectEntities;
+      auto it = new_se.History.find(upper_bound);
+      if(it != new_se.History.begin()){
+        it--;
+      }
+
+      real_se.EffectEntities = it->second.EffectEntities;
     }
   
     //TODO : other stuff
@@ -274,13 +313,13 @@ namespace logistics {
   }
 
   //================================
-  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category){
+  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category, timing_t upper_bound){
     assert(registry.all_of<attributes_info>(entity));
     auto &attr_info = registry.get<attributes_info>(entity);
 
   
     attributes_info_short_changes cumulative_changes;
-    history.cumulative_changes(cumulative_changes);
+    history.cumulative_changes(cumulative_changes, upper_bound);
 
     if(category == changes_category::current){
       attributes_info_reference ref{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
@@ -381,7 +420,6 @@ namespace logistics {
     command(); 
 
     eng->execute_stuff();
-    logistics::merge_active_branch_to_reality(registry);
   }
 
   //===============================================

@@ -19,12 +19,11 @@ void update_status_effects(entt::registry &registry, entt::entity entity){
   
   for(const auto &eff_entity : effs.EffectEntities){
     status_effect_info &eff_info = registry.get<status_effect_info>(eff_entity);
-
     sim->ChangesContext.OriginatingEntity = eff_entity;
     eff_info.ApplyFunc(registry, attr_info, entity, eff_info.OriginatingEntity);
   }
   
-  sim->ChangesContext.OriginatingEntity = entt::null;
+  sim->ChangesContext.OriginatingEntity = entity;
 
   commit_attr_info_to_branch(registry, entity);
 }

@@ -10,6 +10,8 @@ namespace logistics{
 
 
   void entity_update_executable::operator()(entt::registry &registry, simulation_engine *eng) {
+    eng->ChangesContext.OriginatingEntity = EntityToUpdate;
     update_status_effects(registry, EntityToUpdate);
+    eng->ChangesContext.OriginatingEntity = entt::null;
   }
 }

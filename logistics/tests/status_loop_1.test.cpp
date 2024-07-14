@@ -3,6 +3,7 @@
 #include "status.h"
 #include "effect.h"
 #include "combine.h"
+#include "priority.h"
 #include "entt_utils.h"
 #include "simulation_engine.h"
 #include <string_view>
@@ -28,15 +29,21 @@ bool became_creature_condition(const attributes_info_changes &changes){
   return (it != changes.ModifiedStatuses.end() && it->second == smt::added);
 }
 
+bool has_stable_status(entt::registry &registry, entt::entity entity, entt::id_type hash){
+  auto &&storage = registry.storage<void>(hash);
+  return storage.contains(entity);
+}
 
 TEST_CASE("Status effects - cyclic case"){
   entt::registry registry;
   
   entt::entity opalescence = registry.create();
   init_intrinsic_status(registry, opalescence, k_enchantment_hash, true);
+  registry.emplace<priority_info>(opalescence, 10);
   
   entt::entity humility = registry.create();
   registry.emplace<attributes_info>(humility);
+  registry.emplace<priority_info>(humility, 5);
   
   //when a card becomes an enchantment, make it become a creature instead.
   on_status_change_trigger_info opal_on_other_status_change_info;
@@ -95,6 +102,11 @@ TEST_CASE("Status effects - cyclic case"){
     assign_intrinsic_attributes_changes(registry, humility, humility_becomes_enchantment);
   });
   
-
+  //Opalescence has the highest priority so it should win here
   CHECK(loop_counter < MAX_LOOPS);
+  CHECK(has_stable_status(registry, humility, k_creature_hash));
+  CHECK(!has_stable_status(registry, humility, k_enchantment_hash));
+  auto &sea = registry.get<status_effects_affecting>(humility);
+  REQUIRE(sea.EffectEntities.size() == 1);
+  CHECK(sea.EffectEntities.front() == opal_status_effect);
 }

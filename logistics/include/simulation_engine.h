@@ -104,9 +104,9 @@ namespace logistics{
   void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
   
   void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const sea_state_at_timing &info);
-  void merge_active_branch_to_reality(entt::registry &registry);
+  void merge_active_branch_to_reality(entt::registry &registry, timing_t upper_bound);
 
-  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category);
+  void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category, timing_t upper_bound);
 
   
   status_changes_storage_t &get_active_branch_current_changes_storage(entt::registry &registry);
