@@ -180,7 +180,7 @@ bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_sho
   }
 
   timing_t time_tracker = lower_bound;
-  while(it != History.end() && it->first < upper_bound){
+  while(it != History.end() && it->first <= upper_bound){
     attributes_info_short_changes copy = changes;
     attributes_info_changes_comparable left{copy, time_tracker, 0};
     attributes_info_changes_comparable right{it->second.Changes, it->first, 0};

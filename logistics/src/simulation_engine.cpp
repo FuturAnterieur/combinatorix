@@ -99,9 +99,9 @@ namespace logistics {
         assert(competing_entities.size() == 2);
         calculate_priority(*registry, competing_entities.front(), competing_entities.back(), priorities.front(), priorities.back());
         if(priorities.front() > priorities.back()){
-          EndTiming = timings.front() + 2;
+          EndTiming = timings.front() + 1;
         } else {
-          EndTiming = timings.back() + 2;
+          EndTiming = timings.back() + 1;
         }
         break;
       }
@@ -294,11 +294,13 @@ namespace logistics {
     for(entt::entity entity : se_view){
       auto &new_se = se_view.get<status_effects_affecting_history>(entity);
       auto &real_se = registry.get_or_emplace<status_effects_affecting>(entity);
-      auto it = new_se.History.find(upper_bound);
-      if(it != new_se.History.begin()){
-        it--;
+      auto it = new_se.History.begin();
+      auto scout = it;
+      scout++;
+      while(scout != new_se.History.end() && scout->first < upper_bound){
+        it++;
+        scout++;
       }
-
       real_se.EffectEntities = it->second.EffectEntities;
     }
   
@@ -372,8 +374,7 @@ namespace logistics {
       assert(sim); 
       
       auto &intrinsic_history = storage.get(entity);
-      timing_t increment = req == changes_request::last_committed ? 0 : 1;
-      return intrinsic_history.produce_snapshot(sim->CurrentTiming + increment); 
+      return intrinsic_history.produce_snapshot(sim->CurrentTiming); 
     }
 
     return stable_values;
@@ -392,8 +393,8 @@ namespace logistics {
       assert(sim); 
       
       auto &current_history = storage.get(entity);
-      timing_t increment = req == changes_request::last_committed ? 0 : 1;
-      return current_history.produce_snapshot(sim->CurrentTiming + increment); 
+      
+      return current_history.produce_snapshot(sim->CurrentTiming); 
     }
 
     return stable_values;

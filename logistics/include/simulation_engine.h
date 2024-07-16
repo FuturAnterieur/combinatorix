@@ -7,17 +7,11 @@
 #include "effect.h"
 #include "graph.h"
 #include "simulation_executable.h"
+#include "history_utils.h"
 #include <deque>
 
-struct attributes_info_changes;
-struct status_effects_affecting;
-
 namespace logistics{
-  enum class changes_request {
-    last_committed,
-    working_copy
-  };
-
+  
   struct executables_on_same_timing_container {
     timing_t AbsoluteTiming;
     std::deque<executable_common_data> Executables;
@@ -88,11 +82,9 @@ namespace logistics{
       void run_one_timing();
   };
 
-  using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
-  using status_effect_changes_storage_t = entt::constness_as_t<entt::storage_type_t<status_effects_affecting_history, entt::entity, std::allocator<status_effects_affecting_history>>, status_effects_affecting_history>;
+  
   void start_simulating(entt::registry &registry);
   simulation_engine *get_simulation_engine(entt::registry &registry);
-
 
   //==================================================
   void add_edge(entt::registry &registry, entt::entity from, entt::entity to);

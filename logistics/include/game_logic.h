@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <entt/entity/fwd.hpp>
+#include "history_manager.h"
 
 struct simulation_data {
   timing_t CurrentTiming;
@@ -9,39 +10,6 @@ struct simulation_data {
   std::map<timing_t, std::set<entt::entity>> UpdateRequestsPerTiming;
   timeline Timeline;
   changes_context ChangesContext;
-};
-
-class history_manager {
-  entt::id_type ActiveBranchHashForCurrentStatusChanges;
-  entt::id_type ActiveBranchHashForIntrinsicStatusChanges;
-  entt::id_type ActiveBranchHashForLocalStatusChanges; //i.e. during status effect calculatio
-  entt::id_type ActiveBranchHashForStatusEffects;
-  std::string ActiveBranchName;
-  entt::registry *_Registry;
-
-  public:
-    void init_starting_point(entt::registry &registry, status_changes_storage_t &storage, entt::entity entity, changes_category category);
-    void commit_changes_for_current_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
-    void undo_changes_to_registry(entt::registry &registry);
-    void commit_changes_for_intrinsics_to_active_branch(entt::registry &registry, entt::entity entity,  const attributes_info_changes &changes);
-    
-    void commit_status_effects_to_active_branch(entt::registry &registry, entt::entity entity, const sea_state_at_timing &info);
-    void merge_active_branch_to_reality(entt::registry &registry, timing_t upper_bound);
-
-    void apply_history_to_entity(entt::registry &registry, const attributes_info_history &history, entt::entity entity, changes_category category, timing_t upper_bound);
-
-    
-    status_changes_storage_t &get_active_branch_current_changes_storage(entt::registry &registry);
-    status_changes_storage_t &get_active_branch_intrinsics_changes_storage(entt::registry &registry);
-    status_changes_storage_t &get_active_branch_local_changes_storage(entt::registry &registry);
-    status_effect_changes_storage_t &get_active_branch_status_effects_changes_storage(entt::registry &registry);
-
-
-    attributes_info_snapshot get_most_recent_intrinsics(entt::registry &registry, entt::entity entity, changes_request req);
-    attributes_info_snapshot get_most_recent_currents(entt::registry &registry, entt::entity entity, changes_request req);
-    attributes_info_snapshot get_active_snapshot(entt::registry &registry, entt::entity entity);
-
-    status_effects_affecting get_most_recent_status_effects(entt::registry &registry, entt::entity entity);
 };
 
 class game_logic {
