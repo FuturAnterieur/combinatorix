@@ -39,8 +39,6 @@ class game_logic {
 
     bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
 
-    void calculate_priority(entt::registry &registry, entt::entity ent1, entt::entity ent2, priority_t &prio1, priority_t &prio2);
-
   private:
     entt::registry *_Registry;
 
