@@ -113,7 +113,50 @@ namespace geometry {
     sibling_data.Parent = new_parent;
     leaf_data.Parent = new_parent;
 
-    index = new_parent;
+    balancing_loop(registry, new_parent);
+  }
+
+  void remove_leaf(entt::registry &registry, entt::entity leaf){
+    if(registry.any_of<is_root>(leaf)){
+      registry.remove<is_root>(leaf);
+      return;
+    }
+
+    auto &leaf_data = registry.get<tree_node>(leaf);
+    auto &parent_data = registry.get<tree_node>(leaf_data.Parent);
+    entt::entity sibling;
+    if(parent_data.Child1 == leaf){
+      sibling = parent_data.Child2;
+    } else {
+      sibling = parent_data.Child1;
+    }
+
+    if(parent_data.Parent != entt::null){
+		  // Destroy parent and connect sibling to grandParent.
+      auto &gp_data = registry.get<tree_node>(parent_data.Parent);
+      if(gp_data.Child1 == leaf_data.Parent){
+        gp_data.Child1 = sibling;
+      } else {
+        gp_data.Child2 = sibling;
+      }
+      auto &sib_data = registry.get<tree_node>(sibling);
+      sib_data.Parent = parent_data.Parent;
+      registry.remove<tree_node>(leaf_data.Parent);
+
+      balancing_loop(registry, sib_data.Parent);
+
+    } else {
+      registry.remove<is_root>(leaf_data.Parent);
+      registry.emplace<is_root>(sibling);
+      auto &sib_data = registry.get<tree_node>(sibling);
+      sib_data.Parent = entt::null;
+      registry.remove<tree_node>(leaf_data.Parent);
+    }
+
+  }
+
+  void balancing_loop(entt::registry &registry, entt::entity start_index){
+    entt::entity index = start_index;
     while(index != entt::null){
       index = balance(registry, index);
       auto &index_data = registry.get<tree_node>(index);

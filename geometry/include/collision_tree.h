@@ -24,5 +24,8 @@ namespace geometry {
   void geometry_API create_proxy(entt::registry &registry, const aabb &tight_fitting_aabb, entt::entity owner);
 
   void insert_leaf(entt::registry &registry, entt::entity leaf);
+  void remove_leaf(entt::registry &registry, entt::entity leaf);
+
+  void balancing_loop(entt::registry &registry, entt::entity start_index);
   entt::entity balance(entt::registry &registry, entt::entity node);
 }

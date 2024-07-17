@@ -7,6 +7,8 @@
 
 namespace logistics {
 
+  //The planned "generic_history<T>" template class (which history_manager will use indirectly) will most probably go into logistics
+  //If history_manager has to manage positions too, it will have to go into engine-server.
   class history_manager {
     entt::id_type ActiveBranchHashForCurrentStatusChanges;
     entt::id_type ActiveBranchHashForIntrinsicStatusChanges;
