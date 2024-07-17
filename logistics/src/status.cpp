@@ -20,7 +20,7 @@ bool assign_active_status(entt::registry &registry, entt::entity entity, entt::i
 
   
   state.OriginatingEntity = eng->ChangesContext.OriginatingEntity;
-  history.add_changes(registry, 0, state);
+  history.add_changes(0, state, classic_priority_callback, &registry);
   
   
   //TODO : Emplace parent types from the inheritance tree
@@ -102,7 +102,7 @@ bool add_or_set_active_parameter(entt::registry &registry, entt::entity entity, 
   assert(eng);
 
   state.OriginatingEntity = eng->ChangesContext.OriginatingEntity;
-  history.add_changes(registry, 0, state);
+  history.add_changes(0, state, classic_priority_callback, &registry);
 
   return true;
 }

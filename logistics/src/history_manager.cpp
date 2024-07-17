@@ -38,7 +38,7 @@ namespace logistics{
     state.OriginatingEntity = originating_entity;
     //In the only use case for this function, OriginatingEntity will always be Null, and that is on purpose for now.
 
-    history.add_changes(*_Registry, timing, state);
+    history.add_changes(timing, state, PriorityCallback, _Registry);
     attributes_info_snapshot null_snapshot;
     attributes_info_reference ref(null_snapshot);
     paste_attributes_changes(*_Registry, entity, state.Changes, ref, true, false);
@@ -81,7 +81,7 @@ namespace logistics{
     //in the future : put player in ChangesContext for case of starting a simulation
     state.OriginatingEntity = originating_entity;
 
-    history.add_changes(*_Registry, timing, state);
+    history.add_changes(timing, state, PriorityCallback, _Registry);
   }
 
   //=============================

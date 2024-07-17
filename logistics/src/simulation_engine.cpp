@@ -97,7 +97,8 @@ namespace logistics {
           }
         }
         assert(competing_entities.size() == 2);
-        calculate_priority(*registry, competing_entities.front(), competing_entities.back(), priorities.front(), priorities.back());
+        priority_request req{{std::make_pair(competing_entities.front(), &priorities.front()), std::make_pair(competing_entities.back(), &priorities.back())}};
+        classic_priority_callback(req, registry);
         if(priorities.front() > priorities.back()){
           EndTiming = timings.front() + 1;
         } else {
@@ -133,6 +134,7 @@ namespace logistics {
     eng.ActiveBranchHashForStatusEffects = entt::hashed_string::value(se_branch_name.data());
 
     eng.CurrentTiming = 0;
+    eng.registry = &registry;
   }
 
   //------------------------------------
@@ -196,7 +198,7 @@ namespace logistics {
     state.OriginatingEntity = sim->ChangesContext.OriginatingEntity;
     //In the only use case for this function, OriginatingEntity will always be Null, and that is on purpose for now.
 
-    history.add_changes(registry, sim->CurrentTiming, state);
+    history.add_changes(sim->CurrentTiming, state, classic_priority_callback, &registry);
     attributes_info_snapshot null_snapshot;
     attributes_info_reference ref(null_snapshot);
     paste_attributes_changes(registry, entity, state.Changes, ref, true, false);
@@ -249,7 +251,7 @@ namespace logistics {
     }
     
 
-    history.add_changes(registry, sim->CurrentTiming, state);
+    history.add_changes(sim->CurrentTiming, state, classic_priority_callback, &registry);
   }
 
   //=============================

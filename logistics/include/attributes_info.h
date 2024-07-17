@@ -119,7 +119,7 @@ namespace logistics{
 struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
   std::map<timing_t, attributes_info_state_at_timing> History;
-  bool add_changes(entt::registry &registry, timing_t timing, const attributes_info_state_at_timing &changes);
+  bool add_changes(timing_t timing, const attributes_info_state_at_timing &changes, const priority_callback_t &callback, void *cb_user_data);
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes(attributes_info_short_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes_disregarding_timing(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;

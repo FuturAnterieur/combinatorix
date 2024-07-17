@@ -2,6 +2,7 @@
 
 
 #include "history_utils.h"
+#include "priority.h"
 #include <string>
 
 namespace logistics {
@@ -14,8 +15,13 @@ namespace logistics {
     std::string ActiveBranchName;
     entt::registry *_Registry;
 
+    std::function<void(priority_request &, void *)> PriorityCallback;
+
     public:
-    
+      void set_registry(entt::registry *registry);
+      void set_active_branch_name(const std::string &name);
+      void set_priority_callback(const std::function<void(priority_request &, void *)> &callback);
+
       void init_starting_point(status_changes_storage_t &storage, entt::entity entity, changes_category category);
       void commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing);
       void undo_changes_to_registry();

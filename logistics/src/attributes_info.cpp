@@ -123,7 +123,7 @@ bool paste_attributes_changes(const attributes_info_short_changes &changes, attr
 }
 
 //=====================================
-bool attributes_info_history::add_changes(entt::registry &registry, timing_t timing, const attributes_info_state_at_timing &changes){
+bool attributes_info_history::add_changes(timing_t timing, const attributes_info_state_at_timing &changes, const priority_callback_t &callback, void *cb_user_data){
   using namespace logistics;
   auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
   
@@ -131,8 +131,9 @@ bool attributes_info_history::add_changes(entt::registry &registry, timing_t tim
   attributes_info_changes_comparable left{copy, timing};
   attributes_info_changes_comparable right{changes.Changes, timing};
 
-  calculate_priority(registry, state.OriginatingEntity, changes.OriginatingEntity, left.Priority, right.Priority);
-
+  priority_request req{{std::make_pair(state.OriginatingEntity, &left.Priority), std::make_pair(changes.OriginatingEntity, &right.Priority)}};
+  callback(req, cb_user_data);
+  
   simple_change_merger merger;
   auto result = merger.merge_changes(left, right, state.Changes);
   if(result == merge_result::conflict){

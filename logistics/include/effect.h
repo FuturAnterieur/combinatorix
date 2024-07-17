@@ -8,12 +8,14 @@
 #include <set>
 #include <map>
 
+//Move user-funcs (and their signatures) to engine-server
 using status_effect_apply_func_t = std::function<void(entt::registry&, attributes_info&, entt::entity, entt::entity)>;
 struct status_effect_info {
   entt::entity OriginatingEntity;
   status_effect_apply_func_t ApplyFunc;
 };
 
+//Keep entity lists in logistics (entities having components created in engine-server, that do contain the user-funcs)
 struct status_effects_affecting { //i.e. generally status effects currently applying to the parent entity
   std::list<entt::entity> EffectEntities;
   //entt::constness_as_t<entt::storage_type_t<effect_info, entt::entity, std::allocator<effect_info>>, effect_info> InfosOnSteroids;
