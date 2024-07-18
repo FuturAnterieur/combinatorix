@@ -26,6 +26,8 @@ namespace logistics {
       void set_active_branch_name(const std::string &name);
       void set_priority_callback(const std::function<void(priority_request &, void *)> &callback);
 
+      void set_stable_values(entt::entity entity, const attributes_info_short_changes &changes);
+
       void commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing);
       void undo_changes_to_registry();
       void commit_changes_for_intrinsics_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing);

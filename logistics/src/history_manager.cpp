@@ -5,6 +5,14 @@
 #include <entt/entity/registry.hpp>
 
 namespace logistics{
+
+  //==================================================================
+  void history_manager::set_stable_values(entt::entity entity, const attributes_info_short_changes &changes){
+    CurrentAttrHistory.set_stable_values(entity, changes);
+    IntrinsicAttrHistory.set_stable_values(entity, changes);
+    paste_changes_to_official_registry(_Registry, changes, entity);
+  }
+
   //------------------------------------
   void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing){
     CurrentAttrHistory.commit_changes(entity, changes, originating_entity, timing);

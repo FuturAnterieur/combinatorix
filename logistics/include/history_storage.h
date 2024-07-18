@@ -21,9 +21,6 @@ namespace logistics{
       _Registry = registry;
     }
 
-    
-
-
     inline void set_branch_name(const std::string &name){
       std::string long_string_changes = name + std::to_string(category) + std::string(entt::type_name<attributes_info_history>().value());
       ChangesBranchHash = entt::hashed_string::value(long_string_changes.data());
@@ -31,7 +28,7 @@ namespace logistics{
       StableBranchHash = entt::hashed_string::value(long_string_stable.data());
     }
 
-    inline void init_starting_point(entt::entity entity){
+    inline void init_history_starting_point(entt::entity entity){
       auto &storage = get_changes_storage();
       if(!storage.contains(entity)){
         attributes_info_snapshot starting_point;
@@ -40,16 +37,22 @@ namespace logistics{
       }
     }
 
-    inline void init_starting_point(entt::entity entity, const attributes_info_snapshot &snapshot){
+    inline void init_history_starting_point(entt::entity entity, const attributes_info_snapshot &snapshot){
       auto &storage = get_changes_storage();
       if(!storage.contains(entity)){
         storage.emplace(entity, snapshot);
       }
     }
+
+    inline void set_stable_values(entt::entity entity, const attributes_info_short_changes &changes){
+      auto &stable_values = utils::get_or_emplace<snapshot_t>(*_Registry, entity, StableBranchHash);
+      attributes_info_reference ref_to_stable(stable_values);
+      paste_attributes_changes(changes, ref_to_stable);
+    }
     
-    inline void commit_changes(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing){
+    inline void commit_changes(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing, bool apply_to_registry = false){
       auto &status_changes_storage = get_changes_storage();
-      init_starting_point(entity);
+      init_history_starting_point(entity);
 
       auto &history = status_changes_storage.get(entity);
 
@@ -58,32 +61,12 @@ namespace logistics{
       state.OriginatingEntity = originating_entity;
       
       history.add_changes(timing, state, classic_priority_callback, _Registry);
-      if constexpr (category == changes_category::current){
-        paste_changes_to_official_registry(state.Changes, entity);
+      if (apply_to_registry){
+        paste_changes_to_official_registry(_Registry, state.Changes, entity);
       }
     }
 
-    inline void paste_changes_to_official_registry(const attributes_info_short_changes &changes, entt::entity entity){
-      for(const auto &[hash, param] : changes.ModifiedParams){
-        auto &&storage = _Registry->storage<parameter>(hash);
-        if(param.dt() == data_type::null){ //deletion
-          storage.remove(entity);
-        } else  { //modification
-          utils::emplace_or_replace<parameter>(*_Registry, entity, hash, param);
-        }
-      }
-
-      for(const auto &[hash, smt_val] : changes.ModifiedStatuses){
-        auto &&storage = _Registry->storage<void>(hash);
-        if(smt_val == smt::removed){
-          storage.remove(entity);
-        } else {
-          if(storage.contains(entity)) storage.emplace(entity);
-        }
-      }
-    }
-
-    inline void merge_to_reality(timing_t upper_bound){
+    inline void merge_to_reality(timing_t upper_bound, bool apply_to_registry = false){
       auto &changes_storage = get_changes_storage();
       auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{changes_storage};
 
@@ -96,8 +79,8 @@ namespace logistics{
         attributes_info_reference ref_to_stable(get_stable_storage().get(entity));
         paste_attributes_changes(cumulative_changes, ref_to_stable);
 
-        if constexpr (category == changes_category::current){
-          paste_changes_to_official_registry(cumulative_changes, entity);
+        if (apply_to_registry){
+          paste_changes_to_official_registry(_Registry, cumulative_changes, entity);
         }
       }
       changes_storage.clear();
