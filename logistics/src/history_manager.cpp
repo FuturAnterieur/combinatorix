@@ -8,10 +8,6 @@ namespace logistics{
   //------------------------------------
   void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing){
     CurrentAttrHistory.commit_changes(entity, changes, originating_entity, timing);
-    //Maybe TODO : put the following lines in history_storage too, for the 'current' changes_category
-    attributes_info_snapshot null_snapshot;
-    attributes_info_reference ref(null_snapshot);
-    paste_attributes_changes(*_Registry, entity, short_changes_from_changes(changes), ref, true, false);
   }
 
   //================================================================
