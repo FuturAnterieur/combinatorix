@@ -1,6 +1,7 @@
 
 set(ENGINE_SRCS 
   src/engine.cpp
+  src/game_logic.cpp
 )
 
 add_library(engine SHARED ${ENGINE_SRCS})

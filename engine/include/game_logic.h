@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <entt/entity/fwd.hpp>
-#include "history_manager.h"
+#include "logistics/include/history_manager.h"
 
 struct simulation_data {
   timing_t CurrentTiming;
@@ -13,6 +13,12 @@ struct simulation_data {
 };
 
 class game_logic {
+  private:
+    entt::registry *_Registry;
+
+    std::unique_ptr<simulation_data> CurrentSimulationData;
+    std::unique_ptr<logistics::history_manager> HistoryManager;
+
   public:
     //API
     void set_registry(entt::registry *registry);
@@ -20,9 +26,10 @@ class game_logic {
     void run_calculation(const std::function<void(game_logic *)> &request);
     
     //Calculation API
-    void init_attributes(entt::entity entity, /*attributes_info_snapshot*/);
-    void change_intrinsics(entt::entity, /*attributes_info_short_changes*/);
-    void change_actives(entt::entity, /*attributes_info_short_changes*/);
+    void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
+    void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
+
+    void change_actives(entt::entity, const attributes_info_short_changes &changes);
     void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
 
     void add_on_status_change_trigger(entt::entity entity, /*info*/);
@@ -35,13 +42,12 @@ class game_logic {
 
     void use(entt::entity ability); //target would be set in the ability entity????
     void add_on_use_trigger(entt::entity owner, /*const on_use_trigger_func_t &func*/);
-    entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info)
+    entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info);
 
     bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
 
   private:
-    entt::registry *_Registry;
+    void update_status(entt::entity entity);
 
-    std::unique_ptr<simulation_data> CurrentSimulationData;
-    std::unique_ptr<history_manager> HistoryManager;
+    void activate_status_change_triggers(entt::entity entity, const attributes_info_changes &changes);
 };

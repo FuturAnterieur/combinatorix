@@ -50,14 +50,14 @@ namespace logistics{
       paste_attributes_changes(changes, ref_to_stable);
     }
     
-    inline void commit_changes(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing, bool apply_to_registry = false){
+    inline void commit_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing, bool apply_to_registry = false){
       auto &status_changes_storage = get_changes_storage();
       init_history_starting_point(entity);
 
       auto &history = status_changes_storage.get(entity);
 
       attributes_info_state_at_timing state;
-      state.Changes = short_changes_from_changes(changes);
+      state.Changes = changes;
       state.OriginatingEntity = originating_entity;
       
       history.add_changes(timing, state, classic_priority_callback, _Registry);

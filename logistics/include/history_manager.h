@@ -13,8 +13,8 @@ namespace logistics {
   class history_manager {
     history_storage<changes_category::current> CurrentAttrHistory;
     history_storage<changes_category::intrinsics> IntrinsicAttrHistory;
+    history_storage<changes_category::local> LocalAttrHistory;
 
-    entt::id_type ActiveBranchHashForLocalStatusChanges; //i.e. during status effect calculatio
     entt::id_type ActiveBranchHashForStatusEffects;
     std::string ActiveBranchName;
     entt::registry *_Registry;
@@ -28,9 +28,12 @@ namespace logistics {
 
       void set_stable_values(entt::entity entity, const attributes_info_short_changes &changes);
 
-      void commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing);
+      void reset_local_changes(entt::entity entity);
+      void commit_local_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity);
+
+      void commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing);
       void undo_changes_to_registry();
-      void commit_changes_for_intrinsics_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing);
+      void commit_changes_for_intrinsics_to_active_branch(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing);
       
       void commit_status_effects_to_active_branch( entt::entity entity, const sea_state_at_timing &info, timing_t timing);
       void merge_active_branch_to_reality(timing_t upper_bound);

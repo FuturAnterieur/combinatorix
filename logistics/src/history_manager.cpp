@@ -13,9 +13,23 @@ namespace logistics{
     paste_changes_to_official_registry(_Registry, changes, entity);
   }
 
+  //==================================================================
+  void history_manager::reset_local_changes(entt::entity entity){
+    LocalAttrHistory.get_changes_storage().clear();
+  }
+
+  //==================================================================
+  void history_manager::commit_local_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity){
+    if(!LocalAttrHistory.get_changes_storage().contains(entity)){
+      LocalAttrHistory.init_history_starting_point(entity, IntrinsicAttrHistory.get_most_recent_snapshot(entity));
+    }
+    
+    LocalAttrHistory.commit_changes(entity, changes, originating_entity, 0, false);
+  }
+
   //------------------------------------
-  void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing){
-    CurrentAttrHistory.commit_changes(entity, changes, originating_entity, timing);
+  void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing){
+    CurrentAttrHistory.commit_changes(entity, changes, originating_entity, timing, true);
   }
 
   //================================================================
@@ -43,8 +57,8 @@ namespace logistics{
   }
 
   //=================================================================
-  void history_manager::commit_changes_for_intrinsics_to_active_branch( entt::entity entity,  const attributes_info_changes &changes, entt::entity originating_entity, timing_t timing){
-    IntrinsicAttrHistory.commit_changes(entity, changes, originating_entity, timing);
+  void history_manager::commit_changes_for_intrinsics_to_active_branch(entt::entity entity,  const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing){
+    IntrinsicAttrHistory.commit_changes(entity, changes, originating_entity, timing, false);
   }
 
   //=============================
@@ -104,7 +118,7 @@ namespace logistics{
   //=================================================================
   status_changes_storage_t &history_manager::get_active_branch_local_changes_storage(){
     
-    return _Registry->storage<attributes_info_history>(ActiveBranchHashForLocalStatusChanges);
+    return LocalAttrHistory.get_changes_storage();
   }
 
   //==================================================================
