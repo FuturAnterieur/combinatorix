@@ -34,6 +34,8 @@ struct concrete_to_enum_type<std::string>{static constexpr data_type t = data_ty
 
 
 struct logistics_API parameter {
+  using diff_t = parameter;
+
   parameter();
   parameter(const std::string &val);
   parameter(const char *val);
@@ -94,6 +96,11 @@ enum class smt {
   removed
 };
 
+struct status_t {
+  bool Value;
+  using diff_t = smt;
+};
+
 struct attributes_info_changes{ 
   std::map<entt::id_type, smt> ModifiedStatuses; 
   std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
@@ -116,9 +123,24 @@ namespace logistics{
   class change_merger;
 }
 
+template<typename T>
+struct Change {
+  T::diff_t Diff;
+  entt::entity CommiterId;
+};
+
+template<typename T>
+struct generic_history {
+  std::map<timing_t, Change<T>> History;
+};
+
 struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
   std::map<timing_t, attributes_info_state_at_timing> History;
+
+  std::map<entt::id_type, generic_history<status_t>> StatusesHistory; //DA FUTURE
+  std::map<entt::id_type, generic_history<parameter>> ParamsHistory;
+
   bool add_changes(timing_t timing, const attributes_info_state_at_timing &changes, const priority_callback_t &callback, void *cb_user_data);
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes(attributes_info_short_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
