@@ -71,6 +71,9 @@ namespace engine{
       
       size_t start, end;
       if(floyd::find_cycle(Timeline.Events, 0, start, end)){
+        cycle_found = true;
+        EndTiming = CurrentTiming;
+        break;
         //put that in a callback controlled by game_logic
         /*cycle_found = true;
         std::vector<entt::entity> competing_entities;

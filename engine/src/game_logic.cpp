@@ -6,12 +6,33 @@
 
 namespace engine{
   
+  game_logic::game_logic(entt::registry *registry){
+    HistoryManager.reset(new logistics::history_manager());
+    set_registry(registry);
+  }
+
+  //==============================================================
   void game_logic::set_registry(entt::registry *registry){
     assert(registry);
     _Registry = registry;
     HistoryManager->set_registry(registry);
   }
+  
+  //==============================================================
+  void game_logic::run_simulation(const std::function<void(game_logic *)> &request){
+    
+    CurrentSimulationData.reset(new simulation_data());
+    request(this);
 
+    CurrentSimulationData->EndTiming = std::numeric_limits<timing_t>::max();
+    CurrentSimulationData->Finished = false;
+    while(!CurrentSimulationData->Finished){
+      CurrentSimulationData->run_one_timing();
+    }
+    HistoryManager->merge_active_branch_to_reality(CurrentSimulationData->EndTiming);
+  }
+
+  //==============================================================
   void game_logic::init_attributes(entt::entity entity, const attributes_info_short_changes &changes){
     HistoryManager->set_stable_values(entity, changes);
   }

@@ -10,8 +10,12 @@ namespace logistics{
   void history_manager::set_registry(entt::registry *registry){
     _Registry = registry;
     ActiveBranchName = "b0";
+    CurrentAttrHistory.set_registry(registry);
     CurrentAttrHistory.set_branch_name(ActiveBranchName);
+    IntrinsicAttrHistory.set_registry(registry);
     IntrinsicAttrHistory.set_branch_name(ActiveBranchName);
+
+    
     LocalAttrHistory.set_branch_name(ActiveBranchName);
     std::string long_string_changes = ActiveBranchName  + std::string(entt::type_name<attributes_info_history>().value());
     ActiveBranchHashForStatusEffects = entt::hashed_string::value(long_string_changes.data());

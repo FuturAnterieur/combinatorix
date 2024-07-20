@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine_export.h"
 #include <functional>
 #include <entt/entity/fwd.hpp>
 #include "logistics/include/history_manager.h"
@@ -7,7 +8,7 @@
 
 namespace engine {
   
-  class game_logic {
+  class engine_API game_logic {
     private:
       entt::registry *_Registry;
 
@@ -15,10 +16,12 @@ namespace engine {
       std::unique_ptr<logistics::history_manager> HistoryManager;
 
     public:
-      //API
-      void set_registry(entt::registry *registry);
 
-      void run_calculation(const std::function<void(game_logic *)> &request);
+      game_logic(entt::registry *registry);
+      ~game_logic() = default;
+
+      //API
+      void run_simulation(const std::function<void(game_logic *)> &request);
       
       //Calculation API
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
@@ -42,11 +45,11 @@ namespace engine {
 
       //bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
 
-      
-
     private:
       friend struct entity_update_executable;
       friend struct status_trigger_executable;
+
+      void set_registry(entt::registry *registry);
 
       void set_context_originating_entity(entt::entity entity);
       void update_status(entt::entity entity);
