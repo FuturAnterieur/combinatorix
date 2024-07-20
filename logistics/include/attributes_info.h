@@ -106,13 +106,13 @@ struct attributes_info_changes{
   std::map<entt::id_type, std::pair<parameter, parameter>> ModifiedParams;
 };
 
-struct attributes_info_short_changes {
+struct logistics_API  attributes_info_short_changes {
   std::map<entt::id_type, smt> ModifiedStatuses; 
   std::map<entt::id_type, parameter> ModifiedParams;
 };
 
-attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes);
-bool paste_attributes_changes(const attributes_info_short_changes &changes, attributes_info_reference &ref);
+logistics_API attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes);
+logistics_API bool paste_attributes_changes(const attributes_info_short_changes &changes, attributes_info_reference &ref);
 
 struct attributes_info_state_at_timing {
   attributes_info_short_changes Changes;
@@ -125,7 +125,7 @@ namespace logistics{
 
 template<typename T>
 struct Change {
-  T::diff_t Diff;
+  typename T::diff_t Diff;
   entt::entity CommiterId;
 };
 
@@ -153,7 +153,7 @@ struct attributes_info_history {
   bool cumulative_changes_swiss_knife(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const;
 };
 
-bool changes_empty(attributes_info_changes &changes);
+logistics_API bool changes_empty(attributes_info_changes &changes);
 logistics_API attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
 
 enum class changes_category {

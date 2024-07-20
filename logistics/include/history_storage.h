@@ -22,9 +22,9 @@ namespace logistics{
     }
 
     inline void set_branch_name(const std::string &name){
-      std::string long_string_changes = name + std::to_string(category) + std::string(entt::type_name<attributes_info_history>().value());
+      std::string long_string_changes = name + std::to_string(static_cast<int>(category)) + std::string(entt::type_name<attributes_info_history>().value());
       ChangesBranchHash = entt::hashed_string::value(long_string_changes.data());
-      std::string long_string_stable = name + std::to_string(category) + std::string(entt::type_name<attributes_info_snapshot>().value());
+      std::string long_string_stable = name + std::to_string(static_cast<int>(category)) + std::string(entt::type_name<attributes_info_snapshot>().value());
       StableBranchHash = entt::hashed_string::value(long_string_stable.data());
     }
 

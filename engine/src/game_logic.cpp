@@ -2,6 +2,8 @@
 #include "logistics/include/combine.h"
 #include "status_structs.h"
 
+#define DEFAULT_UPDATE_DELTA 0
+
 namespace engine{
   
   void game_logic::set_registry(entt::registry *registry){
@@ -27,13 +29,28 @@ namespace engine{
 
     HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, short_changes_from_changes(actual_changes), CurrentSimulationData->ChangesContext.OriginatingEntity, CurrentSimulationData->CurrentTiming);
     CurrentSimulationData->record_intrinsic_attrs_change(entity);
-    CurrentSimulationData->enqueue_update(entity, DEFAULT_TIMING_DELTA);
+    CurrentSimulationData->enqueue_update(entity, DEFAULT_UPDATE_DELTA, this);
   }
 
   void game_logic::change_actives(entt::entity entity, const attributes_info_short_changes &changes){
     HistoryManager->commit_local_changes(entity, changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
   }
 
+  void game_logic::add_on_status_change_trigger(entt::entity entity, on_status_change_trigger_info &info){
+    on_status_change_triggers &triggers = _Registry->get_or_emplace<on_status_change_triggers>(entity);
+    triggers.Triggers.push_back(info);
+  }
+
+  void game_logic::add_global_on_status_change_trigger(on_status_change_trigger_info &info){
+    on_status_change_triggers *triggers = _Registry->ctx().find<on_status_change_triggers>();
+    if(!triggers){
+      _Registry->ctx().emplace<on_status_change_triggers>();
+      triggers = &_Registry->ctx().get<on_status_change_triggers>();
+    }
+    triggers->Triggers.push_back(info);
+  }
+
+  //=========================================================
   entt::entity game_logic::create_status_effect(entt::entity originating_entity, const status_effect_apply_func_t &apply_func){
     auto eff_ent = _Registry->create();
     auto &eff_info = _Registry->emplace<status_effect_info>(eff_ent);
@@ -60,9 +77,39 @@ namespace engine{
     
     //Sort Infos according to the current rules about Status Effect Modification priority, then
     CurrentSimulationData->record_status_effect_change(affected_entity);
-    CurrentSimulationData->enqueue_update(affected_entity, DEFAULT_TIMING_DELTA); 
+    CurrentSimulationData->enqueue_update(affected_entity, DEFAULT_UPDATE_DELTA, this); 
   }
 
+  //=====================================================================
+  void game_logic::remove_status_effect(entt::entity affected_entity, entt::entity eff_entity){
+    if(!_Registry->any_of<status_effect_info>(eff_entity)){
+      return;
+    }
+  
+    status_effects_affecting curr = HistoryManager->get_most_recent_status_effects(affected_entity);
+
+    curr.EffectEntities.erase(std::remove_if(curr.EffectEntities.begin(),
+                                    curr.EffectEntities.end(),
+                                    [=](const entt::entity eff_ent)-> bool 
+                                    { return eff_ent == eff_entity; }), 
+                    curr.EffectEntities.end());
+
+    HistoryManager->commit_status_effects_to_active_branch(affected_entity, curr, CurrentSimulationData->CurrentTiming);
+
+    auto &eff_info = _Registry->get<status_effect_info>(eff_entity);
+
+    unlink(*_Registry, eff_info.OriginatingEntity, affected_entity);
+    
+    //Sort Infos according to the current rules about Status Effect Modification priority, then
+    
+    CurrentSimulationData->record_status_effect_change(affected_entity);
+    CurrentSimulationData->enqueue_update(affected_entity,  DEFAULT_UPDATE_DELTA, this);
+  }
+
+  //=====================================================================
+  attributes_info_snapshot game_logic::get_active_snapshot(entt::entity entity){
+    return HistoryManager->get_active_snapshot(entity);
+  }
 
   //=====================================================================
   void game_logic::update_status(entt::entity entity){
@@ -72,7 +119,7 @@ namespace engine{
     for(const auto &eff_entity : effs.EffectEntities){
       status_effect_info &eff_info = _Registry->get<status_effect_info>(eff_entity);
       set_context_originating_entity(eff_entity);
-      eff_info.ApplyFunc(*_Registry, attr_info, entity, eff_info.OriginatingEntity); //TODO replace registry argument with a game_logic*
+      eff_info.ApplyFunc(this, entity, eff_info.OriginatingEntity);
     }
     
     //What to do with the originating entity after that????
@@ -99,7 +146,7 @@ namespace engine{
     if(on_status_change_triggers *triggers = _Registry->try_get<on_status_change_triggers>(entity); triggers){
       for(const on_status_change_trigger_info &info : triggers->Triggers){
         if(info.Filter(this, changes, entity, info)){
-          CurrentSimulationData->enqueue_trigger(info, entity, changes);
+          CurrentSimulationData->enqueue_trigger(info, entity, changes, this);
           //info.Func(registry, changes, entity, info);
         }
       }
@@ -110,7 +157,7 @@ namespace engine{
     if(global_triggers){
       for(const on_status_change_trigger_info &info : global_triggers->Triggers){
         if(info.Filter(this, changes, entity, info)){
-          CurrentSimulationData->enqueue_trigger(info, entity, changes);
+          CurrentSimulationData->enqueue_trigger(info, entity, changes, this);
           //info.Func(registry, changes, entity, info);
         }
       }
@@ -121,7 +168,7 @@ namespace engine{
       for(const auto &[kind, entities] : info.CurrentCombinations){
         for(entt::entity target : entities){
           //We are causing an update on another entity here, so add an edge to the graph.
-          CurrentSimulationData->enqueue_update(target, DEFAULT_TIMING_DELTA);
+          CurrentSimulationData->enqueue_update(target, DEFAULT_UPDATE_DELTA, this);
         }
       }
     }
@@ -129,5 +176,9 @@ namespace engine{
 
   void game_logic::set_context_originating_entity(entt::entity entity){
     CurrentSimulationData->ChangesContext.OriginatingEntity = entity;
+  }
+
+  void game_logic::run_one_timing(){
+    CurrentSimulationData->run_one_timing();
   }
 }

@@ -10,7 +10,7 @@ namespace logistics {
 
   //The planned "generic_history<T>" template class (which history_manager will use indirectly) will most probably go into logistics
   //If history_manager has to manage positions too, it will have to go into engine-server.
-  class history_manager {
+  class logistics_API  history_manager {
     history_storage<changes_category::current> CurrentAttrHistory;
     history_storage<changes_category::intrinsics> IntrinsicAttrHistory;
     history_storage<changes_category::local> LocalAttrHistory;
@@ -23,7 +23,6 @@ namespace logistics {
 
     public:
       void set_registry(entt::registry *registry);
-      void set_active_branch_name(const std::string &name);
       void set_priority_callback(const std::function<void(priority_request &, void *)> &callback);
 
       void set_stable_values(entt::entity entity, const attributes_info_short_changes &changes);

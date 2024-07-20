@@ -25,21 +25,22 @@ namespace engine {
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
 
       void change_actives(entt::entity, const attributes_info_short_changes &changes);
-      void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
+      //void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
 
-      void add_on_status_change_trigger(entt::entity entity, /*info*/);
-      void add_global_on_status_change_trigger(/*info*/); //adds to registry.ctx
+      void add_on_status_change_trigger(entt::entity entity, on_status_change_trigger_info &info);
+      void add_global_on_status_change_trigger(on_status_change_trigger_info &info); //adds to registry.ctx
 
       entt::entity create_status_effect(entt::entity originating_entity, const status_effect_apply_func_t &apply_func);
       void add_status_effect(entt::entity affected_entity, entt::entity eff_entity);
       void remove_status_effect(entt::entity affected_entity, entt::entity eff_entity);
-      status_effects_affecting &get_active_status_effects(entt::entity entity);
+      
+      attributes_info_snapshot get_active_snapshot(entt::entity entity);
 
-      void use(entt::entity ability); //target would be set in the ability entity????
-      void add_on_use_trigger(entt::entity owner, /*const on_use_trigger_func_t &func*/);
-      entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info);
+      //void use(entt::entity ability); //target would be set in the ability entity????
+      //void add_on_use_trigger(entt::entity owner, /*const on_use_trigger_func_t &func*/);
+      //entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info);
 
-      bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
+      //bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
 
       
 
@@ -50,5 +51,7 @@ namespace engine {
       void set_context_originating_entity(entt::entity entity);
       void update_status(entt::entity entity);
       void activate_status_change_triggers(entt::entity entity, const attributes_info_changes &changes);
+
+      void run_one_timing();
   };
 }

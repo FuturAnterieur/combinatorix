@@ -2,6 +2,7 @@
 set(ENGINE_SRCS 
   src/engine.cpp
   src/game_logic.cpp
+  src/simulation_data.cpp
   src/simulation_executable.cpp
 )
 
