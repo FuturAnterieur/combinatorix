@@ -3,51 +3,52 @@
 #include <functional>
 #include <entt/entity/fwd.hpp>
 #include "logistics/include/history_manager.h"
+#include "simulation_data.h"
 
-struct simulation_data {
-  timing_t CurrentTiming;
-  std::map<timing_t, executables_on_same_timing_container> ExecutablesPerTimingLevel;
-  std::map<timing_t, std::set<entt::entity>> UpdateRequestsPerTiming;
-  timeline Timeline;
-  changes_context ChangesContext;
-};
+namespace engine {
+  
+  class game_logic {
+    private:
+      entt::registry *_Registry;
 
-class game_logic {
-  private:
-    entt::registry *_Registry;
+      std::unique_ptr<simulation_data> CurrentSimulationData;
+      std::unique_ptr<logistics::history_manager> HistoryManager;
 
-    std::unique_ptr<simulation_data> CurrentSimulationData;
-    std::unique_ptr<logistics::history_manager> HistoryManager;
+    public:
+      //API
+      void set_registry(entt::registry *registry);
 
-  public:
-    //API
-    void set_registry(entt::registry *registry);
+      void run_calculation(const std::function<void(game_logic *)> &request);
+      
+      //Calculation API
+      void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
+      void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
 
-    void run_calculation(const std::function<void(game_logic *)> &request);
-    
-    //Calculation API
-    void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
-    void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
+      void change_actives(entt::entity, const attributes_info_short_changes &changes);
+      void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
 
-    void change_actives(entt::entity, const attributes_info_short_changes &changes);
-    void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
+      void add_on_status_change_trigger(entt::entity entity, /*info*/);
+      void add_global_on_status_change_trigger(/*info*/); //adds to registry.ctx
 
-    void add_on_status_change_trigger(entt::entity entity, /*info*/);
-    void add_global_on_status_change_trigger(/*info*/); //adds to registry.ctx
+      entt::entity create_status_effect(entt::entity originating_entity, const status_effect_apply_func_t &apply_func);
+      void add_status_effect(entt::entity affected_entity, entt::entity eff_entity);
+      void remove_status_effect(entt::entity affected_entity, entt::entity eff_entity);
+      status_effects_affecting &get_active_status_effects(entt::entity entity);
 
-    entt::entity create_status_effect(entt::entity originating_entity, /*func*/);
-    void add_status_effect(entt::entity affected_entity, entt::entity eff_entity);
-    void remove_status_effect(entt::entity affected_entity, entt::entity eff_entity);
-    status_effects_affecting &get_active_status_effects(entt::entity entity);
+      void use(entt::entity ability); //target would be set in the ability entity????
+      void add_on_use_trigger(entt::entity owner, /*const on_use_trigger_func_t &func*/);
+      entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info);
 
-    void use(entt::entity ability); //target would be set in the ability entity????
-    void add_on_use_trigger(entt::entity owner, /*const on_use_trigger_func_t &func*/);
-    entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info);
+      bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
 
-    bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
+      
 
-  private:
-    void update_status(entt::entity entity);
+    private:
+      friend struct entity_update_executable;
+      friend struct status_trigger_executable;
 
-    void activate_status_change_triggers(entt::entity entity, const attributes_info_changes &changes);
-};
+      void set_context_originating_entity(entt::entity entity);
+      void update_status(entt::entity entity);
+      void activate_status_change_triggers(entt::entity entity, const attributes_info_changes &changes);
+  };
+}

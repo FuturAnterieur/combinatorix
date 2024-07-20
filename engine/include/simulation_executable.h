@@ -3,6 +3,11 @@
 #include "status_structs.h"
 
 namespace engine {
+  enum class executable_type {
+    status_trigger,
+    update
+  };
+
   struct status_trigger_executable  {
     on_status_change_trigger_info Info;
     attributes_info_changes Changes;

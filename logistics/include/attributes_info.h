@@ -138,10 +138,15 @@ struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
   std::map<timing_t, attributes_info_state_at_timing> History;
 
-  std::map<entt::id_type, generic_history<status_t>> StatusesHistory; //DA FUTURE
-  std::map<entt::id_type, generic_history<parameter>> ParamsHistory;
+  std::map<entt::id_type, generic_history<status_t>> StatusesHistory2; //DA FUTURE
+  std::map<entt::id_type, generic_history<parameter>> ParamsHistory2;
 
   bool add_changes(timing_t timing, const attributes_info_state_at_timing &changes, const priority_callback_t &callback, void *cb_user_data);
+  bool add_changes_2(timing_t timing, const attributes_info_short_changes &changes, entt::entity originating_entity, const priority_callback_t &callback, void *cb_user_data);
+  //only one commiter per add_changes call???
+  //unless short_changes also contains commiter info???
+  //to be ascertained in refactor Volume II
+
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes(attributes_info_short_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   bool cumulative_changes_disregarding_timing(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;
