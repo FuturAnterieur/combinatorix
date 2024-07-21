@@ -189,7 +189,7 @@ namespace engine{
       for(const auto &[kind, entities] : info.CurrentCombinations){
         for(entt::entity target : entities){
           //We are causing an update on another entity here, so add an edge to the graph.
-          CurrentSimulationData->enqueue_update(target, DEFAULT_UPDATE_DELTA, this);
+          CurrentSimulationData->enqueue_update(target, 1, this);
         }
       }
     }

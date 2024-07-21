@@ -119,18 +119,9 @@ TEST_CASE("Status effects / simple situation"){
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
   CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
-
   // Chapter 3 : un-negate opalescence
-  /*
-  entt::entity negater_removal_ability = add_ability(registry, negater,
-    [=](entt::registry &registry, entt::entity ability, entt::entity target){
-      remove_status_effect(registry, target, neg_stat_eff);
-    }, combination_info{});
-
-
-  
-  logistics::run_calculation(registry, [&]() {
-    use(registry, negater_removal_ability, opalescence);
+  game.run_simulation([&](engine::game_logic *game) {
+    game->remove_status_effect(opalescence, neg_stat_eff);
   });
   
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
@@ -138,15 +129,106 @@ TEST_CASE("Status effects / simple situation"){
 
 
   // Chapter 4 : remove exploration from the field
-  logistics::run_calculation( registry, [&]() {
-    attributes_info_short_changes exploration_leaves_field;
-    exploration_leaves_field.ModifiedParams.emplace(k_location_hash, parameter(k_location_grave));
-    assign_intrinsic_attributes_changes(registry, exploration, exploration_leaves_field);
+  game.run_simulation([&](engine::game_logic *game) {
+    attributes_info_short_changes leaves_field;
+    leaves_field.ModifiedParams.emplace(k_location_hash, parameter(k_location_grave));
+    game->change_intrinsics(exploration, leaves_field);
   });
   
 
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
-  CHECK(has_stable_status(registry, exploration, k_enchantment_hash));*/
+  CHECK(has_stable_status(registry, exploration, k_enchantment_hash));
 
 }
 
+constexpr entt::id_type k_object_hash = "object"_hs;
+constexpr entt::id_type k_illuminated_hash = "illuminated"_hs;
+constexpr entt::id_type k_blue_hash = "blue"_hs;
+constexpr entt::id_type k_red_hash = "red"_hs;
+constexpr entt::id_type k_color_hash = "Color"_hs;
+
+TEST_CASE("Status effects / diamond pattern"){
+  entt::registry registry;
+  engine::game_logic game(&registry);
+
+  entt::entity sorcerer = registry.create();
+  game.init_attributes(sorcerer, attributes_info_short_changes{{{k_creature_hash, smt::added}},{}});
+  
+  entt::entity light = registry.create();
+  game.init_attributes(light, attributes_info_short_changes{{{k_object_hash, smt::added}}, {}});
+  
+  entt::entity blue_mirror = registry.create();
+  game.init_attributes(blue_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Blue"}}});
+  
+  entt::entity red_mirror = registry.create();
+  game.init_attributes(red_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Red"}}});
+  
+  
+  auto &illuminate = [](engine::game_logic *game, entt::entity target, entt::entity owner){
+      attributes_info_short_changes illum;
+      illum.ModifiedStatuses.emplace(k_illuminated_hash, smt::added);
+      game->change_actives(target, illum);
+    };
+
+  entt::entity illuminate_eff = game.create_status_effect(sorcerer, illuminate);
+
+  auto mirror_trigger_filter = 
+    [](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &info){
+      auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
+      return it != changes.ModifiedStatuses.end() && it->second == smt::added;
+  };
+
+  int blue_update_counter{0};
+  int red_update_counter{0};
+  auto light_changer_func = [&](engine::game_logic *game, entt::entity target, entt::entity owner){
+      auto snapshot = game->get_active_snapshot(owner);
+      parameter color = get_value_for_parameter(snapshot, k_color_hash);
+      
+      attributes_info_short_changes color_changer;
+
+      if(std::get<std::string>(color.value()) == "Red"){
+        color_changer.ModifiedStatuses.emplace(k_red_hash, smt::added);
+        game->change_actives(target, color_changer); 
+        red_update_counter++;
+      } else if(std::get<std::string>(color.value()) == "Blue"){
+        color_changer.ModifiedStatuses.emplace(k_blue_hash, smt::added);
+        game->change_actives(target, color_changer); 
+        blue_update_counter++;
+      }
+    };
+
+  entt::entity light_changer_blue = game.create_status_effect( blue_mirror, light_changer_func);
+  entt::entity light_changer_red = game.create_status_effect(red_mirror, light_changer_func);
+  
+  auto mirror_trigger_func = [&](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &trigger_info){
+    
+    //use combination to get 'light' from 'entity'
+    //in this trigger 'entity' is equivalent to trigger_info.Owner
+    game->add_status_effect(light, registry.get<status_effects_owned>(entity).EffectEntities.front());
+  };
+
+  engine::on_status_change_trigger_info blue_mirror_on_illuminated;
+  blue_mirror_on_illuminated.TriggerOwner = blue_mirror;
+  engine::on_status_change_trigger_info red_mirror_on_illuminated;
+  red_mirror_on_illuminated.TriggerOwner = red_mirror;
+
+  blue_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  blue_mirror_on_illuminated.Func = mirror_trigger_func;
+  red_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  red_mirror_on_illuminated.Func = mirror_trigger_func;
+
+  game.add_on_status_change_trigger(blue_mirror, blue_mirror_on_illuminated);
+  game.add_on_status_change_trigger(red_mirror, red_mirror_on_illuminated);
+
+  game.run_simulation([&](engine::game_logic *game){
+    game->add_status_effect(red_mirror, illuminate_eff);
+    game->add_status_effect(blue_mirror, illuminate_eff);
+  });
+  
+  CHECK(has_stable_status(registry, blue_mirror, k_illuminated_hash));
+  CHECK(has_stable_status(registry, red_mirror, k_illuminated_hash));
+  CHECK(has_stable_status(registry, light, k_blue_hash));
+  CHECK(has_stable_status(registry, light, k_red_hash));
+  CHECK(blue_update_counter == 1);
+  CHECK(red_update_counter == 1);
+}
