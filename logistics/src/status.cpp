@@ -165,7 +165,8 @@ bool assign_intrinsic_attributes_changes(entt::registry &registry, entt::entity 
 
   auto snapshot = logistics::get_most_recent_intrinsics(registry, entity, logistics::changes_request::working_copy);
   auto candidate = snapshot;
-  paste_attributes_changes(changes, attributes_info_reference{candidate});
+  attributes_info_reference ref(candidate);
+  paste_attributes_changes(changes, ref);
   attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
   
   if(changes_empty(actual_changes)) {

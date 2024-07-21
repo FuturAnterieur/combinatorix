@@ -164,7 +164,7 @@ TEST_CASE("Status effects / diamond pattern"){
   game.init_attributes(red_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Red"}}});
   
   
-  auto &illuminate = [](engine::game_logic *game, entt::entity target, entt::entity owner){
+  auto illuminate = [](engine::game_logic *game, entt::entity target, entt::entity owner){
       attributes_info_short_changes illum;
       illum.ModifiedStatuses.emplace(k_illuminated_hash, smt::added);
       game->change_actives(target, illum);

@@ -181,7 +181,7 @@ TEST_CASE("Status effects / diamond pattern"){
   registry.emplace<multi_target>(two_mirrors, std::vector<entt::entity>{blue_mirror, red_mirror});
 
   
-  auto &illuminate = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
+  auto illuminate = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
       assign_active_status(registry, target, k_illuminated_hash, true);
     };
 

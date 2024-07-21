@@ -41,7 +41,8 @@ namespace engine{
     
     auto snapshot = HistoryManager->get_most_recent_intrinsics(entity);
     auto candidate = snapshot;
-    paste_attributes_changes(changes, attributes_info_reference{candidate});
+    attributes_info_reference ref(candidate);
+    paste_attributes_changes(changes, ref);
     attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
     
     if(changes_empty(actual_changes)) {
@@ -146,7 +147,7 @@ namespace engine{
     //What to do with the originating entity after that????
     set_context_originating_entity(entt::null);
 
-    auto &working_copy = HistoryManager->get_active_snapshot(entity);
+    auto working_copy = HistoryManager->get_active_snapshot(entity);
     attributes_info_snapshot previous_current = HistoryManager->get_most_recent_currents(entity);
 
     attributes_info_changes actual_changes = compute_diff(previous_current, working_copy);

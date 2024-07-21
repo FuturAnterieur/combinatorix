@@ -25,10 +25,10 @@ namespace utils {
   }
 
   template<typename Component>
-  Component get_or_default(entt::registry &registry, entt::entity entity, entt::id_type hash, const Component &default){
+  Component get_or_default(entt::registry &registry, entt::entity entity, entt::id_type hash, const Component &default_val){
     auto &&specific_storage = registry.storage<Component>(hash);
     if(!specific_storage.contains(entity)){
-      return default;
+      return default_val;
     } else {
       return specific_storage.get(entity);
     }
