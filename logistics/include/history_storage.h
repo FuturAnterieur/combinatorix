@@ -31,9 +31,8 @@ namespace logistics{
     inline void init_history_starting_point(entt::entity entity){
       auto &storage = get_changes_storage();
       if(!storage.contains(entity)){
-        attributes_info_snapshot starting_point;
-        auto &stable_info = get_stable_storage().get(entity);
-        storage.emplace(entity, starting_point);
+        auto &stable_snapshot = get_stable_storage().get(entity);
+        storage.emplace(entity, stable_snapshot);
       }
     }
 

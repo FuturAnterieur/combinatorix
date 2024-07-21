@@ -96,28 +96,24 @@ TEST_CASE("Status effects / simple situation"){
   CHECK(has_stable_status(registry, exploration, k_creature_hash));
 
   //Chapter 2 : opalescence becomes negated
-  /*entt::entity negater = registry.create();
+  entt::entity negater = registry.create();
    
-  auto neg_stat_eff_func = [](entt::registry &registry, attributes_info &attrs, entt::entity target, entt::entity owner){
-      assign_active_status(registry, target, k_negated_hash, true);
+  auto neg_stat_eff_func = [](engine::game_logic *game, entt::entity target, entt::entity owner){
+      attributes_info_short_changes become_negated;
+      become_negated.ModifiedStatuses.emplace(k_negated_hash, smt::added);
+      game->change_actives(target, become_negated);
     };
 
-  entt::entity neg_stat_eff = create_status_effect(registry, negater, neg_stat_eff_func);
+  entt::entity neg_stat_eff = game.create_status_effect(negater, neg_stat_eff_func);
 
-
-  entt::entity negater_adding_ability = add_ability(registry, negater, 
+  //'use ability' API is not used here, and should be modernized anyway
+  /*entt::entity negater_adding_ability = add_ability(registry, negater, 
     [=](entt::registry &registry, entt::entity ability, entt::entity target){
       add_status_effect(registry, target, neg_stat_eff);
-    }, combination_info{});
+    }, combination_info{});*/
 
-  entt::entity negater_removal_ability = add_ability(registry, negater,
-    [=](entt::registry &registry, entt::entity ability, entt::entity target){
-      remove_status_effect(registry, target, neg_stat_eff);
-    }, combination_info{});
-
-
-  logistics::run_calculation(registry, [&](){
-    use(registry, negater_adding_ability, opalescence);
+  game.run_simulation([&](engine::game_logic *game){
+    game->add_status_effect(opalescence, neg_stat_eff);
   });
   
   CHECK(!has_stable_status(registry, exploration, k_creature_hash));
@@ -125,6 +121,14 @@ TEST_CASE("Status effects / simple situation"){
 
 
   // Chapter 3 : un-negate opalescence
+  /*
+  entt::entity negater_removal_ability = add_ability(registry, negater,
+    [=](entt::registry &registry, entt::entity ability, entt::entity target){
+      remove_status_effect(registry, target, neg_stat_eff);
+    }, combination_info{});
+
+
+  
   logistics::run_calculation(registry, [&]() {
     use(registry, negater_removal_ability, opalescence);
   });

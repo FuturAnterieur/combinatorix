@@ -12,11 +12,13 @@ namespace logistics{
     ActiveBranchName = "b0";
     CurrentAttrHistory.set_registry(registry);
     CurrentAttrHistory.set_branch_name(ActiveBranchName);
+    
     IntrinsicAttrHistory.set_registry(registry);
     IntrinsicAttrHistory.set_branch_name(ActiveBranchName);
 
-    
+    LocalAttrHistory.set_registry(registry);
     LocalAttrHistory.set_branch_name(ActiveBranchName);
+
     std::string long_string_changes = ActiveBranchName  + std::string(entt::type_name<attributes_info_history>().value());
     ActiveBranchHashForStatusEffects = entt::hashed_string::value(long_string_changes.data());
   }
@@ -29,8 +31,14 @@ namespace logistics{
   }
 
   //==================================================================
-  void history_manager::reset_local_changes(entt::entity entity){
-    LocalAttrHistory.get_changes_storage().clear();
+  void history_manager::init_local_changes(entt::entity entity){
+    LocalAttrHistory.get_changes_storage().remove(entity);
+    LocalAttrHistory.init_history_starting_point(entity, IntrinsicAttrHistory.get_most_recent_snapshot(entity));
+  }
+
+  //==================================================================
+  void history_manager::clear_local_changes(entt::entity entity){
+    LocalAttrHistory.get_changes_storage().remove(entity);
   }
 
   //==================================================================
@@ -94,9 +102,9 @@ namespace logistics{
   void history_manager::merge_active_branch_to_reality( timing_t upper_bound){
     
     //TODO : refactor with smth like a branch_changes_storage class
-    CurrentAttrHistory.merge_to_reality(upper_bound);
+    CurrentAttrHistory.merge_to_reality(upper_bound, true);
 
-    IntrinsicAttrHistory.merge_to_reality(upper_bound);
+    IntrinsicAttrHistory.merge_to_reality(upper_bound, false);
 
     auto& se_storage = get_active_branch_status_effects_changes_storage();
     auto se_view = entt::view<entt::get_t<status_effects_affecting_history>>{se_storage};

@@ -27,7 +27,8 @@ namespace logistics {
 
       void set_stable_values(entt::entity entity, const attributes_info_short_changes &changes);
 
-      void reset_local_changes(entt::entity entity);
+      void init_local_changes(entt::entity entity);
+      void clear_local_changes(entt::entity entity);
       void commit_local_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity);
 
       void commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing);

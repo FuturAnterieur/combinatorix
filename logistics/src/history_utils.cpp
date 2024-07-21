@@ -18,7 +18,7 @@ namespace logistics {
         if(smt_val == smt::removed){
           storage.remove(entity);
         } else {
-          if(storage.contains(entity)) storage.emplace(entity);
+          if(!storage.contains(entity)) storage.emplace(entity);
         }
       }
     }

@@ -17,7 +17,7 @@ namespace engine{
     _Registry = registry;
     HistoryManager->set_registry(registry);
   }
-  
+
   //==============================================================
   void game_logic::run_simulation(const std::function<void(game_logic *)> &request){
     
@@ -134,9 +134,9 @@ namespace engine{
 
   //=====================================================================
   void game_logic::update_status(entt::entity entity){
-    attributes_info &attr_info = _Registry->get<attributes_info>(entity);
+    HistoryManager->init_local_changes(entity);
+
     status_effects_affecting effs = HistoryManager->get_most_recent_status_effects(entity);
-    
     for(const auto &eff_entity : effs.EffectEntities){
       status_effect_info &eff_info = _Registry->get<status_effect_info>(eff_entity);
       set_context_originating_entity(eff_entity);
@@ -151,7 +151,7 @@ namespace engine{
 
     attributes_info_changes actual_changes = compute_diff(previous_current, working_copy);
 
-    HistoryManager->reset_local_changes(entity);
+    HistoryManager->clear_local_changes(entity);
     if(changes_empty(actual_changes)){
       return;
     }

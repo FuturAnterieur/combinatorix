@@ -14,7 +14,11 @@ void classic_priority_callback(priority_request &req, void *user_data)
   entt::registry *registry = (entt::registry *)(user_data);
 
   for(auto &[ent, prio] : req.EntitiesWithResultingPriorityValues){
-    auto &info = registry->get_or_emplace<priority_info>(ent);
-    *prio = info.Value;
+    if(ent != entt::null){
+      auto &info = registry->get_or_emplace<priority_info>(ent);
+      *prio = info.Value;
+    } else {
+      *prio = 0;
+    }
   }
 }
