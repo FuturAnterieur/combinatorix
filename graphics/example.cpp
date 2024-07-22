@@ -9,6 +9,13 @@
 #include "sokol_log.h"
 #include "glfw_glue.h"
 
+#define HANDMADE_MATH_IMPLEMENTATION
+#include "HandmadeMath.h"
+
+struct params_t {
+  hmm_mat4 mvp;
+};
+
 int main() {
 
     // create window and GL context via GLFW
@@ -64,19 +71,25 @@ int main() {
     
 
     shd_desc.vs.source = "#version 330\n"
+            "uniform mat4 mvp;\n"
             "layout(location=0) in vec4 position;\n"
             "layout(location=1) in vec4 color0;\n"
             "out vec4 color;\n"
             "void main() {\n"
-            "  gl_Position = position;\n"
+            "  gl_Position = mvp * position;\n"
             "  color = color0;\n"
             "}\n";
+
+    shd_desc.vs.uniform_blocks[0].size = sizeof(params_t);
+    shd_desc.vs.uniform_blocks[0].uniforms[0].name = "mvp";
+    shd_desc.vs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_MAT4;
     shd_desc.fs.source = "#version 330\n"
             "in vec4 color;\n"
             "out vec4 frag_color;\n"
             "void main() {\n"
             "  frag_color = color;\n"
             "}\n";
+    
 
     // create a shader (use vertex attribute locations)
     sg_shader shd = sg_make_shader(&shd_desc);
@@ -93,13 +106,28 @@ int main() {
     sg_pipeline pip = sg_make_pipeline(&pip_desc);
 
     // draw loop
+    float rz = 0.0f;
+    params_t vs_params;
     while (!glfwWindowShouldClose(glfw_window())) {
         sg_pass the_pass = {};
-        //the_pass.action.colors[0].clear_value = sg_color{0.0f, 0.0f, 0.f, 1.f};
+        
+        hmm_mat4 proj = HMM_Perspective(60.0f, (float)glfw_width()/(float)glfw_height(), 0.01f, 10.0f);
+        hmm_mat4 view = HMM_LookAt(HMM_Vec3(0.0f, 1.5f, 6.0f), HMM_Vec3(0.0f, 0.0f, 0.0f), HMM_Vec3(0.0f, 1.0f, 0.0f));
+        hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
+
+        // rotated model matrix
+        rz += 1.0f;
+        hmm_mat4 model = HMM_Rotate(rz, HMM_Vec3(0.0f, 0.0f, 1.0f));
+        
+        // model-view-projection matrix for vertex shader
+        vs_params.mvp = HMM_MultiplyMat4(view_proj, model);
+
+        sg_range uniforms = SG_RANGE(vs_params);
         the_pass.swapchain = glfw_swapchain();
         sg_begin_pass(&the_pass);
         sg_apply_pipeline(pip);
         sg_apply_bindings(&bind);
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &uniforms);
         sg_draw(0, 9, 1);
         sg_end_pass();
         sg_commit();
