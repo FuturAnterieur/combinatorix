@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 //  quad-glfw.c
 //  Indexed drawing, explicit vertex attr locations.
+//  Draw a PRISMATIC SHIELD
 //------------------------------------------------------------------------------
 #define SOKOL_IMPL
 #define SOKOL_GLCORE
@@ -11,16 +12,15 @@
 int main() {
 
     // create window and GL context via GLFW
-    glfw_desc_t glfw_desc;
+    glfw_desc_t glfw_desc = {};
     glfw_desc.title = "quad-glfw.c";
     glfw_desc.width = 640;
     glfw_desc.height = 480;
-
+   
     glfw_init(&glfw_desc);
 
     // setup sokol_gfx
-    sg_desc sokol_desc;
-    memset(&sokol_desc, 0, sizeof(sg_desc));
+    sg_desc sokol_desc = {};
     sokol_desc.environment = glfw_environment();
     sokol_desc.logger.func = slog_func;
     
@@ -34,9 +34,10 @@ int main() {
          0.5f,  0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
          0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f,
         -0.5f, -0.5f, 0.5f,     1.0f, 1.0f, 0.0f, 1.0f,
+         0.0f, -1.0f, 0.5f,     1.0f, 1.0f, 1.0f, 1.0f
     };
-    sg_buffer_desc vbuf_desc; 
-    memset(&vbuf_desc, 0, sizeof(sg_buffer_desc));
+    sg_buffer_desc vbuf_desc ={}; 
+    
     
     vbuf_desc.data = SG_RANGE(vertices);
     sg_buffer vbuf = sg_make_buffer(&vbuf_desc);
@@ -45,21 +46,22 @@ int main() {
     uint16_t indices[] = {
         0, 1, 2,    // first triangle
         0, 2, 3,    // second triangle
+        3, 2, 4
     };
-    sg_buffer_desc ibuf_desc; 
-    memset(&ibuf_desc, 0, sizeof(sg_buffer_desc));
+    sg_buffer_desc ibuf_desc = {}; 
+    
     ibuf_desc.type = SG_BUFFERTYPE_INDEXBUFFER; 
     ibuf_desc.data = SG_RANGE(indices);
     sg_buffer ibuf = sg_make_buffer(&ibuf_desc);
 
     // define the resource bindings
-    sg_bindings bind;
-    memset(&bind, 0, sizeof(sg_bindings));
+    sg_bindings bind = {};
+    
     bind.vertex_buffers[0] = vbuf;
     bind.index_buffer = ibuf;
     
-    sg_shader_desc shd_desc;
-    memset(&shd_desc, 0, sizeof(sg_shader_desc));
+    sg_shader_desc shd_desc = {};
+    
 
     shd_desc.vs.source = "#version 330\n"
             "layout(location=0) in vec4 position;\n"
@@ -79,8 +81,8 @@ int main() {
     // create a shader (use vertex attribute locations)
     sg_shader shd = sg_make_shader(&shd_desc);
     
-    sg_pipeline_desc pip_desc;
-    memset(&pip_desc, 0, sizeof(sg_pipeline_desc));
+    sg_pipeline_desc pip_desc = {};
+    
 
     pip_desc.shader = shd;
     pip_desc.index_type = SG_INDEXTYPE_UINT16;
@@ -92,13 +94,13 @@ int main() {
 
     // draw loop
     while (!glfwWindowShouldClose(glfw_window())) {
-        sg_pass the_pass;
-        memset(&the_pass, 0, sizeof(sg_pass));
+        sg_pass the_pass = {};
+        //the_pass.action.colors[0].clear_value = sg_color{0.0f, 0.0f, 0.f, 1.f};
         the_pass.swapchain = glfw_swapchain();
         sg_begin_pass(&the_pass);
         sg_apply_pipeline(pip);
         sg_apply_bindings(&bind);
-        sg_draw(0, 6, 1);
+        sg_draw(0, 9, 1);
         sg_end_pass();
         sg_commit();
         glfwSwapBuffers(glfw_window());
