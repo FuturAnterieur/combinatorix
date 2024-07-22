@@ -87,7 +87,7 @@ int main() {
     pip_desc.shader = shd;
     pip_desc.index_type = SG_INDEXTYPE_UINT16;
     pip_desc.layout.attrs[0].offset = 0; pip_desc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
-    pip_desc.layout.attrs[1].offset = 12; pip_desc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT4;
+    pip_desc.layout.attrs[1].offset = 3 * sizeof(float); pip_desc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT4;
 
     // create a pipeline object (default render state is fine)
     sg_pipeline pip = sg_make_pipeline(&pip_desc);
