@@ -23,7 +23,7 @@ int main() {
     glfw_desc_t glfw_desc = {};
     glfw_desc.title = "quad-glfw.c";
     glfw_desc.width = 640;
-    glfw_desc.height = 480;
+    glfw_desc.height = 640;
    
     glfw_init(&glfw_desc);
 
@@ -38,10 +38,35 @@ int main() {
     // create a vertex buffer
     float vertices[] = {
         // positions            colors
-        -0.5f,  0.5f, 0.0f,     1.0f, 0.0f, 0.0f, 1.0f,
-         0.5f,  0.5f, 0.0f,     0.0f, 1.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f,     1.0f, 1.0f, 0.0f, 1.0f,
+        -1.0, -1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
+         1.0, -1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
+         1.0,  1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
+        -1.0,  1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
+
+        -1.0, -1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
+         1.0, -1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
+         1.0,  1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
+        -1.0,  1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
+
+        -1.0, -1.0, -1.0,   0.0, 0.0, 1.0, 1.0,
+        -1.0,  1.0, -1.0,   0.0, 0.0, 1.0, 1.0,
+        -1.0,  1.0,  1.0,   0.0, 0.0, 1.0, 1.0,
+        -1.0, -1.0,  1.0,   0.0, 0.0, 1.0, 1.0,
+
+        1.0, -1.0, -1.0,    1.0, 0.5, 0.0, 1.0,
+        1.0,  1.0, -1.0,    1.0, 0.5, 0.0, 1.0,
+        1.0,  1.0,  1.0,    1.0, 0.5, 0.0, 1.0,
+        1.0, -1.0,  1.0,    1.0, 0.5, 0.0, 1.0,
+
+        -1.0, -1.0, -1.0,   0.0, 0.5, 1.0, 1.0,
+        -1.0, -1.0,  1.0,   0.0, 0.5, 1.0, 1.0,
+         1.0, -1.0,  1.0,   0.0, 0.5, 1.0, 1.0,
+         1.0, -1.0, -1.0,   0.0, 0.5, 1.0, 1.0,
+
+        -1.0,  1.0, -1.0,   1.0, 0.0, 0.5, 1.0,
+        -1.0,  1.0,  1.0,   1.0, 0.0, 0.5, 1.0,
+         1.0,  1.0,  1.0,   1.0, 0.0, 0.5, 1.0,
+         1.0,  1.0, -1.0,   1.0, 0.0, 0.5, 1.0
     };
     sg_buffer_desc vbuf_desc ={}; 
     vbuf_desc.data = SG_RANGE(vertices);
@@ -50,8 +75,12 @@ int main() {
 
     // create an index buffer
     uint16_t indices[] = {
-        0, 1, 2,    // first triangle
-        0, 2, 3,    // second triangle
+        0, 1, 2,  0,2,3,
+        6, 5, 4,  7, 6, 4,
+        8, 9, 10,  8, 10, 11,
+        14, 13, 12,  15, 14, 12,
+        16, 17, 18,  16, 18, 19,
+        22, 21, 20,  23, 22, 20
     };
     sg_buffer_desc ibuf_desc = {}; 
     ibuf_desc.type = SG_BUFFERTYPE_INDEXBUFFER; 
@@ -128,54 +157,28 @@ int main() {
     hmm_vec3 positions[num_instances];
     positions[0].X = 0.0f;
     positions[0].Y = 0.0f;
-    positions[0].Z = -0.5f;
+    positions[0].Z = 0.0f;
     positions[1].X = 0.0f;
     positions[1].Y = 0.f;
-    positions[1].Z = 0.5f;
+    positions[1].Z = 0.0f;
     
 
     while (!glfwWindowShouldClose(glfw_window())) {
         sg_pass the_pass = {};
 
-        
-        
-        /*float length = HMM_SQRTF(1.f/3.f);
-
-        hmm_vec3 eye = HMM_Vec3(length, length, length);
-        hmm_vec3 center = HMM_Vec3(0.0f, 0.0f, 0.0f);
-        hmm_vec3 up = HMM_Vec3(0.f, 1.f, 0.f);*/
         //hmm_mat4 proj = HMM_Perspective(60.0f, (float)glfw_width()/(float)glfw_height(), 0.01f, 10.0f);
-        //hmm_mat4 view = HMM_LookAt(eye, center, HMM_Vec3(0.0f, 1.0f, 0.f));
-        //hmm_mat4 view_proj = HMM_MultiplyMat4(proj, view);
 
         hmm_mat4 iso = {0};
 
-        //hmm_vec3 F = HMM_NormalizeVec3(HMM_SubtractVec3(center, eye));
-        //hmm_vec3 S = HMM_NormalizeVec3(HMM_Cross(F, up));
-        //hmm_vec3 U = HMM_Cross(S, F);
-
-        /*float factor = sqrtf(1/6.f);
-        iso.Elements[0][0] = sqrtf(3) * factor;
-        iso.Elements[0][1] = 0.0f;
-        iso.Elements[0][2] = -sqrtf(3.f) * factor;
-
-        iso.Elements[1][0] = 1.f * factor;
-        iso.Elements[1][1] = 2.f * factor;
-        iso.Elements[1][2] = 1.f * factor;
-
-        iso.Elements[2][0] = sqrtf(2.f) * factor;
-        iso.Elements[2][1] = -sqrtf(2.f) * factor;
-        iso.Elements[2][2] = sqrtf(2.f) * factor;
-
-        iso.Elements[3][3] = 1.0f;*/
-
         hmm_mat4 iso1 = HMM_Rotate(45.f, HMM_Vec3(0.f, 0.f, 1.f));
-        hmm_mat4 iso2 = HMM_Rotate(35.264f, HMM_Vec3(1.f, 0.f, 0.f));
+        hmm_mat4 iso2 = HMM_Rotate(-35.264f, HMM_Vec3(1.f, 0.f, 0.f)); //35.264f
         iso = HMM_MultiplyMat4(iso2, iso1);
         iso.Elements[3][3] = 1.f;
 
+        //hmm_mat4 proj_iso = HMM_MultiplyMat4(proj, iso);
+
         // rotated model matrix
-        rz += 0.f;
+        rz += 1.f;
         hmm_mat4 model = HMM_Rotate(rz, HMM_Vec3(0.0f, 0.0f, 1.0f));
         hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.5f, 0.5f, 0.5f));
         hmm_mat4 model_scale = HMM_MultiplyMat4(model, scale);
@@ -191,7 +194,7 @@ int main() {
         sg_apply_pipeline(pip);
         sg_apply_bindings(&bind);
         sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &uniforms);
-        sg_draw(0, 9, num_instances);
+        sg_draw(0, 36, 1);
         sg_end_pass();
         sg_commit();
         glfwSwapBuffers(glfw_window());
