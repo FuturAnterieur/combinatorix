@@ -114,6 +114,9 @@ int main() {
     pip_desc.layout.attrs[2].offset = 0; 
     pip_desc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT3; 
     pip_desc.layout.attrs[2].buffer_index = 1;
+    pip_desc.cull_mode = SG_CULLMODE_BACK;
+    pip_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
+    pip_desc.depth.write_enabled = true;
 
     // create a pipeline object (default render state is fine)
     sg_pipeline pip = sg_make_pipeline(&pip_desc);
@@ -125,10 +128,10 @@ int main() {
     hmm_vec3 positions[num_instances];
     positions[0].X = 0.0f;
     positions[0].Y = 0.0f;
-    positions[0].Z = 0.0f;
+    positions[0].Z = -0.5f;
     positions[1].X = 0.0f;
     positions[1].Y = 0.f;
-    positions[1].Z = 0.0f;
+    positions[1].Z = 0.5f;
     
 
     while (!glfwWindowShouldClose(glfw_window())) {
@@ -171,21 +174,13 @@ int main() {
         iso = HMM_MultiplyMat4(iso2, iso1);
         iso.Elements[3][3] = 1.f;
 
-        hmm_mat4 ortho = {0};
-        ortho.Elements[0][0] = 1.f;
-        ortho.Elements[1][1] = 1.f;
-        ortho.Elements[2][2] = 1.f;
-        ortho.Elements[3][3] = 1.f;
-
-        hmm_mat4 ortho_iso = HMM_MultiplyMat4(ortho, iso);
-
         // rotated model matrix
         rz += 0.f;
         hmm_mat4 model = HMM_Rotate(rz, HMM_Vec3(0.0f, 0.0f, 1.0f));
         hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.5f, 0.5f, 0.5f));
         hmm_mat4 model_scale = HMM_MultiplyMat4(model, scale);
         // model-view-projection matrix for vertex shader
-        vs_params.mvp = HMM_MultiplyMat4(ortho_iso, model_scale);
+        vs_params.mvp = HMM_MultiplyMat4(iso, model_scale);
         sg_range pos_buffers = sg_range{positions, num_instances * 3 * sizeof(float)};
 
         sg_update_buffer(bind.vertex_buffers[1], &pos_buffers);
