@@ -113,11 +113,27 @@ TEST_CASE("Storage sanity"){
   CHECK(result.size() == 1);
   CHECK(result[0] == "Mermelionos");
   
+  std::string wizard_str = "wizard";
+  entt::storage_for_t<void> &wizzy_storage_2 = registry.storage<void>(entt::hashed_string::value(wizard_str.data()));
+  entt::storage_for_t<void> &roby_storage_2 = registry.storage<void>(entt::hashed_string::value("has_robe"));
+  auto wizzy_view = entt::view<entt::get_t<void>>(wizzy_storage_2);
+  auto roby_view = entt::view<entt::get_t<void>>(roby_storage_2);
+
+  std::vector<std::string> result_2;
+  for(auto entity : wizzy_view | roby_view){
+    has_name &hn = registry.get<has_name>(entity);
+    result_2.push_back(hn.Name);
+  }
+  CHECK(result_2.size() == 1);
+  CHECK(result_2[0] == "Mermelionos");
+
+
+
   //Doesn't seem to compile with July 3rd master EnTT
   /*auto yes_view = entt::view<entt::get_t<void>>{wizzy_storage};
   auto yes_view_2 = entt::view<entt::get_t<has_name>>(registry.storage<has_name>());
   auto no_view = entt::view<entt::get_t<>, entt::exclude_t<void>>{roby_storage};
-
+  
   result.clear();
   for(auto entity : yes_view | yes_view_2 | no_view){
     has_name &hn = registry.get<has_name>(entity);
@@ -236,5 +252,77 @@ TEST_CASE("Storage sanity"){
   std::string hg_desc_on_client = std::get<std::string>(my_stable_storage_2.get(loader.map(hermione_granger)).value());
 
   CHECK(hg_desc_on_client == "Hermione Granger MODIFIEE, entity 4 sur le serveur");
+}
+
+struct my_counter {
+  int Value{0};
+};
+
+bool counter_sort(const my_counter &left, const my_counter &right){
+  return left.Value < right.Value;
+}
+
+struct my_data_type {};
+TEST_CASE("Storage sanity with empty struct instead of void"){
+  entt::registry registry;
+  
+  const entt::entity sukuna = registry.create();
+  registry.emplace<my_counter>(sukuna, 3);
+  const entt::entity mermelionos = registry.create();
+  registry.emplace<my_counter>(mermelionos, 2);
+  const entt::entity taliesin = registry.create();
+  registry.emplace<my_counter>(taliesin, 4);
+  const entt::entity merlin = registry.create();
+  registry.emplace<my_counter>(merlin, 1);
+  
+  registry.sort<my_counter>(counter_sort);
+
+  std::string wizard_str = "wizard";
+  entt::storage_for_t<my_data_type> &wizzy_storage = registry.storage<my_data_type>(entt::hashed_string::value(wizard_str.data()));
+  wizzy_storage.emplace(merlin);
+  wizzy_storage.emplace(taliesin);
+  wizzy_storage.emplace(mermelionos);
+  
+
+
+  entt::storage_for_t<my_data_type> &roby_storage = registry.storage<my_data_type>(entt::hashed_string::value("has_robe"));
+  roby_storage.emplace(merlin);
+  roby_storage.emplace(taliesin);
+  roby_storage.emplace(sukuna);
+  
+
+  //entt::storage_for_t<void> &fake_roby_storage = registry.storage<void>(entt::hashed_string::value("has_robe"));
+  //cannot even create a storage for another concrete type with the same hash ID
+  
+  auto wizzy_view = entt::view<entt::get_t<my_data_type, my_data_type, my_counter>>();
+  //auto roby_view = entt::view<entt::get_t<my_data_type>>(roby_storage);
+
+  wizzy_view.storage<0>(wizzy_storage);
+  wizzy_view.storage<1>(roby_storage);
+  wizzy_view.storage(registry.storage<my_counter>());
+
+  REQUIRE(wizzy_view); //check that is is fully initialized
+
+  std::vector<int> result_2;
+  for(auto entity : wizzy_view){
+    my_counter &hn = registry.get<my_counter>(entity);
+    result_2.push_back(hn.Value);
+  }
+  REQUIRE(result_2.size() == 2);
+  CHECK(result_2[0] == 4);
+  CHECK(result_2[1] == 1);
+  
+  wizzy_view.use<my_counter>();
+  
+  result_2.clear();
+  for(auto entity : wizzy_view){
+    my_counter &hn = registry.get<my_counter>(entity);
+    result_2.push_back(hn.Value);
+  }
+
+  REQUIRE(result_2.size() == 2);
+  CHECK(result_2[0] == 1);
+  CHECK(result_2[1] == 4);
+  
 }
 
