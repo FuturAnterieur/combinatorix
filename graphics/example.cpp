@@ -166,8 +166,7 @@ int main() {
     while (!glfwWindowShouldClose(glfw_window())) {
         sg_pass the_pass = {};
 
-        //hmm_mat4 proj = HMM_Perspective(60.0f, (float)glfw_width()/(float)glfw_height(), 0.01f, 10.0f);
-
+        
         hmm_mat4 iso = {0};
 
         hmm_mat4 iso1 = HMM_Rotate(45.f, HMM_Vec3(0.f, 0.f, 1.f));
@@ -175,7 +174,10 @@ int main() {
         iso = HMM_MultiplyMat4(iso2, iso1);
         iso.Elements[3][3] = 1.f;
 
-        //hmm_mat4 proj_iso = HMM_MultiplyMat4(proj, iso);
+        float aspect_ratio = static_cast<float>(glfw_height()) / static_cast<float>(glfw_width());
+
+        hmm_mat4 ortho = HMM_Orthographic(-1.f, 1.f, -aspect_ratio, aspect_ratio, -10.f, 10.f);
+        hmm_mat4 ortho_iso = HMM_MultiplyMat4(ortho, iso);
 
         // rotated model matrix
         rz += 1.f;
@@ -183,7 +185,7 @@ int main() {
         hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.5f, 0.5f, 0.5f));
         hmm_mat4 model_scale = HMM_MultiplyMat4(model, scale);
         // model-view-projection matrix for vertex shader
-        vs_params.mvp = HMM_MultiplyMat4(iso, model_scale);
+        vs_params.mvp = HMM_MultiplyMat4(ortho_iso, model_scale);
         sg_range pos_buffers = sg_range{positions, num_instances * 3 * sizeof(float)};
 
         sg_update_buffer(bind.vertex_buffers[1], &pos_buffers);
