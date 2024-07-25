@@ -16,6 +16,14 @@ struct params_t {
   hmm_mat4 mvp;
 };
 
+
+hmm_mat4 isometric(){
+  hmm_mat4 iso1 = HMM_Rotate(45.f, HMM_Vec3(0.f, 1.f, 0.f));
+  hmm_mat4 iso2 = HMM_Rotate(35.264f, HMM_Vec3(1.f, 0.f, 0.f)); //should be -35.264f but...
+  hmm_mat4 iso = HMM_MultiplyMat4(iso2, iso1);
+  return iso;
+}
+
 int main() {
 
     constexpr int num_instances = 2;
@@ -24,6 +32,8 @@ int main() {
     glfw_desc.title = "quad-glfw.c";
     glfw_desc.width = 640;
     glfw_desc.height = 640;
+
+    float native_size = 640.f;
    
     glfw_init(&glfw_desc);
 
@@ -166,24 +176,18 @@ int main() {
     while (!glfwWindowShouldClose(glfw_window())) {
         sg_pass the_pass = {};
 
-        
-        hmm_mat4 iso = {0};
-
-        hmm_mat4 iso1 = HMM_Rotate(45.f, HMM_Vec3(0.f, 0.f, 1.f));
-        hmm_mat4 iso2 = HMM_Rotate(-35.264f, HMM_Vec3(1.f, 0.f, 0.f)); //35.264f
-        iso = HMM_MultiplyMat4(iso2, iso1);
-        iso.Elements[3][3] = 1.f;
-
+        hmm_mat4 iso = isometric();
         float aspect_ratio = static_cast<float>(glfw_height()) / static_cast<float>(glfw_width());
+        float native_ratio = static_cast<float>(glfw_width()) / native_size;
 
-        hmm_mat4 ortho = HMM_Orthographic(-1.f, 1.f, -aspect_ratio, aspect_ratio, -10.f, 10.f);
+        hmm_mat4 ortho = HMM_Scale(HMM_Vec3(1.f / native_ratio, 1.f/(aspect_ratio * native_ratio), 1.f));
         hmm_mat4 ortho_iso = HMM_MultiplyMat4(ortho, iso);
 
         // rotated model matrix
-        rz += 1.f;
-        hmm_mat4 model = HMM_Rotate(rz, HMM_Vec3(0.0f, 0.0f, 1.0f));
-        hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.5f, 0.5f, 0.5f));
-        hmm_mat4 model_scale = HMM_MultiplyMat4(model, scale);
+        rz = 0.f;
+        hmm_mat4 rot = HMM_Rotate(rz, HMM_Vec3(0.0f, 1.0f, 0.0f));
+        hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.25f, 0.25f, 0.25f));
+        hmm_mat4 model_scale = HMM_MultiplyMat4(rot, scale);
         // model-view-projection matrix for vertex shader
         vs_params.mvp = HMM_MultiplyMat4(ortho_iso, model_scale);
         sg_range pos_buffers = sg_range{positions, num_instances * 3 * sizeof(float)};
