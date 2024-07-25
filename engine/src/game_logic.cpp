@@ -134,6 +134,16 @@ namespace engine{
   }
 
   //=====================================================================
+  parameter_view_t game_logic::get_parameter_view(entt::id_type hash){
+    return parameter_view_t{_Registry->storage<parameter>(hash)};
+  }
+
+  //=====================================================================
+  status_view_t game_logic::get_status_view(entt::id_type hash){
+    return status_view_t{_Registry->storage<void>(hash)};
+  }
+
+  //=====================================================================
   void game_logic::update_status(entt::entity entity){
     HistoryManager->init_local_changes(entity);
 

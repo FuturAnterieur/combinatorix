@@ -232,3 +232,74 @@ TEST_CASE("Status effects / diamond pattern"){
   CHECK(blue_update_counter == 1);
   CHECK(red_update_counter == 1);
 }
+
+
+TEST_CASE("diamond pattern without status effects, triggers only"){
+  entt::registry registry;
+  engine::game_logic game(&registry);
+
+  entt::entity sorcerer = registry.create();
+  game.init_attributes(sorcerer, attributes_info_short_changes{{{k_creature_hash, smt::added}},{}});
+  
+  entt::entity light = registry.create();
+  game.init_attributes(light, attributes_info_short_changes{{{k_object_hash, smt::added}}, {}});
+  
+  entt::entity blue_mirror = registry.create();
+  game.init_attributes(blue_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Blue"}}});
+  
+  entt::entity red_mirror = registry.create();
+  game.init_attributes(red_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Red"}}});
+
+  auto mirror_trigger_filter = 
+    [](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &info){
+      auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
+      return it != changes.ModifiedStatuses.end() && it->second == smt::added;
+  };
+
+  int blue_update_counter{0};
+  int red_update_counter{0};
+  auto mirror_trigger_func = [&](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &trigger_info){
+    const auto &owner_snapshot = game->get_active_snapshot(trigger_info.TriggerOwner);
+    parameter color = get_value_for_parameter(owner_snapshot, k_color_hash);
+    
+    if(std::get<std::string>(color.value()) == "Red"){
+      attributes_info_short_changes target_changes;
+      target_changes.ModifiedStatuses.emplace(k_red_hash, smt::added);
+      game->change_intrinsics(light, target_changes);
+      red_update_counter++;
+    } else if(std::get<std::string>(color.value()) == "Blue"){
+      attributes_info_short_changes target_changes;
+      target_changes.ModifiedStatuses.emplace(k_blue_hash, smt::added);
+      game->change_intrinsics(light, target_changes); 
+      blue_update_counter++;
+    }
+  };
+
+  
+  engine::on_status_change_trigger_info blue_mirror_on_illuminated;
+  blue_mirror_on_illuminated.TriggerOwner = blue_mirror;
+  engine::on_status_change_trigger_info red_mirror_on_illuminated;
+  red_mirror_on_illuminated.TriggerOwner = red_mirror;
+
+  blue_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  blue_mirror_on_illuminated.Func = mirror_trigger_func;
+  red_mirror_on_illuminated.Filter = mirror_trigger_filter;
+  red_mirror_on_illuminated.Func = mirror_trigger_func;
+
+  game.add_on_status_change_trigger(blue_mirror, blue_mirror_on_illuminated);
+  game.add_on_status_change_trigger(red_mirror, red_mirror_on_illuminated);
+  
+  game.run_simulation([&](engine::game_logic *game){
+    attributes_info_short_changes illum;
+    illum.ModifiedStatuses.emplace(k_illuminated_hash, smt::added);
+    game->change_intrinsics(blue_mirror, illum);
+    game->change_intrinsics(red_mirror, illum);
+  });
+  
+  CHECK(has_stable_status(registry, blue_mirror, k_illuminated_hash));
+  CHECK(has_stable_status(registry, red_mirror, k_illuminated_hash));
+  CHECK(has_stable_status(registry, light, k_blue_hash));
+  CHECK(has_stable_status(registry, light, k_red_hash));
+  CHECK(blue_update_counter == 1);
+  CHECK(red_update_counter == 1);
+}
