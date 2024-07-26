@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
   dumbo.emplace<attributes_info>(ent1, info);
   dumbo.emplace<has_name>(ent2, "Jordi Savall");
 
-  use(dumbo, ent1, ent2);
+  //use(dumbo, ent1, ent2);
 
   std::cout << std::get<std::string>(dumbo.get<attributes_info>(ent1).CurrentParamValues[1234].value()) << "\n";
 

@@ -56,16 +56,15 @@ namespace logistics{
   }
 
   //================================================================
-  void history_manager::undo_changes_to_registry(){ //not used for now
+  void history_manager::undo_changes_to_registry(){ //not used for now, and never tested, not even in the old API
     
     //TODO : refactor with smth like a branch_changes_storage class
     auto &current_changes_storage = get_active_branch_current_changes_storage();
     auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{current_changes_storage};
 
     for(entt::entity entity : status_changes_view){
-      auto &attr_info = _Registry->get<attributes_info>(entity);
-      attributes_info_snapshot stable_snapshot{attr_info.CurrentStatusHashes, attr_info.CurrentParamValues};
-
+      auto &stable_snapshot = CurrentAttrHistory.get_stable_storage().get(entity);
+      
       auto &history = current_changes_storage.get(entity);
       attributes_info_changes cumulative_changes;
       attributes_info_snapshot current_snapshot = history.produce_snapshot();
@@ -73,9 +72,7 @@ namespace logistics{
       attributes_info_changes reverse_changes = compute_diff(current_snapshot, stable_snapshot);
 
       attributes_info_short_changes sr_changes = short_changes_from_changes(reverse_changes);
-      attributes_info_snapshot null_snapshot;
-      attributes_info_reference ref(null_snapshot);
-      paste_attributes_changes(*_Registry, entity, sr_changes, ref, true, false);
+      paste_changes_to_official_registry(_Registry, sr_changes, entity);
     }
   }
 

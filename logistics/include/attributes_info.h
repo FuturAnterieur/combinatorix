@@ -69,14 +69,6 @@ private:
   pimpl *_Pimpl;
 };
 
-struct attributes_info {
-  std::set<entt::id_type> IntrinsicStatusHashes;
-  std::set<entt::id_type> CurrentStatusHashes;
-  std::map<entt::id_type, parameter> IntrinsicParamValues;
-  std::map<entt::id_type, parameter> CurrentParamValues;
-};
-
-
 struct attributes_info_snapshot {
   std::set<entt::id_type> StatusHashes;
   std::map<entt::id_type, parameter> ParamValues;

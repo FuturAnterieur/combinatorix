@@ -8,7 +8,7 @@
 #include <cereal/types/memory.hpp>
 #include <cereal/types/variant.hpp>
 #include <cereal/archives/binary.hpp>
-#include "status.h"
+#include "attributes_info.h"
 
 struct has_name {
   std::string Name;

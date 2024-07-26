@@ -1,7 +1,6 @@
 #include "priority.h"
 
 #include <entt/entity/registry.hpp>
-#include "simulation_engine.h"
 
 //will have to add a priority rules system someday!!!
 

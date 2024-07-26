@@ -97,6 +97,10 @@ attributes_info_short_changes short_changes_from_changes(const attributes_info_c
   return result;
 }
 
+//=========================================
+bool changes_empty(attributes_info_changes &changes){
+  return changes.ModifiedStatuses.empty() && changes.ModifiedParams.empty();
+}
 
 //=====================================
 bool paste_attributes_changes(const attributes_info_short_changes &changes, attributes_info_reference &ref)
