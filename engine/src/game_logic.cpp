@@ -40,16 +40,15 @@ namespace engine{
   void game_logic::change_intrinsics(entt::entity entity, const attributes_info_short_changes &changes){
     
     auto snapshot = HistoryManager->get_most_recent_intrinsics(entity);
-    auto candidate = snapshot;
-    attributes_info_reference ref(candidate);
-    paste_attributes_changes(changes, ref);
+    HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, short_changes_from_changes(actual_changes), CurrentSimulationData->ChangesContext.OriginatingEntity, CurrentSimulationData->CurrentTiming);
+    auto candidate = HistoryManager->get_most_recent_intrinsics(entity);
+
     attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
     
     if(changes_empty(actual_changes)) {
       return;
     }
 
-    HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, short_changes_from_changes(actual_changes), CurrentSimulationData->ChangesContext.OriginatingEntity, CurrentSimulationData->CurrentTiming);
     CurrentSimulationData->record_intrinsic_attrs_change(entity);
     CurrentSimulationData->enqueue_update(entity, DEFAULT_UPDATE_DELTA, this);
   }

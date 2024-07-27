@@ -43,10 +43,9 @@ namespace logistics{
       }
     }
 
-    inline void set_stable_values(entt::entity entity, const attributes_info_short_changes &changes){
+    inline void set_stable_values(entt::entity entity, const attributes_info_cumulative_changes &changes){
       auto &stable_values = utils::get_or_emplace<snapshot_t>(*_Registry, entity, StableBranchHash);
-      attributes_info_reference ref_to_stable(stable_values);
-      paste_attributes_changes(changes, ref_to_stable);
+      paste_cumulative_changes(changes, stable_values);
     }
     
     inline void commit_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing, bool apply_to_registry = false){
@@ -55,11 +54,7 @@ namespace logistics{
 
       auto &history = status_changes_storage.get(entity);
 
-      attributes_info_state_at_timing state;
-      state.Changes = changes;
-      state.OriginatingEntity = originating_entity;
-      
-      history.add_changes(timing, state, classic_priority_callback, _Registry);
+      history.add_changes(timing, changes, classic_priority_callback, _Registry);
       if (apply_to_registry){
         paste_changes_to_official_registry(_Registry, state.Changes, entity);
       }
@@ -75,8 +70,7 @@ namespace logistics{
         attributes_info_short_changes cumulative_changes;
         history.cumulative_changes(cumulative_changes, upper_bound);
 
-        attributes_info_reference ref_to_stable(get_stable_storage().get(entity));
-        paste_attributes_changes(cumulative_changes, ref_to_stable);
+        paste_cumulative_changes(cumulative_changes, get_stable_storage().get(entity));
 
         if (apply_to_registry){
           paste_changes_to_official_registry(_Registry, cumulative_changes, entity);

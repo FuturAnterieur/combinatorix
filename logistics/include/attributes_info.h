@@ -110,7 +110,7 @@ struct attributes_info_snapshot {
 };*/
 
 
-
+//used by the client to know what has changed -- used in trigger filters and functions
 struct attributes_info_changes{ 
   std::map<entt::id_type, Change<status_t>> ModifiedStatuses; 
   std::map<entt::id_type, std::pair<CommittedValue<parameter>, CommittedValue<parameter>>> ModifiedParams;
@@ -122,8 +122,10 @@ struct logistics_API  attributes_info_short_changes {
   std::map<entt::id_type, parameter> ModifiedParams;
 };
 
-logistics_API attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes);
-logistics_API bool paste_attributes_changes(const attributes_info_short_changes &changes, attributes_info_snapshot &snapshot);
+struct attributes_info_cumulative_changes {
+  std::map<entt::id_type, Change<status_t>> StatusesChanges; 
+  std::map<entt::id_type, Change<parameter>> ParamChanges;
+};
 
 /*struct attributes_info_state_at_timing {
   attributes_info_short_changes Changes;
@@ -136,15 +138,41 @@ logistics_API bool paste_attributes_changes(const attributes_info_short_changes 
 
 template<typename T>
   class diff_merger {
-    virtual Change<T> merge_changes(const Change<T> &left, const Change<T> &right, const priority_callback_t &prio_func);
+    //If we are doing cumulative changes : left will have a lower timing than right and right will always be prioritized in case of conflict
+    //Otherwise this will be called in add_changes
+    virtual Change<T> merge_changes(const Change<T> &left, const Change<T> &right, const priority_callback_t &prio_func) {
+      
+    }
   };
 
 template<typename T>
 struct generic_history {
   std::map<timing_t, Change<T>> History;
   void add_change(timing_t timing, const typename T::diff_t &diff, const priority_callback_t &prio_func);
-  void cumulative_changes(timing_t upper_bound, const priority_callback_t &prio_func);
+  Change<T> cumulative_change(timing_t upper_bound, const priority_callback_t &prio_func) const;
 };
+
+template<typename T>
+Change<T> generic_history<T>::cumulative_change(timing_t upper_bound, const priority_callback_t &prio_func) const {
+  Change<T> result;
+  result.CommitterId = entt::null;
+  diff_merger<T> merger;
+
+  auto it = History.begin();
+  /*while(it != History.end() && it->first < lower_bound){
+    it++;
+  }
+  time_tracker = lower_bound;
+  */
+
+  while(it != History.end() && it->first <= upper_bound){
+    result = merger.merge_changes(result, it->second, prio_func);
+    time_tracker = it->first;
+    it++;
+  }
+  
+  return result;
+}
 
 struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
@@ -160,10 +188,23 @@ struct attributes_info_history {
   //to be ascertained in refactor Volume II
 
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
-  //bool cumulative_changes(attributes_info_short_changes &cumul_changes, timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
+  attributes_info_cumulative_changes cumulative_changes(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   //bool cumulative_changes_disregarding_timing(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;
   //bool cumulative_changes_swiss_knife(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const;
 };
+
+
+template<typename T>
+void populate_change_map(std::map<entt::id_type, Change<T>> &map, const std::map<entt::id_type, typename T::diff_t> &diff_map, entt::entity originating_entity) {
+  for(const auto &[hash, diff] : diff_map){
+    map.emplace(hash, Change<T>{diff, originating_entity});
+  }
+}
+
+logistics_API attributes_info_cumulative_changes cumul_changes_from_short(const attributes_info_short_changes &short_changes, entt::entity originating_entity);
+logistics_API attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes);
+logistics_API bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes, attributes_info_snapshot &snapshot);
+
 
 logistics_API bool changes_empty(attributes_info_changes &changes);
 logistics_API attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot);
