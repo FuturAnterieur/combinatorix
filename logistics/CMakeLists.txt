@@ -2,7 +2,6 @@ include(MyFunctions)
 
 set(CORE_LOGISTICS_SRCS 
   src/attributes_info.cpp
-  src/change_merger.cpp
   src/combine.cpp
   src/history_manager.cpp
   src/history_utils.cpp

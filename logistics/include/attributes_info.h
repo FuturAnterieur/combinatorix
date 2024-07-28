@@ -132,15 +132,6 @@ struct attributes_info_cumulative_changes {
   std::map<entt::id_type, Change<parameter>> ParamChanges;
 };
 
-/*struct attributes_info_state_at_timing {
-  attributes_info_short_changes Changes;
-  entt::entity OriginatingEntity;
-};*/
-
-/*namespace logistics{
-  class change_merger;
-}*/
-
 template<typename T>
   class diff_merger {
     public:
@@ -202,21 +193,15 @@ Change<T> generic_history<T>::cumulative_change(timing_t upper_bound, const prio
 
 struct attributes_info_history {
   const attributes_info_snapshot StartingPoint;
-  //std::map<timing_t, attributes_info_state_at_timing> History;
+  
+  std::map<entt::id_type, generic_history<status_t>> StatusesHistory; //DA FUTURE
+  std::map<entt::id_type, generic_history<parameter>> ParamsHistory;
 
-  std::map<entt::id_type, generic_history<status_t>> StatusesHistory2; //DA FUTURE
-  std::map<entt::id_type, generic_history<parameter>> ParamsHistory2;
-
-  //bool add_changes(timing_t timing, const attributes_info_state_at_timing &changes, const priority_callback_t &callback, void *cb_user_data);
   bool add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback);
-  //only one commiter per add_changes call???
-  //unless short_changes also contains commiter info???
-  //to be ascertained in refactor Volume II
-
+  
   attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   attributes_info_cumulative_changes cumulative_changes(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
-  //bool cumulative_changes_disregarding_timing(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound) const;
-  //bool cumulative_changes_swiss_knife(attributes_info_short_changes &cumul_changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const;
+  
 };
 
 

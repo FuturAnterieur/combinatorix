@@ -1,4 +1,3 @@
-#include "change_merger.h"
 #include "attributes_info.h"
 #include "entt_utils.h"
 
@@ -133,34 +132,17 @@ bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes,
 
 //=====================================
 bool attributes_info_history::add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback){
-  using namespace logistics;
-
+  
   for(const auto &[hash, change] : changes.ParamChanges){
-    auto &hist = ParamsHistory2.emplace(hash, generic_history<parameter>()).first->second;
+    auto &hist = ParamsHistory.emplace(hash, generic_history<parameter>()).first->second;
     hist.add_change(timing, change, callback);
   }
     
   for(const auto &[hash, change] : changes.StatusesChanges){
-    auto &hist = StatusesHistory2.emplace(hash, generic_history<status_t>()).first->second;
+    auto &hist = StatusesHistory.emplace(hash, generic_history<status_t>()).first->second;
     hist.add_change(timing, change, callback);
   }
 
-  /*
-  auto &state = History.emplace(timing, attributes_info_state_at_timing{}).first->second;
-  
-  attributes_info_short_changes copy = state.Changes;
-  attributes_info_changes_comparable left{copy, timing};
-  attributes_info_changes_comparable right{changes.Changes, timing};
-
-  priority_request req{{std::make_pair(state.OriginatingEntity, &left.Priority), std::make_pair(changes.OriginatingEntity, &right.Priority)}};
-  callback(req, cb_user_data);
-  
-  simple_change_merger merger;
-  auto result = merger.merge_changes(left, right, state.Changes);
-  if(result == merge_result::conflict){
-    return false;
-  }*/
-  
   return true;
 }
 
@@ -186,59 +168,15 @@ attributes_info_cumulative_changes attributes_info_history::cumulative_changes(t
   };
   timing_only_callback.UserData = nullptr;
 
-  for(const auto &[hash, hist] : ParamsHistory2){
+  for(const auto &[hash, hist] : ParamsHistory){
     cumul.ParamChanges.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
   }
     
-  for(const auto &[hash, hist] : StatusesHistory2){
+  for(const auto &[hash, hist] : StatusesHistory){
     cumul.StatusesChanges.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
   }
   return cumul;
 }
-
-/*
-//=====================================
-bool attributes_info_history::cumulative_changes(attributes_info_short_changes &changes, timing_t upper_bound) const{
-  using namespace logistics;
-  simple_change_merger merger;
-  return cumulative_changes_swiss_knife(changes, 0, upper_bound, &merger);
-}
-
-//=====================================
-bool attributes_info_history::cumulative_changes_disregarding_timing(attributes_info_short_changes &changes, timing_t lower_bound, timing_t upper_bound) const{
-  using namespace logistics;
-  timing_less_merger merger;
-  return cumulative_changes_swiss_knife(changes, lower_bound, upper_bound, &merger);
-}
-
-//=====================================
-bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_short_changes &changes, timing_t lower_bound, timing_t upper_bound, logistics::change_merger *merger) const {
-  using namespace logistics;
-  attributes_info_changes temp;
-  merge_result result = merge_result::success;
-
-
-  auto it = History.begin();
-  while(it != History.end() && it->first < lower_bound){
-    it++;
-  }
-
-  timing_t time_tracker = lower_bound;
-  while(it != History.end() && it->first <= upper_bound){
-    attributes_info_short_changes copy = changes;
-    attributes_info_changes_comparable left{copy, time_tracker, 0};
-    attributes_info_changes_comparable right{it->second.Changes, it->first, 0};
-    result = merger->merge_changes(left, right, changes);
-    if(result == merge_result::conflict){
-      return false;
-    }
-    time_tracker = it->first;
-    it++;
-  }
-  return true;
-
-}
-*/
 
 //=====================================
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
