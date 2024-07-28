@@ -25,7 +25,7 @@ namespace logistics{
 
   //==================================================================
   void history_manager::set_stable_values(entt::entity entity, const attributes_info_short_changes &changes){
-    auto cumul = cumul_changes_from_short(changes, entt::null);
+    auto cumul = cumul_changes_from_short(changes, entity);
     CurrentAttrHistory.set_stable_values(entity, cumul);
     IntrinsicAttrHistory.set_stable_values(entity, cumul);
     paste_changes_to_official_registry(_Registry, cumul, entity);

@@ -33,12 +33,12 @@ bool changing_location_condition(const attributes_info_changes &changes){
 
 bool entering_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.second.value()) == k_location_field);
+  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.second.Value.value()) == k_location_field);
 }
 
 bool leaving_field_condition(const attributes_info_changes &changes){
   auto it = changes.ModifiedParams.find(k_location_hash);
-  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.first.value()) == k_location_field;
+  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.first.Value.value()) == k_location_field;
 }
 
 std::string get_location_value(entt::registry &registry, entt::entity entity){

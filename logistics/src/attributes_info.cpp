@@ -247,8 +247,7 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
   const CommittedValue<parameter> param_null = CommittedValue<parameter>{parameter{}, entt::null};
   for(const auto &[hash, val] : new_snapshot.StatusHashes){
     auto old_it = old_snapshot.StatusHashes.find(hash);
-    if(old_it == old_snapshot.StatusHashes.end() || 
-        (old_it->second.Value == false && val.Value == true))
+    if(old_it == old_snapshot.StatusHashes.end() || (old_it->second.Value == false && val.Value == true))
     {
       changes.ModifiedStatuses.emplace(hash, Change<status_t>{smt::added, val.CommitterId});
     }
@@ -256,9 +255,12 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
 
   for(const auto &[hash, val] : old_snapshot.StatusHashes){
     auto new_it = new_snapshot.StatusHashes.find(hash);
-    if(new_it != new_snapshot.StatusHashes.end() &&
-      new_it->second.Value == false && val.Value == true){
-      changes.ModifiedStatuses.emplace(hash, Change<status_t>{smt::removed, new_it->second.CommitterId});
+    entt::entity CommitterId = entt::null;
+    if(new_it == new_snapshot.StatusHashes.end() || (new_it->second.Value == false && val.Value == true)){
+      if(new_it != new_snapshot.StatusHashes.end()){
+        CommitterId = new_it->second.CommitterId;
+      }
+      changes.ModifiedStatuses.emplace(hash, Change<status_t>{smt::removed, CommitterId});
     }
   }
 
