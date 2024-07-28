@@ -88,11 +88,11 @@ data_type &parameter::access_data_type(){
 }
 
 //=================================================
-attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes){
-  attributes_info_short_changes result;
-  result.ModifiedStatuses = changes.ModifiedStatuses;
+attributes_info_cumulative_changes cumul_changes_from_long(const attributes_info_changes &changes){
+  attributes_info_cumulative_changes result;
+  result.StatusesChanges = changes.ModifiedStatuses;
   for(const auto &[hash, param_pair] : changes.ModifiedParams){
-    result.ModifiedParams.emplace(hash, param_pair.second);
+    result.ParamChanges.emplace(hash, Change<parameter>{param_pair.second.Value, param_pair.second.CommitterId});
   }
   return result;
 }
@@ -106,6 +106,7 @@ attributes_info_cumulative_changes cumul_changes_from_short(const attributes_inf
   attributes_info_cumulative_changes changes;
   populate_change_map<status_t>(changes.StatusesChanges, short_changes.ModifiedStatuses, originating_entity);
   populate_change_map<parameter>(changes.ParamChanges, short_changes.ModifiedParams, originating_entity);
+  return changes;
 }
 
 //=====================================
@@ -131,17 +132,17 @@ bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes,
 }
 
 //=====================================
-bool attributes_info_history::add_changes(timing_t timing, const attributes_info_short_changes &changes, entt::entity originating_entity, const priority_callback_t &callback, void *cb_user_data){
+bool attributes_info_history::add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback){
   using namespace logistics;
 
-  for(const auto &[hash, param] : changes.ModifiedParams){
+  for(const auto &[hash, change] : changes.ParamChanges){
     auto &hist = ParamsHistory2.emplace(hash, generic_history<parameter>()).first->second;
-    hist.add_change(timing, param, callback);
+    hist.add_change(timing, change, callback);
   }
     
-  for(const auto &[hash, smt_val] : changes.ModifiedStatuses){
+  for(const auto &[hash, change] : changes.StatusesChanges){
     auto &hist = StatusesHistory2.emplace(hash, generic_history<status_t>()).first->second;
-    hist.add_change(timing, smt_val, callback);
+    hist.add_change(timing, change, callback);
   }
 
   /*
@@ -166,11 +167,10 @@ bool attributes_info_history::add_changes(timing_t timing, const attributes_info
 //=====================================
 attributes_info_snapshot attributes_info_history::produce_snapshot(timing_t upper_bound) const{
   attributes_info_snapshot snapshot = StartingPoint;
-  attributes_info_short_changes changes;
-  attributes_info_reference ref(snapshot);
+  
   //calculate priority here too!
-  cumulative_changes(changes, upper_bound);
-  paste_cumulative_changes(changes, ref);
+  attributes_info_cumulative_changes cumul = cumulative_changes(upper_bound);
+  paste_cumulative_changes(cumul, snapshot);
   return snapshot;
 }
 
@@ -193,6 +193,7 @@ attributes_info_cumulative_changes attributes_info_history::cumulative_changes(t
   for(const auto &[hash, hist] : StatusesHistory2){
     cumul.StatusesChanges.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
   }
+  return cumul;
 }
 
 /*
@@ -243,16 +244,21 @@ bool attributes_info_history::cumulative_changes_swiss_knife(attributes_info_sho
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
   attributes_info_changes changes;
 
-  const parameter param_null = parameter();
-  for(const auto &hash : new_snapshot.StatusHashes){
-    if(old_snapshot.StatusHashes.find(hash) == old_snapshot.StatusHashes.end()){
-      changes.ModifiedStatuses.emplace(hash, smt::added);
+  const CommittedValue<parameter> param_null = CommittedValue<parameter>{parameter{}, entt::null};
+  for(const auto &[hash, val] : new_snapshot.StatusHashes){
+    auto old_it = old_snapshot.StatusHashes.find(hash);
+    if(old_it == old_snapshot.StatusHashes.end() || 
+        (old_it->second.Value == false && val.Value == true))
+    {
+      changes.ModifiedStatuses.emplace(hash, Change<status_t>{smt::added, val.CommitterId});
     }
   }
 
-  for(const auto &hash : old_snapshot.StatusHashes){
-    if(new_snapshot.StatusHashes.find(hash) == new_snapshot.StatusHashes.end()){
-      changes.ModifiedStatuses.emplace(hash, smt::removed);
+  for(const auto &[hash, val] : old_snapshot.StatusHashes){
+    auto new_it = new_snapshot.StatusHashes.find(hash);
+    if(new_it != new_snapshot.StatusHashes.end() &&
+      new_it->second.Value == false && val.Value == true){
+      changes.ModifiedStatuses.emplace(hash, Change<status_t>{smt::removed, new_it->second.CommitterId});
     }
   }
 
@@ -260,8 +266,8 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
     if(old_snapshot.ParamValues.find(hash) == old_snapshot.ParamValues.end()){
       changes.ModifiedParams.emplace(hash, std::make_pair(param_null, param));
     } else {
-      parameter previous_value = old_snapshot.ParamValues.at(hash);
-      if(previous_value.value() != param.value()){
+      auto previous_value = old_snapshot.ParamValues.at(hash);
+      if(previous_value.Value.value() != param.Value.value()){
         changes.ModifiedParams.emplace(hash, std::make_pair(previous_value, param));
       }
     }

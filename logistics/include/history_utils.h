@@ -16,5 +16,5 @@ namespace logistics{
   using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
   using status_effect_changes_storage_t = entt::constness_as_t<entt::storage_type_t<status_effects_affecting_history, entt::entity, std::allocator<status_effects_affecting_history>>, status_effects_affecting_history>;
 
-  void paste_changes_to_official_registry(entt::registry *registry, const attributes_info_short_changes &changes, entt::entity entity);
+  void paste_changes_to_official_registry(entt::registry *registry, const attributes_info_cumulative_changes &changes, entt::entity entity);
 }

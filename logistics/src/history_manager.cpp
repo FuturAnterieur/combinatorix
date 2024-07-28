@@ -28,7 +28,7 @@ namespace logistics{
     auto cumul = cumul_changes_from_short(changes, entt::null);
     CurrentAttrHistory.set_stable_values(entity, cumul);
     IntrinsicAttrHistory.set_stable_values(entity, cumul);
-    paste_changes_to_official_registry(_Registry, changes, entity);
+    paste_changes_to_official_registry(_Registry, cumul, entity);
   }
 
   //==================================================================
@@ -43,24 +43,24 @@ namespace logistics{
   }
 
   //==================================================================
-  void history_manager::commit_local_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity){
+  void history_manager::commit_local_changes(entt::entity entity, const attributes_info_cumulative_changes &changes){
     if(!LocalAttrHistory.get_changes_storage().contains(entity)){
       LocalAttrHistory.init_history_starting_point(entity, IntrinsicAttrHistory.get_most_recent_snapshot(entity));
     }
     
-    LocalAttrHistory.commit_changes(entity, changes, originating_entity, 0, false);
+    LocalAttrHistory.commit_changes(entity, changes, 0, false);
   }
 
   //------------------------------------
-  void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing){
-    CurrentAttrHistory.commit_changes(entity, changes, originating_entity, timing, true);
+  void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_cumulative_changes &changes, timing_t timing){
+    CurrentAttrHistory.commit_changes(entity, changes,  timing, true);
   }
 
   //================================================================
   void history_manager::undo_changes_to_registry(){ //not used for now, and never tested, not even in the old API
     
     //TODO : refactor with smth like a branch_changes_storage class
-    auto &current_changes_storage = get_active_branch_current_changes_storage();
+    /*auto &current_changes_storage = get_active_branch_current_changes_storage();
     auto status_changes_view = entt::view<entt::get_t<attributes_info_history>>{current_changes_storage};
 
     for(entt::entity entity : status_changes_view){
@@ -74,12 +74,12 @@ namespace logistics{
 
       attributes_info_short_changes sr_changes = short_changes_from_changes(reverse_changes);
       paste_changes_to_official_registry(_Registry, sr_changes, entity);
-    }
+    }*/
   }
 
   //=================================================================
-  void history_manager::commit_changes_for_intrinsics_to_active_branch(entt::entity entity,  const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing){
-    IntrinsicAttrHistory.commit_changes(entity, changes, originating_entity, timing, false);
+  void history_manager::commit_changes_for_intrinsics_to_active_branch(entt::entity entity,  const attributes_info_cumulative_changes &changes, timing_t timing){
+    IntrinsicAttrHistory.commit_changes(entity, changes, timing, false);
   }
 
   //=============================

@@ -39,9 +39,12 @@ namespace engine{
 
   void game_logic::change_intrinsics(entt::entity entity, const attributes_info_short_changes &changes){
     
+    auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
     auto snapshot = HistoryManager->get_most_recent_intrinsics(entity);
-    HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, short_changes_from_changes(actual_changes), CurrentSimulationData->ChangesContext.OriginatingEntity, CurrentSimulationData->CurrentTiming);
-    auto candidate = HistoryManager->get_most_recent_intrinsics(entity);
+    
+    //This 'actual change deduction' procedure should be reviewed
+    auto candidate = snapshot;
+    paste_cumulative_changes(cumul, candidate);
 
     attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
     
@@ -49,12 +52,14 @@ namespace engine{
       return;
     }
 
+    HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, cumul, CurrentSimulationData->CurrentTiming);
     CurrentSimulationData->record_intrinsic_attrs_change(entity);
     CurrentSimulationData->enqueue_update(entity, DEFAULT_UPDATE_DELTA, this);
   }
 
   void game_logic::change_actives(entt::entity entity, const attributes_info_short_changes &changes){
-    HistoryManager->commit_local_changes(entity, changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
+    auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
+    HistoryManager->commit_local_changes(entity, cumul);
   }
 
   void game_logic::add_on_status_change_trigger(entt::entity entity, on_status_change_trigger_info &info){
@@ -162,11 +167,12 @@ namespace engine{
     attributes_info_changes actual_changes = compute_diff(previous_current, working_copy);
 
     HistoryManager->clear_local_changes(entity);
+    
     if(changes_empty(actual_changes)){
       return;
     }
 
-    HistoryManager->commit_changes_for_current_to_active_branch(entity, short_changes_from_changes(actual_changes), entt::null, CurrentSimulationData->CurrentTiming);
+    HistoryManager->commit_changes_for_current_to_active_branch(entity, cumul_changes_from_long(actual_changes), CurrentSimulationData->CurrentTiming);
     activate_status_change_triggers(entity, actual_changes);
   }
 

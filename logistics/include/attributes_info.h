@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 #include <variant>
-#include <entt/entity/fwd.hpp>
+#include <entt/entity/registry.hpp>
 #include <cereal/access.hpp>
 
 typedef unsigned int timing_t;
@@ -80,6 +80,12 @@ enum class smt {
 struct status_t {
   bool Value;
   using diff_t = smt;
+  bool operator==(const status_t &rhs) const{
+    return Value == rhs.Value;
+  }
+  bool operator==(bool rhs) const {
+    return Value == rhs;
+  }
 };
 
 template<typename T>
@@ -92,7 +98,6 @@ template<typename T>
 struct CommittedValue {
   T Value;
   entt::entity CommitterId;
-  void apply_change(const Change<T> &change);
 };
 
 struct attributes_info_snapshot {
@@ -138,19 +143,46 @@ struct attributes_info_cumulative_changes {
 
 template<typename T>
   class diff_merger {
+    public:
     //If we are doing cumulative changes : left will have a lower timing than right and right will always be prioritized in case of conflict
     //Otherwise this will be called in add_changes
     virtual Change<T> merge_changes(const Change<T> &left, const Change<T> &right, const priority_callback_t &prio_func) {
+      //most basic generic merge function here
+      priority_request req;
+      priority_t left_prio = 0;
+      priority_t right_prio = 0;
+      req.EntitiesWithResultingPriorityValues.push_back(std::make_pair(left.CommitterId, &left_prio));
+      req.EntitiesWithResultingPriorityValues.push_back(std::make_pair(right.CommitterId, &right_prio));
+      prio_func.Func(req, prio_func.UserData);
       
+      Change<T> result;
+      result.Diff = left_prio > right_prio ? left.Diff : right.Diff;
+      result.CommitterId = left_prio > right_prio ? left.CommitterId : right.CommitterId;
+
+      return result;
     }
+
+    //For params : specialize the template to take into account if the diff is incremental (i.e. an HP param for instance)
   };
 
 template<typename T>
 struct generic_history {
   std::map<timing_t, Change<T>> History;
-  void add_change(timing_t timing, const typename T::diff_t &diff, const priority_callback_t &prio_func);
+  void add_change(timing_t timing, const Change<T> &change, const priority_callback_t &prio_func);
   Change<T> cumulative_change(timing_t upper_bound, const priority_callback_t &prio_func) const;
 };
+
+template<typename T>
+void generic_history<T>::add_change(timing_t timing, const Change<T> &change, const priority_callback_t &prio_func){
+  auto it = History.find(timing);
+  if(it == History.end()){
+    History.emplace(timing, change);
+  } else {
+    Change<T> &existing = it->second;
+    diff_merger<T> merger;
+    existing = merger.merge_changes(existing, change, prio_func);
+  }
+}
 
 template<typename T>
 Change<T> generic_history<T>::cumulative_change(timing_t upper_bound, const priority_callback_t &prio_func) const {
@@ -159,15 +191,9 @@ Change<T> generic_history<T>::cumulative_change(timing_t upper_bound, const prio
   diff_merger<T> merger;
 
   auto it = History.begin();
-  /*while(it != History.end() && it->first < lower_bound){
-    it++;
-  }
-  time_tracker = lower_bound;
-  */
-
   while(it != History.end() && it->first <= upper_bound){
+    //merge because changes may become incremental
     result = merger.merge_changes(result, it->second, prio_func);
-    time_tracker = it->first;
     it++;
   }
   
@@ -182,7 +208,7 @@ struct attributes_info_history {
   std::map<entt::id_type, generic_history<parameter>> ParamsHistory2;
 
   //bool add_changes(timing_t timing, const attributes_info_state_at_timing &changes, const priority_callback_t &callback, void *cb_user_data);
-  bool add_changes(timing_t timing, const attributes_info_short_changes &changes, entt::entity originating_entity, const priority_callback_t &callback, void *cb_user_data);
+  bool add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback);
   //only one commiter per add_changes call???
   //unless short_changes also contains commiter info???
   //to be ascertained in refactor Volume II
@@ -202,7 +228,7 @@ void populate_change_map(std::map<entt::id_type, Change<T>> &map, const std::map
 }
 
 logistics_API attributes_info_cumulative_changes cumul_changes_from_short(const attributes_info_short_changes &short_changes, entt::entity originating_entity);
-logistics_API attributes_info_short_changes short_changes_from_changes(const attributes_info_changes &changes);
+logistics_API attributes_info_cumulative_changes cumul_changes_from_long(const attributes_info_changes &changes);
 logistics_API bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes, attributes_info_snapshot &snapshot);
 
 

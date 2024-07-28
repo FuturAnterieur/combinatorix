@@ -48,15 +48,20 @@ namespace logistics{
       paste_cumulative_changes(changes, stable_values);
     }
     
-    inline void commit_changes(entt::entity entity, const attributes_info_short_changes &changes, entt::entity originating_entity, timing_t timing, bool apply_to_registry = false){
+    inline void commit_changes(entt::entity entity, const attributes_info_cumulative_changes &changes, timing_t timing, bool apply_to_registry = false){
       auto &status_changes_storage = get_changes_storage();
       init_history_starting_point(entity);
 
       auto &history = status_changes_storage.get(entity);
 
-      history.add_changes(timing, changes, classic_priority_callback, _Registry);
+      priority_callback cb;
+      cb.Func = classic_priority_callback;
+      cb.UserData = _Registry;
+
+      history.add_changes(timing, changes, cb);
       if (apply_to_registry){
-        paste_changes_to_official_registry(_Registry, state.Changes, entity);
+        //TODO what to do in case of merge refusal??
+        paste_changes_to_official_registry(_Registry, changes, entity);
       }
     }
 
@@ -67,13 +72,13 @@ namespace logistics{
       for(entt::entity entity : status_changes_view){
         auto &history = status_changes_view.get<attributes_info_history>(entity);
 
-        attributes_info_short_changes cumulative_changes;
-        history.cumulative_changes(cumulative_changes, upper_bound);
+        
+        attributes_info_cumulative_changes cumul = history.cumulative_changes(upper_bound);
 
-        paste_cumulative_changes(cumulative_changes, get_stable_storage().get(entity));
+        paste_cumulative_changes(cumul, get_stable_storage().get(entity));
 
         if (apply_to_registry){
-          paste_changes_to_official_registry(_Registry, cumulative_changes, entity);
+          paste_changes_to_official_registry(_Registry, cumul, entity);
         }
       }
       changes_storage.clear();
