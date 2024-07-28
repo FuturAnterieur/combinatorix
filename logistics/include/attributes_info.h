@@ -13,6 +13,18 @@
 typedef unsigned int timing_t;
 #define DEFAULT_TIMING_DELTA 1
 
+template<typename T>
+struct CommittedValue {
+  T Value;
+  entt::entity CommitterId{entt::null};
+};
+
+template<typename T>
+struct Change {
+  typename T::diff_t Diff;
+  entt::entity CommitterId{entt::null};
+};
+
 enum class data_type {
   null,
   string,
@@ -35,6 +47,7 @@ struct concrete_to_enum_type<std::string>{static constexpr data_type t = data_ty
 
 struct logistics_API parameter {
   using diff_t = parameter;
+  using detailed_change_t = std::pair<CommittedValue<parameter>, CommittedValue<parameter>>;
 
   parameter();
   parameter(const std::string &val);
@@ -80,45 +93,178 @@ enum class smt {
 struct status_t {
   bool Value;
   using diff_t = smt;
+  using detailed_change_t = Change<status_t>;
   bool operator==(const status_t &rhs) const{
     return Value == rhs.Value;
   }
   bool operator==(bool rhs) const {
     return Value == rhs;
   }
+
+  status_t &operator=(bool rhs){
+    Value = rhs;
+    return *this;
+  }
 };
 
 template<typename T>
-struct Change {
-  typename T::diff_t Diff;
-  entt::entity CommitterId;
+struct DetailedChange {
+  typename T::detailed_change_t Change;
+  DetailedChange<T> &operator= (const DetailedChange<T> &rhs);
+};
+
+template<>
+DetailedChange<parameter> &DetailedChange<parameter>::operator=(const DetailedChange<parameter> &rhs){
+  this->Change.first = rhs.Change.first;
+  this->Change.second = rhs.Change.second;
+  return *this;
+}
+
+template<typename T>
+struct attributes_snapshot_t {
+  std::map<entt::id_type, CommittedValue<T>> Values;
 };
 
 template<typename T>
-struct CommittedValue {
-  T Value;
-  entt::entity CommitterId;
+struct attributes_changes_t {
+  std::map<entt::id_type, Change<T>> Changes;
 };
+
+template<typename T>
+struct attributes_detailed_changes_t {
+  std::map<entt::id_type, DetailedChange<T>> Changes;
+};
+
+
+
+template<typename T>
+CommittedValue<T> apply_change(const CommittedValue<T> &orig, const Change<T> &change){
+  static_assert(std::is_same_v<T, T::diff_t>());
+  CommittedValue<T> result;
+  result.CommitterId = change.CommitterId;
+  result.Value = change.Value;
+}
+
+template<>
+CommittedValue<status_t> apply_change(const CommittedValue<status_t> &orig, const Change<status_t> &change){
+  CommittedValue<status_t> result;
+  result.CommitterId = change.CommitterId;
+  result.Value = (change.Diff == smt::added) ? true : false;
+}
+
+template<typename T>
+Change<T> shorten_change(const DetailedChange<T> &change);
+
+template<>
+Change<status_t> shorten_change(const DetailedChange<status_t> &change){
+  Change<status_t> result;
+  result.CommitterId = change.Change.CommitterId;
+  result.Diff = change.Change.Diff;
+  return result;
+}
+
+template<>
+Change<parameter> shorten_change(const DetailedChange<parameter> &change){
+  Change<parameter> result;
+  result.CommitterId = change.Change.second.CommitterId;
+  result.Diff = change.Change.second.Value;
+  return result;
+}
+
+template<typename T>
+bool compute_diff(const CommittedValue<T> *left, const CommittedValue<T> *right, DetailedChange<T> &result);
+
+template<>
+bool compute_diff(const CommittedValue<status_t> *left, const CommittedValue<status_t> *right, DetailedChange<status_t> &result){
+  bool has_change = false;
+  bool left_exists = left && left->Value == true;
+  bool right_exists = right && right->Value == true;
+
+  if(left_exists && !right_exists) {
+    result.Change.Diff = smt::removed;
+    has_change = true;
+  } else if (!left_exists && right_exists) {
+    result.Change.Diff = smt::added;
+    has_change = true;
+  }
+
+  if(right){
+    result.Change.CommitterId = right->CommitterId;
+  }
+  return has_change;
+}
+
+template<>
+bool compute_diff(const CommittedValue<parameter> *left, const CommittedValue<parameter> *right, DetailedChange<parameter> &result){
+  bool has_change = false;
+
+  result.Change.first = left ? *left : CommittedValue{parameter{}, entt::null};
+  result.Change.second = right ? *right : CommittedValue{parameter{}, entt::null};;
+
+  if(result.Change.first.Value.value() == result.Change.second.Value.value()){
+    return false;
+  }
+  
+  return true;
+}
+
+
+
+template<typename T>
+attributes_detailed_changes_t<T> compute_diff(const attributes_snapshot_t<T> &left, const attributes_snapshot_t<T> &right){
+  attributes_detailed_changes_t<T> all_changes;
+  auto compute_diff_process_map = [&all_changes](const auto &left, const auto &right) {
+    for(const auto &[hash, val] : left.Values){
+      CommittedValue<T> *ptr = nullptr;
+      auto it = right.Values.find(hash);
+      if(it != right.Values.end()){
+        ptr = &it->second;
+      }
+      Change<T> result;
+      if(compute_diff(&val, ptr, result)){
+        all_changes.Changes.emplace(hash, result);
+      }
+    }
+  };
+
+  compute_diff_process_map(left, right);
+  compute_diff_process_map(right, left);
+
+  return all_changes;
+}
+
+template<typename T>
+void apply_changes_to_snapshot(const attributes_changes_t<T> &changes, attributes_snapshot_t<T> &snapshot){
+  for(const auto &[hash, change] : changes){
+    auto it = snapshot.Values.find(hash);
+    if(it == snapshot.Values.end()){
+      snapshot.values.emplace(hash, apply_change(CommittedValue<T>{}, change));
+    } else {
+      it->second = apply_change(it->second, change);
+    }
+  }
+}
+
+template<typename T>
+attributes_changes_t<T> shorten_changes(const attributes_detailed_changes_t<T> &detailed){
+  attributes_changes_t<T> shortened;
+  for(const auto &[hash, change] : detailed){
+   shortened.emplace(hash, shorten_change(change));
+  }
+}
+
+
 
 struct attributes_info_snapshot {
-  std::map<entt::id_type, CommittedValue<status_t>> StatusHashes;
-  std::map<entt::id_type, CommittedValue<parameter>> ParamValues;
+  attributes_snapshot_t<status_t> StatusHashes;
+  attributes_snapshot_t<parameter> ParamValues;
 };
-
-
-
-/*struct attributes_info_reference {
-  attributes_info_reference(std::set<entt::id_type> &stat, std::map<entt::id_type, parameter> &params) : StatusHashes(stat), ParamValues(params) {}
-  attributes_info_reference(attributes_info_snapshot &snapshot) : StatusHashes(snapshot.StatusHashes), ParamValues(snapshot.ParamValues) {}
-  std::set<entt::id_type> &StatusHashes;
-  std::map<entt::id_type, parameter> &ParamValues;
-};*/
 
 
 //used by the client to know what has changed -- used in trigger filters and functions
 struct attributes_info_changes{ 
-  std::map<entt::id_type, Change<status_t>> ModifiedStatuses; 
-  std::map<entt::id_type, std::pair<CommittedValue<parameter>, CommittedValue<parameter>>> ModifiedParams;
+  std::map<entt::id_type, DetailedChange<status_t>> ModifiedStatuses; 
+  std::map<entt::id_type, DetailedChange<parameter>> ModifiedParams;
 };
 
 //sent to the backend by the clients, who should not have to care about committer IDs

@@ -182,16 +182,23 @@ attributes_info_cumulative_changes attributes_info_history::cumulative_changes(t
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
   attributes_info_changes changes;
 
+  attributes_detailed_changes_t<status_t> statuses = compute_diff(old_snapshot.StatusHashes, new_snapshot.StatusHashes);
+  attributes_detailed_changes_t<parameter> params = compute_diff(old_snapshot.ParamValues, new_snapshot.ParamValues);
+
+  changes.ModifiedParams = params.Changes;
+  changes.ModifiedStatuses = statuses.Changes;
+
+  /*
   const CommittedValue<parameter> param_null = CommittedValue<parameter>{parameter{}, entt::null};
-  for(const auto &[hash, val] : new_snapshot.StatusHashes){
-    auto old_it = old_snapshot.StatusHashes.find(hash);
-    if(old_it == old_snapshot.StatusHashes.end() || (old_it->second.Value == false && val.Value == true))
+  for(const auto &[hash, val] : new_snapshot.StatusHashes.Values){
+    auto old_it = old_snapshot.StatusHashes.Values.find(hash);
+    if(old_it == old_snapshot.StatusHashes.Values.end() || (old_it->second.Value == false && val.Value == true))
     {
       changes.ModifiedStatuses.emplace(hash, Change<status_t>{smt::added, val.CommitterId});
     }
   }
 
-  for(const auto &[hash, val] : old_snapshot.StatusHashes){
+  for(const auto &[hash, val] : old_snapshot.Values.StatusHashes){
     auto new_it = new_snapshot.StatusHashes.find(hash);
     entt::entity CommitterId = entt::null;
     if(new_it == new_snapshot.StatusHashes.end() || (new_it->second.Value == false && val.Value == true)){
@@ -217,7 +224,7 @@ attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapsho
     if(new_snapshot.ParamValues.find(hash) == new_snapshot.ParamValues.end()){
       changes.ModifiedParams.emplace(hash, std::make_pair(param, param_null));
     } 
-  }
+  }*/
 
   return changes;
 }
