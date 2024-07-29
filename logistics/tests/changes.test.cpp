@@ -4,17 +4,17 @@
 
 TEST_CASE("reverse changes -- do they work????!?!?!") {
   attributes_info_snapshot snapshot1, snapshot2;
-  snapshot1.ParamValues.emplace(1234, "Hello");
-  snapshot1.StatusHashes.emplace(4321, status_t{true});
+  snapshot1.ParamValues.Values.emplace(1234, "Hello");
+  snapshot1.StatusHashes.Values.emplace(4321, status_t{true});
 
-  snapshot2.ParamValues.emplace(1234, "Goodbye");
-  snapshot2.StatusHashes.emplace(5678, status_t{true});
+  snapshot2.ParamValues.Values.emplace(1234, "Goodbye");
+  snapshot2.StatusHashes.Values.emplace(5678, status_t{true});
 
   attributes_info_changes reverse_changes = compute_diff(snapshot2, snapshot1);
-  CHECK(reverse_changes.ModifiedStatuses.at(4321).Diff == smt::added);
-  CHECK(reverse_changes.ModifiedStatuses.at(5678).Diff == smt::removed);
+  CHECK(reverse_changes.ModifiedStatuses.at(4321).Change.Diff == smt::added);
+  CHECK(reverse_changes.ModifiedStatuses.at(5678).Change.Diff == smt::removed);
   
   attributes_info_changes forward_changes = compute_diff(snapshot1, snapshot2);
-  CHECK(forward_changes.ModifiedStatuses.at(5678).Diff == smt::added);
-  CHECK(forward_changes.ModifiedStatuses.at(4321).Diff == smt::removed);
+  CHECK(forward_changes.ModifiedStatuses.at(5678).Change.Diff == smt::added);
+  CHECK(forward_changes.ModifiedStatuses.at(4321).Change.Diff == smt::removed);
 }

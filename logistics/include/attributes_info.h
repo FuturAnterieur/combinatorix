@@ -110,15 +110,16 @@ struct status_t {
 template<typename T>
 struct DetailedChange {
   typename T::detailed_change_t Change;
-  DetailedChange<T> &operator= (const DetailedChange<T> &rhs);
+  //DetailedChange<T> &operator= (const DetailedChange<T> &rhs);
 };
 
+/*
 template<>
 DetailedChange<parameter> &DetailedChange<parameter>::operator=(const DetailedChange<parameter> &rhs){
   this->Change.first = rhs.Change.first;
   this->Change.second = rhs.Change.second;
   return *this;
-}
+}*/
 
 template<typename T>
 struct attributes_snapshot_t {
@@ -138,25 +139,26 @@ struct attributes_detailed_changes_t {
 
 
 template<typename T>
-CommittedValue<T> apply_change(const CommittedValue<T> &orig, const Change<T> &change){
-  static_assert(std::is_same_v<T, T::diff_t>());
+inline CommittedValue<T> apply_change(const CommittedValue<T> &orig, const Change<T> &change){
   CommittedValue<T> result;
   result.CommitterId = change.CommitterId;
-  result.Value = change.Value;
+  result.Value = change.Diff;
+  return result;
 }
 
 template<>
-CommittedValue<status_t> apply_change(const CommittedValue<status_t> &orig, const Change<status_t> &change){
+inline CommittedValue<status_t> apply_change(const CommittedValue<status_t> &orig, const Change<status_t> &change){
   CommittedValue<status_t> result;
   result.CommitterId = change.CommitterId;
   result.Value = (change.Diff == smt::added) ? true : false;
+  return result;
 }
 
 template<typename T>
 Change<T> shorten_change(const DetailedChange<T> &change);
 
 template<>
-Change<status_t> shorten_change(const DetailedChange<status_t> &change){
+inline Change<status_t> shorten_change(const DetailedChange<status_t> &change){
   Change<status_t> result;
   result.CommitterId = change.Change.CommitterId;
   result.Diff = change.Change.Diff;
@@ -164,7 +166,7 @@ Change<status_t> shorten_change(const DetailedChange<status_t> &change){
 }
 
 template<>
-Change<parameter> shorten_change(const DetailedChange<parameter> &change){
+inline Change<parameter> shorten_change(const DetailedChange<parameter> &change){
   Change<parameter> result;
   result.CommitterId = change.Change.second.CommitterId;
   result.Diff = change.Change.second.Value;
@@ -175,7 +177,7 @@ template<typename T>
 bool compute_diff(const CommittedValue<T> *left, const CommittedValue<T> *right, DetailedChange<T> &result);
 
 template<>
-bool compute_diff(const CommittedValue<status_t> *left, const CommittedValue<status_t> *right, DetailedChange<status_t> &result){
+inline bool compute_diff(const CommittedValue<status_t> *left, const CommittedValue<status_t> *right, DetailedChange<status_t> &result){
   bool has_change = false;
   bool left_exists = left && left->Value == true;
   bool right_exists = right && right->Value == true;
@@ -195,7 +197,7 @@ bool compute_diff(const CommittedValue<status_t> *left, const CommittedValue<sta
 }
 
 template<>
-bool compute_diff(const CommittedValue<parameter> *left, const CommittedValue<parameter> *right, DetailedChange<parameter> &result){
+inline bool compute_diff(const CommittedValue<parameter> *left, const CommittedValue<parameter> *right, DetailedChange<parameter> &result){
   bool has_change = false;
 
   result.Change.first = left ? *left : CommittedValue{parameter{}, entt::null};
@@ -211,9 +213,9 @@ bool compute_diff(const CommittedValue<parameter> *left, const CommittedValue<pa
 
 
 template<typename T>
-attributes_detailed_changes_t<T> compute_diff(const attributes_snapshot_t<T> &left, const attributes_snapshot_t<T> &right){
+inline attributes_detailed_changes_t<T> compute_diff(const attributes_snapshot_t<T> &left, const attributes_snapshot_t<T> &right){
   attributes_detailed_changes_t<T> all_changes;
-  auto compute_diff_process_map = [&all_changes](const auto &left, const auto &right) {
+  /*auto compute_diff_process_map = [&all_changes](const auto &left, const auto &right) {
     for(const auto &[hash, val] : left.Values){
       CommittedValue<T> *ptr = nullptr;
       auto it = right.Values.find(hash);
@@ -228,13 +230,35 @@ attributes_detailed_changes_t<T> compute_diff(const attributes_snapshot_t<T> &le
   };
 
   compute_diff_process_map(left, right);
-  compute_diff_process_map(right, left);
+  compute_diff_process_map(right, left);*/
+
+  std::map<entt::id_type, std::pair<const CommittedValue<T> *, const CommittedValue<T> *>> pairs_map;
+
+  for(const auto &[hash, val] : left.Values){
+    pairs_map.emplace(hash, std::make_pair(&val, nullptr));
+  }
+
+  for(const auto &[hash, val] : right.Values){
+    auto it = pairs_map.find(hash);
+    if(it == pairs_map.end()){
+      pairs_map.emplace(hash, std::make_pair(nullptr, &val));
+    } else {
+      it->second.second = &val;
+    }
+  }
+
+  for(const auto &[hash, pair] : pairs_map){
+    DetailedChange<T> result;
+    if(compute_diff(pair.first, pair.second, result)){
+      all_changes.Changes.emplace(hash, result);
+    }
+  }
 
   return all_changes;
 }
 
 template<typename T>
-void apply_changes_to_snapshot(const attributes_changes_t<T> &changes, attributes_snapshot_t<T> &snapshot){
+inline void apply_changes_to_snapshot(const attributes_changes_t<T> &changes, attributes_snapshot_t<T> &snapshot){
   for(const auto &[hash, change] : changes){
     auto it = snapshot.Values.find(hash);
     if(it == snapshot.Values.end()){
@@ -246,7 +270,7 @@ void apply_changes_to_snapshot(const attributes_changes_t<T> &changes, attribute
 }
 
 template<typename T>
-attributes_changes_t<T> shorten_changes(const attributes_detailed_changes_t<T> &detailed){
+inline attributes_changes_t<T> shorten_changes(const attributes_detailed_changes_t<T> &detailed){
   attributes_changes_t<T> shortened;
   for(const auto &[hash, change] : detailed){
    shortened.emplace(hash, shorten_change(change));

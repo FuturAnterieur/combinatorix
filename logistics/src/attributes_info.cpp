@@ -89,9 +89,14 @@ data_type &parameter::access_data_type(){
 //=================================================
 attributes_info_cumulative_changes cumul_changes_from_long(const attributes_info_changes &changes){
   attributes_info_cumulative_changes result;
-  result.StatusesChanges = changes.ModifiedStatuses;
+  
+  //result.StatusesChanges = shorten_changes(changes.ModifiedStatuses);
+  for(const auto &[hash, change] : changes.ModifiedStatuses){
+    result.StatusesChanges.emplace(hash, shorten_change(change));
+  }
+
   for(const auto &[hash, param_pair] : changes.ModifiedParams){
-    result.ParamChanges.emplace(hash, Change<parameter>{param_pair.second.Value, param_pair.second.CommitterId});
+    result.ParamChanges.emplace(hash, shorten_change(param_pair));
   }
   return result;
 }
@@ -111,21 +116,23 @@ attributes_info_cumulative_changes cumul_changes_from_short(const attributes_inf
 //=====================================
 bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes, attributes_info_snapshot &snapshot)
 {
+  //apply_changes_to_snapshot<status_t>(changes.StatusesChanges, snapshot.StatusHashes);
+
   for(const auto &[hash, change] : changes.ParamChanges){
-    
-    if(change.Diff.dt() == data_type::null){ //deletion
-      snapshot.ParamValues.erase(hash);
-    } else  { //modification
-      snapshot.ParamValues.insert_or_assign(hash, CommittedValue<parameter>{change.Diff, change.CommitterId});
+    CommittedValue<parameter> existing;
+    auto it = snapshot.ParamValues.Values.find(hash);
+    if(it != snapshot.ParamValues.Values.end()){
+      existing = it->second;
     }
+    snapshot.ParamValues.Values.insert_or_assign(hash, apply_change(existing, change));
   }
   for(const auto &[hash, change] : changes.StatusesChanges){
-    
-    if(change.Diff == smt::removed){
-      snapshot.StatusHashes.erase(hash);
-    } else {
-      snapshot.StatusHashes.insert_or_assign(hash, CommittedValue<status_t>{true, change.CommitterId});
+    CommittedValue<status_t> existing;
+    auto it = snapshot.StatusHashes.Values.find(hash);
+    if(it != snapshot.StatusHashes.Values.end()){
+      existing = it->second;
     }
+    snapshot.StatusHashes.Values.insert_or_assign(hash, apply_change(existing, change));
   }
   return true;
 }
