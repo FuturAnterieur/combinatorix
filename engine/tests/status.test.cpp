@@ -24,18 +24,18 @@ bool has_stable_status(entt::registry &registry, entt::entity entity, std::strin
 }
 
 bool changing_location_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end());
+  auto it = changes.ModifiedParams.Changes.find(k_location_hash);
+  return (it != changes.ModifiedParams.Changes.end());
 }
 
 bool entering_field_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.Change.second.Value.value()) == k_location_field);
+  auto it = changes.ModifiedParams.Changes.find(k_location_hash);
+  return (it != changes.ModifiedParams.Changes.end() && std::get<std::string>(it->second.Change.second.Value.value()) == k_location_field);
 }
 
 bool leaving_field_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find(k_location_hash);
-  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.Change.first.Value.value()) == k_location_field;
+  auto it = changes.ModifiedParams.Changes.find(k_location_hash);
+  return it != changes.ModifiedParams.Changes.end() && std::get<std::string>(it->second.Change.first.Value.value()) == k_location_field;
 }
 
 TEST_CASE("Status effects / simple situation"){
@@ -174,8 +174,8 @@ TEST_CASE("Status effects / diamond pattern"){
 
   auto mirror_trigger_filter = 
     [](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &info){
-      auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
-      return it != changes.ModifiedStatuses.end() && it->second.Change.Diff == smt::added;
+      auto it = changes.ModifiedStatuses.Changes.find(k_illuminated_hash);
+      return it != changes.ModifiedStatuses.Changes.end() && it->second.Change.Diff == smt::added;
   };
 
   int blue_update_counter{0};
@@ -252,8 +252,8 @@ TEST_CASE("diamond pattern without status effects, triggers only"){
 
   auto mirror_trigger_filter = 
     [](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &info){
-      auto it = changes.ModifiedStatuses.find(k_illuminated_hash);
-      return it != changes.ModifiedStatuses.end() && it->second.Change.Diff == smt::added;
+      auto it = changes.ModifiedStatuses.Changes.find(k_illuminated_hash);
+      return it != changes.ModifiedStatuses.Changes.end() && it->second.Change.Diff == smt::added;
   };
 
   int blue_update_counter{0};

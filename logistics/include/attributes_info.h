@@ -233,10 +233,10 @@ inline attributes_detailed_changes_t<T> compute_diff(const attributes_snapshot_t
 
 template<typename T>
 inline void apply_changes_to_snapshot(const attributes_changes_t<T> &changes, attributes_snapshot_t<T> &snapshot){
-  for(const auto &[hash, change] : changes){
+  for(const auto &[hash, change] : changes.Changes){
     auto it = snapshot.Values.find(hash);
     if(it == snapshot.Values.end()){
-      snapshot.values.emplace(hash, apply_change(CommittedValue<T>{}, change));
+      snapshot.Values.emplace(hash, apply_change(CommittedValue<T>{}, change));
     } else {
       it->second = apply_change(it->second, change);
     }
@@ -246,9 +246,10 @@ inline void apply_changes_to_snapshot(const attributes_changes_t<T> &changes, at
 template<typename T>
 inline attributes_changes_t<T> shorten_changes(const attributes_detailed_changes_t<T> &detailed){
   attributes_changes_t<T> shortened;
-  for(const auto &[hash, change] : detailed){
-   shortened.emplace(hash, shorten_change(change));
+  for(const auto &[hash, change] : detailed.Changes){
+   shortened.Changes.emplace(hash, shorten_change(change));
   }
+  return shortened;
 }
 
 
@@ -261,8 +262,8 @@ struct attributes_info_snapshot {
 
 //used by the client to know what has changed -- used in trigger filters and functions
 struct attributes_info_changes{ 
-  std::map<entt::id_type, DetailedChange<status_t>> ModifiedStatuses; 
-  std::map<entt::id_type, DetailedChange<parameter>> ModifiedParams;
+  attributes_detailed_changes_t<status_t> ModifiedStatuses; 
+  attributes_detailed_changes_t<parameter> ModifiedParams;
 };
 
 //sent to the backend by the clients, who should not have to care about committer IDs
@@ -272,8 +273,8 @@ struct logistics_API  attributes_info_short_changes {
 };
 
 struct attributes_info_cumulative_changes {
-  std::map<entt::id_type, Change<status_t>> StatusesChanges; 
-  std::map<entt::id_type, Change<parameter>> ParamChanges;
+  attributes_changes_t<status_t> StatusesChanges; 
+  attributes_changes_t<parameter> ParamChanges;
 };
 
 template<typename T>

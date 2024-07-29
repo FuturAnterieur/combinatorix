@@ -90,64 +90,41 @@ data_type &parameter::access_data_type(){
 attributes_info_cumulative_changes cumul_changes_from_long(const attributes_info_changes &changes){
   attributes_info_cumulative_changes result;
   
-  //TODO TODO convert cumul changes to use the templated structs
-  //result.StatusesChanges = shorten_changes(changes.ModifiedStatuses);
-  for(const auto &[hash, change] : changes.ModifiedStatuses){
-    result.StatusesChanges.emplace(hash, shorten_change(change));
-  }
-
-  for(const auto &[hash, param_pair] : changes.ModifiedParams){
-    result.ParamChanges.emplace(hash, shorten_change(param_pair));
-  }
+  result.StatusesChanges = shorten_changes(changes.ModifiedStatuses);
+  result.ParamChanges = shorten_changes(changes.ModifiedParams);
   return result;
 }
 
 //=========================================
 bool changes_empty(attributes_info_changes &changes){
-  return changes.ModifiedStatuses.empty() && changes.ModifiedParams.empty();
+  return changes.ModifiedStatuses.Changes.empty() && changes.ModifiedParams.Changes.empty();
 }
 
 attributes_info_cumulative_changes cumul_changes_from_short(const attributes_info_short_changes &short_changes, entt::entity originating_entity){
   attributes_info_cumulative_changes changes;
-  populate_change_map<status_t>(changes.StatusesChanges, short_changes.ModifiedStatuses, originating_entity);
-  populate_change_map<parameter>(changes.ParamChanges, short_changes.ModifiedParams, originating_entity);
+  populate_change_map<status_t>(changes.StatusesChanges.Changes, short_changes.ModifiedStatuses, originating_entity);
+  populate_change_map<parameter>(changes.ParamChanges.Changes, short_changes.ModifiedParams, originating_entity);
   return changes;
 }
 
 //=====================================
 bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes, attributes_info_snapshot &snapshot)
 {
-  //TODO TODO convert cumul changes to use the templated structs
-  //apply_changes_to_snapshot<status_t>(changes.StatusesChanges, snapshot.StatusHashes);
-
-  for(const auto &[hash, change] : changes.ParamChanges){
-    CommittedValue<parameter> existing;
-    auto it = snapshot.ParamValues.Values.find(hash);
-    if(it != snapshot.ParamValues.Values.end()){
-      existing = it->second;
-    }
-    snapshot.ParamValues.Values.insert_or_assign(hash, apply_change(existing, change));
-  }
-  for(const auto &[hash, change] : changes.StatusesChanges){
-    CommittedValue<status_t> existing;
-    auto it = snapshot.StatusHashes.Values.find(hash);
-    if(it != snapshot.StatusHashes.Values.end()){
-      existing = it->second;
-    }
-    snapshot.StatusHashes.Values.insert_or_assign(hash, apply_change(existing, change));
-  }
+  apply_changes_to_snapshot<status_t>(changes.StatusesChanges, snapshot.StatusHashes);
+  apply_changes_to_snapshot<parameter>(changes.ParamChanges, snapshot.ParamValues);
+  
   return true;
 }
 
 //=====================================
 bool attributes_info_history::add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback){
   
-  for(const auto &[hash, change] : changes.ParamChanges){
+  for(const auto &[hash, change] : changes.ParamChanges.Changes){
     auto &hist = ParamsHistory.emplace(hash, generic_history<parameter>()).first->second;
     hist.add_change(timing, change, callback);
   }
     
-  for(const auto &[hash, change] : changes.StatusesChanges){
+  for(const auto &[hash, change] : changes.StatusesChanges.Changes){
     auto &hist = StatusesHistory.emplace(hash, generic_history<status_t>()).first->second;
     hist.add_change(timing, change, callback);
   }
@@ -178,11 +155,11 @@ attributes_info_cumulative_changes attributes_info_history::cumulative_changes(t
   timing_only_callback.UserData = nullptr;
 
   for(const auto &[hash, hist] : ParamsHistory){
-    cumul.ParamChanges.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
+    cumul.ParamChanges.Changes.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
   }
     
   for(const auto &[hash, hist] : StatusesHistory){
-    cumul.StatusesChanges.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
+    cumul.StatusesChanges.Changes.emplace(hash, hist.cumulative_change(upper_bound, timing_only_callback));
   }
   return cumul;
 }
@@ -191,11 +168,8 @@ attributes_info_cumulative_changes attributes_info_history::cumulative_changes(t
 attributes_info_changes compute_diff(const attributes_info_snapshot &old_snapshot, const attributes_info_snapshot &new_snapshot){
   attributes_info_changes changes;
 
-  attributes_detailed_changes_t<status_t> statuses = compute_diff(old_snapshot.StatusHashes, new_snapshot.StatusHashes);
-  attributes_detailed_changes_t<parameter> params = compute_diff(old_snapshot.ParamValues, new_snapshot.ParamValues);
-
-  changes.ModifiedParams = params.Changes;
-  changes.ModifiedStatuses = statuses.Changes;
+  changes.ModifiedStatuses = compute_diff(old_snapshot.StatusHashes, new_snapshot.StatusHashes);
+  changes.ModifiedParams = compute_diff(old_snapshot.ParamValues, new_snapshot.ParamValues);
 
   return changes;
 }

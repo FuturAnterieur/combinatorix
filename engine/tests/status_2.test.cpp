@@ -27,18 +27,18 @@ bool has_stable_status(entt::registry &registry, entt::entity entity, std::strin
 }
 
 bool changing_location_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end());
+  auto it = changes.ModifiedParams.Changes.find(k_location_hash);
+  return (it != changes.ModifiedParams.Changes.end());
 }
 
 bool entering_field_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find(k_location_hash);
-  return (it != changes.ModifiedParams.end() && std::get<std::string>(it->second.Change.second.Value.value()) == k_location_field);
+  auto it = changes.ModifiedParams.Changes.find(k_location_hash);
+  return (it != changes.ModifiedParams.Changes.end() && std::get<std::string>(it->second.Change.second.Value.value()) == k_location_field);
 }
 
 bool leaving_field_condition(const attributes_info_changes &changes){
-  auto it = changes.ModifiedParams.find(k_location_hash);
-  return it != changes.ModifiedParams.end() && std::get<std::string>(it->second.Change.first.Value.value()) == k_location_field;
+  auto it = changes.ModifiedParams.Changes.find(k_location_hash);
+  return it != changes.ModifiedParams.Changes.end() && std::get<std::string>(it->second.Change.first.Value.value()) == k_location_field;
 }
 
 std::string get_location_value(entt::registry &registry, entt::entity entity){
