@@ -110,16 +110,7 @@ struct status_t {
 template<typename T>
 struct DetailedChange {
   typename T::detailed_change_t Change;
-  //DetailedChange<T> &operator= (const DetailedChange<T> &rhs);
 };
-
-/*
-template<>
-DetailedChange<parameter> &DetailedChange<parameter>::operator=(const DetailedChange<parameter> &rhs){
-  this->Change.first = rhs.Change.first;
-  this->Change.second = rhs.Change.second;
-  return *this;
-}*/
 
 template<typename T>
 struct attributes_snapshot_t {
@@ -215,23 +206,6 @@ inline bool compute_diff(const CommittedValue<parameter> *left, const CommittedV
 template<typename T>
 inline attributes_detailed_changes_t<T> compute_diff(const attributes_snapshot_t<T> &left, const attributes_snapshot_t<T> &right){
   attributes_detailed_changes_t<T> all_changes;
-  /*auto compute_diff_process_map = [&all_changes](const auto &left, const auto &right) {
-    for(const auto &[hash, val] : left.Values){
-      CommittedValue<T> *ptr = nullptr;
-      auto it = right.Values.find(hash);
-      if(it != right.Values.end()){
-        ptr = &it->second;
-      }
-      Change<T> result;
-      if(compute_diff(&val, ptr, result)){
-        all_changes.Changes.emplace(hash, result);
-      }
-    }
-  };
-
-  compute_diff_process_map(left, right);
-  compute_diff_process_map(right, left);*/
-
   std::map<entt::id_type, std::pair<const CommittedValue<T> *, const CommittedValue<T> *>> pairs_map;
 
   for(const auto &[hash, val] : left.Values){
