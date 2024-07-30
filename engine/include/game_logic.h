@@ -7,7 +7,8 @@
 #include "simulation_data.h"
 
 namespace engine {
-  
+  struct pre_change_trigger_info;
+
   using status_view_t = entt::view<entt::get_t<void>>;
   using parameter_view_t = entt::view<entt::get_t<parameter>>;
 
@@ -40,8 +41,10 @@ namespace engine {
       void add_status_effect(entt::entity affected_entity, entt::entity eff_entity);
       void remove_status_effect(entt::entity affected_entity, entt::entity eff_entity);
       
-      attributes_info_snapshot get_active_snapshot(entt::entity entity);
+      entt::entity create_pre_change_trigger(const pre_change_trigger_info &info);
+      void add_pre_change_trigger(entt::entity affected_entity, entt::entity trigger_entity);
 
+      attributes_info_snapshot get_active_snapshot(entt::entity entity);
       parameter_view_t get_parameter_view(entt::id_type hash);
       status_view_t get_status_view(entt::id_type hash);
 
