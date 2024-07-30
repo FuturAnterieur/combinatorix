@@ -37,6 +37,7 @@ namespace engine{
     HistoryManager->set_stable_values(entity, changes);
   }
 
+  //==============================================================
   void game_logic::change_intrinsics(entt::entity entity, const attributes_info_short_changes &changes){
     
     auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
