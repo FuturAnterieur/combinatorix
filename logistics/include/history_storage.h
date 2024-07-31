@@ -102,5 +102,10 @@ namespace logistics{
 
       return  get_stable_storage().get(entity);
     }
+
+    inline void clear_storages(){
+      get_changes_storage().clear();
+      get_stable_storage().clear();
+    }
   };
 }

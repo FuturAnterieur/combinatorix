@@ -342,10 +342,10 @@ struct attributes_info_history {
   std::map<entt::id_type, generic_history<status_t>> StatusesHistory; //DA FUTURE
   std::map<entt::id_type, generic_history<parameter>> ParamsHistory;
 
-  bool add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback);
+  logistics_API bool add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback);
   
-  attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
-  attributes_info_cumulative_changes cumulative_changes(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
+  logistics_API attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
+  logistics_API attributes_info_cumulative_changes cumulative_changes(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   
 };
 

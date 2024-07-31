@@ -2,6 +2,7 @@
 #include "logistics/include/combine.h"
 #include "status_structs.h"
 #include "action.h"
+#include "logistics/include/history_storage.h"
 
 #define DEFAULT_UPDATE_DELTA 0
 
@@ -41,35 +42,42 @@ namespace engine{
   //==============================================================
   void game_logic::change_intrinsics(entt::entity entity, const attributes_info_short_changes &changes){
     
-    
+    auto snapshot = HistoryManager->get_most_recent_intrinsics(entity);
     auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
     
+
     //Change changers (i.e. pre-change triggers)
     //TODO : Globals
     //TODO : probably provide detailed changes to the trigger functions
-    //TODO : priority in case of conflict
+    
+    //Handles merge conflicts by deferring them to the diff_merger used by history
+    logistics::history_storage<changes_category::intrinsics> temp_history;
+    temp_history.set_registry(_Registry);
+    temp_history.set_branch_name("temp");
+    temp_history.init_history_starting_point(entity, snapshot);
+    temp_history.commit_changes(entity, cumul, 0, false);
+
     if(pre_change_triggers_affecting *triggers = _Registry->try_get<pre_change_triggers_affecting>(entity); triggers){
       for(auto trig_ent : triggers->TriggerEntities){
         assert(_Registry->any_of<pre_change_trigger_info>(trig_ent));
         const auto &info = _Registry->get<pre_change_trigger_info>(trig_ent);
         if(info.Filter(this, cumul, entity, info)){
           info.Func(this, cumul, entity, info);
+          temp_history.commit_changes(entity, cumul, 0, false);
         }
       }
     }
     
-    auto snapshot = HistoryManager->get_most_recent_intrinsics(entity);
-    
-    //This 'actual change determination' procedure could be reviewed
-    auto candidate = snapshot;
-    paste_cumulative_changes(cumul, candidate);
-
+    auto candidate = temp_history.get_most_recent_snapshot(entity);
     attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
+
+    temp_history.clear_storages();
 
     if(changes_empty(actual_changes)) {
       return;
     }
 
+    //Question : maybe commit the cumul even if there are no actual changes????
     HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, cumul, CurrentSimulationData->CurrentTiming);
     CurrentSimulationData->record_intrinsic_attrs_change(entity);
     CurrentSimulationData->enqueue_update(entity, DEFAULT_UPDATE_DELTA, this);
