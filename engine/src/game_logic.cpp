@@ -73,6 +73,11 @@ namespace engine{
           paste_cumulative_changes(cumul, next_candidate);
           auto actual = compute_diff(previous_candidate, next_candidate);
 
+          //super sneaky way wo include committer IDs for change changers
+          for(auto &[hash, change] : actual.ModifiedParams.Changes){
+            change.Change.second.CommitterId = info.Owner;
+          }
+
           temp_history.commit_changes(entity, cumul_changes_from_long(actual), 0, false);
           previous_candidate = next_candidate;
         }
