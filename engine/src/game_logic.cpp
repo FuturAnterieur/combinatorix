@@ -55,6 +55,10 @@ namespace engine{
     temp_history.set_registry(_Registry);
     temp_history.set_branch_name("temp");
     temp_history.init_history_starting_point(entity, snapshot);
+    auto next_candidate = snapshot;
+    paste_cumulative_changes(cumul, next_candidate);
+    auto previous_candidate = next_candidate;
+    
     temp_history.commit_changes(entity, cumul, 0, false);
 
     if(pre_change_triggers_affecting *triggers = _Registry->try_get<pre_change_triggers_affecting>(entity); triggers){
@@ -63,7 +67,14 @@ namespace engine{
         const auto &info = _Registry->get<pre_change_trigger_info>(trig_ent);
         if(info.Filter(this, cumul, entity, info)){
           info.Func(this, cumul, entity, info);
-          temp_history.commit_changes(entity, cumul, 0, false);
+
+          //this will work for non-incremental parameters, mostly for the case of change cancellation
+          next_candidate = snapshot;
+          paste_cumulative_changes(cumul, next_candidate);
+          auto actual = compute_diff(previous_candidate, next_candidate);
+
+          temp_history.commit_changes(entity, cumul_changes_from_long(actual), 0, false);
+          previous_candidate = next_candidate;
         }
       }
     }

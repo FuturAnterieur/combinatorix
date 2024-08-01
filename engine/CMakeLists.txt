@@ -24,3 +24,4 @@ set(TEST_INCLUDES ${ENTT_SOURCE_DIR}/src ${CEREAL_SOURCE_DIR}/include ${DOCTEST_
 
 add_cxx_doctest_driver(TestStatusWithEngine SRCS tests/status.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine TEST_FANCY_NAME basic_status_wih_engine)
 add_cxx_doctest_driver(TestStatus2WithEngine SRCS tests/status_2.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine TEST_FANCY_NAME slightly_less_basic_status_wih_engine)
+add_cxx_doctest_driver(TestStatus3 SRCS tests/status_3.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine TEST_FANCY_NAME pre_change_triggers_wih_engine)

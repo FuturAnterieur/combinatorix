@@ -53,6 +53,11 @@ namespace engine{
   void simulation_data::run_one_timing(){
     bool cycle_found = false;
 
+    if(ExecutablesPerTimingLevel.empty()){
+      Finished = true;
+      return;
+    }
+
     auto it = ExecutablesPerTimingLevel.find(CurrentTiming);
     if(it == ExecutablesPerTimingLevel.end()){
       CurrentTiming++;
