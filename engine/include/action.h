@@ -1,19 +1,90 @@
 #pragma once
 
 #include "logistics/include/attributes_info.h"
+#include "logistics/include/priority.h"
 #include "engine/include/status_structs.h"
 #include "engine_export.h"
 
 #include <functional>
 #include <entt/entity/fwd.hpp>
 
+#include <optional>
+
 namespace engine {
   class game_logic;
   struct pre_change_trigger_info;
+
+  struct change_suppression_edit {
+    entt::entity CommitterId;
+  };
+
+  template<typename T>
+  struct change_history_t{
+    std::vector<Change<T>> ModificationEdits; //Change<T> already has a committer ID
+    std::vector<change_suppression_edit> SuppressionEdits;
+    void add_suppression_edit(entt::entity committer_id);
+    void add_modification_edit(const Change<T> &change);
+    
+    //For now I don't have the notion of incremental changes, so a maximum of one change may be actually applied
+    std::optional<Change<T>> merge_result(entt::registry *registry){ // argument could be replaced by game_logic
+      priority_request req;
+
+      size_t all_edits_size = ModificationEdits.size() + SuppressionEdits.size();
+      std::vector<priority_t> all_priorities(all_edits_size, 0);
+      size_t counter = 0;
+      for(const auto &edit : ModificationEdits){
+        req.EntitiesWithResultingPriorityValues.push_back(std::make_pair(edit.CommitterId, &all_priorities[counter]));
+        counter++;
+      }
+      for(const auto &edit : SuppressionEdits){
+        req.EntitiesWithResultingPriorityValues.push_back(std::make_pair(edit.CommitterId, &all_priorities[counter]));
+        counter++;
+      }
+
+      classic_priority_callback(req, registry);
+
+      std::optional<Change<T>> result = std::nullopt;
+      //find  highest suppression priority
+
+      priority_t highest_suppression_priority = std::numeric_limits<priority_t>::min();
+      for(size_t i = ModificationEdits.size(); i < all_edits_size; i++){
+        if((*req.EntitiesWithResultingPriorityValues[i].second) > highest_suppression_priority){
+          highest_suppression_priority = *req.EntitiesWithResultingPriorityValues[i].second;
+        }
+      }
+
+      //filter out modification edits
+      //For non-incremental parameters, keep the highest priority only
+
+      //anyway incremental parameters would be calculated differently, because we still want only one change to be outputted for a single timing
+      priority_t highest_modif_prio = std::numeric_limits<priority_t>::min();
+      for(size_t i = 0; i < ModificationEdits.size(); i++){
+        priority_t prio_val = *req.EntitiesWithResultingPriorityValues[i].second;
+        if(prio_val > highest_suppression_priority){
+          if(prio_val > highest_modif_prio){
+            highest_modif_prio = prio_val;
+            result.emplace(ModificationEdits.at(i));
+          }
+        }
+      }
+
+      return result;
+    }
+  };
+
+  class change_edit_history {
+    private:
+      std::map<entt::id_type, change_history_t<status_t>> Statuses;
+      std::map<entt::id_type, change_history_t<parameter>> Parameters;
+    public:
+      void record_status_edit(entt::id_type hash, std::optional<Change<status_t>> change);
+      void record_param_edit(entt::id_type hash, std::optional<Change<parameter>> change);
+  };
+
   //signature : game_logic, proposed status changes, entity whose status changed, trigger's info (containing owning entity)
-  using pre_change_trigger_func_t = std::function<void(game_logic *, attributes_info_cumulative_changes &proposed_changes, entt::entity, const pre_change_trigger_info &info)>;
+  using pre_change_trigger_func_t = std::function<void(game_logic *, const attributes_info_changes &detailed_changes, entt::entity, const pre_change_trigger_info &info)>;
   //signature : game_logic, modifiable status changes, entity whose status changed, trigger's info (containing owning entity)
-  using pre_change_trigger_filter_t = std::function<bool(game_logic *, attributes_info_cumulative_changes &proposed_changes, entt::entity, const pre_change_trigger_info &info)>;
+  using pre_change_trigger_filter_t = std::function<bool(game_logic *, const attributes_info_changes &detailed_changes, entt::entity, const pre_change_trigger_info &info, change_edit_history &io_hist)>;
   
   struct engine_API pre_change_trigger_info {
     pre_change_trigger_func_t Func;
