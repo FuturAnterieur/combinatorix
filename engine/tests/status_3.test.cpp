@@ -55,6 +55,8 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
   entt::registry registry;
   engine::game_logic game(&registry);
 
+  auto player = registry.create();
+  registry.emplace<priority_info>(player, 5);
   auto subject = registry.create();
   game.init_attributes(subject, {{},{{k_location_hash, k_location_field}}});
   auto modifier = registry.create();
@@ -77,11 +79,28 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
   auto mod_trigger = game.create_pre_change_trigger(engine::pre_change_trigger_info{func, filter, modifier});
   game.add_pre_change_trigger(subject, mod_trigger);
 
-  game.run_simulation([&](engine::game_logic *game){
-    attributes_info_short_changes sc;
-    sc.ModifiedParams.emplace(k_location_hash, k_location_grave);
-    game->change_intrinsics(subject, sc);
-  });
+  SUBCASE("Trigger has priority over original change"){
+    game.run_simulation([&](engine::game_logic *game){
+      game->set_originating_entity(player);
+      attributes_info_short_changes sc;
+      sc.ModifiedParams.emplace(k_location_hash, k_location_grave);
+      game->change_intrinsics(subject, sc);
+    });
 
-  CHECK(get_location_value(registry, subject) == k_location_field);
+    CHECK(get_location_value(registry, subject) == k_location_field);
+  }
+
+  SUBCASE("original change has priority"){
+    auto &player_prio = registry.get<priority_info>(player);
+    player_prio.Value = 11;
+
+    game.run_simulation([&](engine::game_logic *game){
+      game->set_originating_entity(player);
+      attributes_info_short_changes sc;
+      sc.ModifiedParams.emplace(k_location_hash, k_location_grave);
+      game->change_intrinsics(subject, sc);
+    });
+
+    CHECK(get_location_value(registry, subject) == k_location_grave);
+  }
 }

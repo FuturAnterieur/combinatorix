@@ -24,6 +24,7 @@ namespace engine {
       game_logic(entt::registry *registry);
       ~game_logic() = default;
 
+      //only useful for change edit history, the API of which should be changed anyway
       inline entt::registry *get_registry() {
         return _Registry;
       }
@@ -34,9 +35,9 @@ namespace engine {
       //Calculation API
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
-
       void change_actives(entt::entity, const attributes_info_short_changes &changes);
       //void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
+      void set_originating_entity(entt::entity entity); //To be used e.g. to say when a player is playing. Mostly useful at the start of a simulation, because otherwise, it is managed internally.
 
       void add_on_status_change_trigger(entt::entity entity, on_status_change_trigger_info &info);
       void add_global_on_status_change_trigger(on_status_change_trigger_info &info); //adds to registry.ctx

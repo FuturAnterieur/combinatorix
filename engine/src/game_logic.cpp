@@ -86,9 +86,14 @@ namespace engine{
     CurrentSimulationData->enqueue_update(entity, DEFAULT_UPDATE_DELTA, this);
   }
 
+  //=========================================================================
   void game_logic::change_actives(entt::entity entity, const attributes_info_short_changes &changes){
     auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
     HistoryManager->commit_local_changes(entity, cumul);
+  }
+
+  void game_logic::set_originating_entity(entt::entity entity){
+    CurrentSimulationData->ChangesContext.OriginatingEntity = entity;
   }
 
   void game_logic::add_on_status_change_trigger(entt::entity entity, on_status_change_trigger_info &info){
