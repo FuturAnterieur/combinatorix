@@ -24,6 +24,10 @@ namespace engine {
       game_logic(entt::registry *registry);
       ~game_logic() = default;
 
+      inline entt::registry *get_registry() {
+        return _Registry;
+      }
+
       //API
       void run_simulation(const std::function<void(game_logic *)> &request);
       

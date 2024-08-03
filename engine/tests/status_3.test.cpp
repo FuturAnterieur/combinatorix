@@ -62,7 +62,7 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
 
   registry.emplace<priority_info>(modifier, 10);
 
-  auto filter = [](engine::game_logic *game, attributes_info_cumulative_changes &proposed_changes, entt::entity, const engine::pre_change_trigger_info &info){
+  auto filter = [](engine::game_logic *game, const attributes_info_changes &actual_changes, const attributes_info_cumulative_changes &proposed_changes, entt::entity entity, const engine::pre_change_trigger_info &info){
     auto it = proposed_changes.ParamChanges.Changes.find(k_location_hash);
     if(it != proposed_changes.ParamChanges.Changes.end() && std::get<std::string>(it->second.Diff.value()) == k_location_grave){
       return true;
@@ -70,11 +70,9 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
     return false;
   };
 
-  auto func = [](engine::game_logic *game, attributes_info_cumulative_changes &proposed_changes, entt::entity, const engine::pre_change_trigger_info &info){
-    auto it = proposed_changes.ParamChanges.Changes.find(k_location_hash);
-    proposed_changes.ParamChanges.Changes.erase(it);
+  auto func = [](engine::game_logic *game, const attributes_info_changes &actual_changes, const attributes_info_cumulative_changes &proposed_changes, entt::entity entity, const engine::pre_change_trigger_info &info, engine::change_edit_history &hist){
+    hist.record_param_change_suppression(k_location_hash, info.Owner);
   };
-
 
   auto mod_trigger = game.create_pre_change_trigger(engine::pre_change_trigger_info{func, filter, modifier});
   game.add_pre_change_trigger(subject, mod_trigger);

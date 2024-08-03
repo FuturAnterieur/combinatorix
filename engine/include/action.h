@@ -6,7 +6,6 @@
 #include "engine_export.h"
 
 #include <functional>
-#include <entt/entity/fwd.hpp>
 
 #include <optional>
 
@@ -19,14 +18,18 @@ namespace engine {
   };
 
   template<typename T>
-  struct change_history_t{
+  struct change_history_t {
     std::vector<Change<T>> ModificationEdits; //Change<T> already has a committer ID
     std::vector<change_suppression_edit> SuppressionEdits;
-    void add_suppression_edit(entt::entity committer_id);
-    void add_modification_edit(const Change<T> &change);
+    void add_suppression_edit(entt::entity committer_id){
+      SuppressionEdits.push_back(change_suppression_edit{committer_id});
+    }
+    void add_modification_edit(const Change<T> &change){
+      ModificationEdits.push_back(change);
+    }
     
     //For now I don't have the notion of incremental changes, so a maximum of one change may be actually applied
-    std::optional<Change<T>> merge_result(entt::registry *registry){ // argument could be replaced by game_logic
+    std::optional<Change<T>> merge_result(entt::registry *registry) const{ // argument could be replaced by game_logic
       priority_request req;
 
       size_t all_edits_size = ModificationEdits.size() + SuppressionEdits.size();
@@ -77,14 +80,18 @@ namespace engine {
       std::map<entt::id_type, change_history_t<status_t>> Statuses;
       std::map<entt::id_type, change_history_t<parameter>> Parameters;
     public:
-      void record_status_edit(entt::id_type hash, std::optional<Change<status_t>> change);
-      void record_param_edit(entt::id_type hash, std::optional<Change<parameter>> change);
+      //TODO offer API functions in game_logic
+      void engine_API record_status_edit(entt::id_type hash, Change<status_t> change);
+      void engine_API record_param_edit(entt::id_type hash, Change<parameter> change);
+      void engine_API record_status_change_suppression(entt::id_type hash, entt::entity committer);
+      void engine_API record_param_change_suppression(entt::id_type hash, entt::entity committer);
+      attributes_info_cumulative_changes create_cumul_changes(game_logic *game) const;
   };
 
-  //signature : game_logic, proposed status changes, entity whose status changed, trigger's info (containing owning entity)
-  using pre_change_trigger_func_t = std::function<void(game_logic *, const attributes_info_changes &detailed_changes, entt::entity, const pre_change_trigger_info &info)>;
-  //signature : game_logic, modifiable status changes, entity whose status changed, trigger's info (containing owning entity)
-  using pre_change_trigger_filter_t = std::function<bool(game_logic *, const attributes_info_changes &detailed_changes, entt::entity, const pre_change_trigger_info &info, change_edit_history &io_hist)>;
+
+ 
+  using pre_change_trigger_filter_t = std::function<bool(game_logic *, const attributes_info_changes &detailed_changes, const attributes_info_cumulative_changes &requested_changes, entt::entity, const pre_change_trigger_info &info)>;
+  using pre_change_trigger_func_t = std::function<void(game_logic *, const attributes_info_changes &detailed_changes, const attributes_info_cumulative_changes &requested_changes, entt::entity, const pre_change_trigger_info &info, change_edit_history &io_hist)>;
   
   struct engine_API pre_change_trigger_info {
     pre_change_trigger_func_t Func;

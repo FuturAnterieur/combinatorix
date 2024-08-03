@@ -43,58 +43,45 @@ namespace engine{
   void game_logic::change_intrinsics(entt::entity entity, const attributes_info_short_changes &changes){
     
     auto snapshot = HistoryManager->get_most_recent_intrinsics(entity);
-    auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
-    
+    auto proposed = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
+    attributes_info_snapshot candidate = snapshot;
+    paste_cumulative_changes(proposed, candidate);
+    attributes_info_changes detailed_changes = compute_diff(snapshot, candidate);
 
     //Change changers (i.e. pre-change triggers)
     //TODO : Globals
-    //TODO : probably provide detailed changes to the trigger functions
     
-    //Handles merge conflicts by deferring them to the diff_merger used by history
-    logistics::history_storage<changes_category::intrinsics> temp_history;
-    temp_history.set_registry(_Registry);
-    temp_history.set_branch_name("temp");
-    temp_history.init_history_starting_point(entity, snapshot);
-    auto next_candidate = snapshot;
-    paste_cumulative_changes(cumul, next_candidate);
-    auto previous_candidate = next_candidate;
-    
-    temp_history.commit_changes(entity, cumul, 0, false);
+    change_edit_history hist;
+    for(const auto &[hash, change] : proposed.StatusesChanges.Changes){
+      hist.record_status_edit(hash, change);
+    }
 
+    for(const auto &[hash, change] : proposed.ParamChanges.Changes){
+      hist.record_param_edit(hash, change);
+    }
+    
     if(pre_change_triggers_affecting *triggers = _Registry->try_get<pre_change_triggers_affecting>(entity); triggers){
       for(auto trig_ent : triggers->TriggerEntities){
         assert(_Registry->any_of<pre_change_trigger_info>(trig_ent));
         const auto &info = _Registry->get<pre_change_trigger_info>(trig_ent);
-        if(info.Filter(this, cumul, entity, info)){
-          info.Func(this, cumul, entity, info);
-
-          //this will work for non-incremental parameters, mostly for the case of change cancellation
-          next_candidate = snapshot;
-          paste_cumulative_changes(cumul, next_candidate);
-          auto actual = compute_diff(previous_candidate, next_candidate);
-
-          //super sneaky way wo include committer IDs for change changers
-          for(auto &[hash, change] : actual.ModifiedParams.Changes){
-            change.Change.second.CommitterId = info.Owner;
-          }
-
-          temp_history.commit_changes(entity, cumul_changes_from_long(actual), 0, false);
-          previous_candidate = next_candidate;
+        if(info.Filter(this, detailed_changes, proposed, entity, info)){
+          info.Func(this, detailed_changes, proposed, entity, info, hist);
         }
       }
     }
     
-    auto candidate = temp_history.get_most_recent_snapshot(entity);
-    attributes_info_changes actual_changes = compute_diff(snapshot, candidate);
-
-    temp_history.clear_storages();
+    attributes_info_cumulative_changes modified_changes = hist.create_cumul_changes(this);
+    attributes_info_snapshot candidate2 = snapshot;
+    paste_cumulative_changes(modified_changes, candidate2);
+    
+    attributes_info_changes actual_changes = compute_diff(snapshot, candidate2);
 
     if(changes_empty(actual_changes)) {
       return;
     }
 
     //Question : maybe commit the cumul even if there are no actual changes????
-    HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, cumul, CurrentSimulationData->CurrentTiming);
+    HistoryManager->commit_changes_for_intrinsics_to_active_branch(entity, modified_changes, CurrentSimulationData->CurrentTiming);
     CurrentSimulationData->record_intrinsic_attrs_change(entity);
     CurrentSimulationData->enqueue_update(entity, DEFAULT_UPDATE_DELTA, this);
   }
