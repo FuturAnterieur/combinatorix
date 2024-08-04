@@ -101,4 +101,18 @@ TEST_CASE("Basic test for parameters with incremental changes applied to them (i
     float result = get_hp_value(registry, subject);
     CHECK(std::round(result) == 53.0f);
   }
+
+  SUBCASE("Case 2 : two modifiers + one intrinsic change"){
+    game.run_simulation([&](engine::game_logic *game){
+      attributes_info_short_changes intrinsics;
+      intrinsics.ModifiedParams.emplace(k_hp_hash, diff_from_op(param_op_type::mul, 2.f));
+      
+      game->add_status_effect(subject, se1);
+      game->add_status_effect(subject, se2);
+      game->change_intrinsics(subject, intrinsics);
+    });
+
+    float result = get_hp_value(registry, subject);
+    CHECK(std::round(result) == 103.0f);
+  }
 }
