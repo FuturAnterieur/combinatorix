@@ -10,6 +10,11 @@ parameter::parameter() : _Pimpl(new pimpl()) {
   _Pimpl->Value = "";
 }
 
+parameter::parameter(const parameter_value_t &val) : _Pimpl(new pimpl()) {
+  DT = data_type::not_null;
+  _Pimpl->Value = val;
+}
+
 parameter::parameter(const std::string &val) :  _Pimpl(new pimpl()){
   DT = concrete_to_enum_type<std::string>::t;
   _Pimpl->Value = val;
@@ -108,7 +113,23 @@ bool changes_empty(attributes_info_changes &changes){
   return changes.ModifiedStatuses.Changes.empty() && changes.ModifiedParams.Changes.empty();
 }
 
-attributes_info_cumulative_changes cumul_changes_from_short(const attributes_info_short_changes &short_changes, entt::entity originating_entity){
+parameter_diff diff_from_set_val(parameter_value_t val){
+  parameter_diff result;
+  result.Type = param_diff_type::set_value;
+  result.Data = param_set_value_diff_data{val, true};
+  return result;
+}
+
+parameter_diff diff_from_op(param_op_type op, float arg)
+{
+  parameter_diff result;
+  result.Type = param_diff_type::apply_op;
+  result.Data = param_apply_op_diff_data{op, {arg}};
+  return result;
+}
+
+attributes_info_cumulative_changes cumul_changes_from_short(const attributes_info_short_changes &short_changes, entt::entity originating_entity)
+{
   attributes_info_cumulative_changes changes;
   populate_change_map<status_t>(changes.StatusesChanges.Changes, short_changes.ModifiedStatuses, originating_entity);
   populate_change_map<parameter>(changes.ParamChanges.Changes, short_changes.ModifiedParams, originating_entity);

@@ -43,9 +43,9 @@ TEST_CASE("Status effects / simple situation"){
   engine::game_logic game(&registry);
 
   entt::entity opalescence = registry.create();
-  game.init_attributes(opalescence, attributes_info_short_changes{{{k_enchantment_hash, smt::added}},{}});
+  game.init_status(opalescence, k_enchantment_hash, smt::added);
   entt::entity exploration = registry.create();
-  game.init_attributes(exploration, attributes_info_short_changes{{{k_enchantment_hash, smt::added}},{}});
+  game.init_status(exploration, k_enchantment_hash, smt::added);
   
   auto opal_stat_eff_func = [](engine::game_logic *game, entt::entity target, entt::entity owner){
         auto target_snapshot = game->get_active_snapshot(target);
@@ -88,7 +88,7 @@ TEST_CASE("Status effects / simple situation"){
 
   game.run_simulation([&](engine::game_logic *game){
     attributes_info_short_changes exploration_enters_field;
-    exploration_enters_field.ModifiedParams.emplace(k_location_hash, parameter(k_location_field));
+    exploration_enters_field.ModifiedParams.emplace(k_location_hash, diff_from_set_val(k_location_field));
     game->change_intrinsics(exploration, exploration_enters_field);
   });
   
@@ -131,7 +131,7 @@ TEST_CASE("Status effects / simple situation"){
   // Chapter 4 : remove exploration from the field
   game.run_simulation([&](engine::game_logic *game) {
     attributes_info_short_changes leaves_field;
-    leaves_field.ModifiedParams.emplace(k_location_hash, parameter(k_location_grave));
+    leaves_field.ModifiedParams.emplace(k_location_hash, diff_from_set_val(k_location_grave));
     game->change_intrinsics(exploration, leaves_field);
   });
   
@@ -152,17 +152,18 @@ TEST_CASE("Status effects / diamond pattern"){
   engine::game_logic game(&registry);
 
   entt::entity sorcerer = registry.create();
-  game.init_attributes(sorcerer, attributes_info_short_changes{{{k_creature_hash, smt::added}},{}});
+  game.init_status(sorcerer, k_creature_hash, smt::added);
   
   entt::entity light = registry.create();
-  game.init_attributes(light, attributes_info_short_changes{{{k_object_hash, smt::added}}, {}});
+  game.init_status(light, k_object_hash, smt::added);
   
   entt::entity blue_mirror = registry.create();
-  game.init_attributes(blue_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Blue"}}});
-  
+  game.init_status(blue_mirror, k_object_hash, smt::added);
+  game.init_parameter(blue_mirror, k_color_hash, "Blue");
+
   entt::entity red_mirror = registry.create();
-  game.init_attributes(red_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Red"}}});
-  
+  game.init_status(red_mirror, k_object_hash, smt::added);
+  game.init_parameter(red_mirror, k_color_hash, "Red");
   
   auto illuminate = [](engine::game_logic *game, entt::entity target, entt::entity owner){
       attributes_info_short_changes illum;
@@ -239,17 +240,19 @@ TEST_CASE("diamond pattern without status effects, triggers only"){
   engine::game_logic game(&registry);
 
   entt::entity sorcerer = registry.create();
-  game.init_attributes(sorcerer, attributes_info_short_changes{{{k_creature_hash, smt::added}},{}});
+  game.init_status(sorcerer, k_creature_hash, smt::added);
   
   entt::entity light = registry.create();
-  game.init_attributes(light, attributes_info_short_changes{{{k_object_hash, smt::added}}, {}});
+  game.init_status(light, k_object_hash, smt::added);
   
   entt::entity blue_mirror = registry.create();
-  game.init_attributes(blue_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Blue"}}});
-  
-  entt::entity red_mirror = registry.create();
-  game.init_attributes(red_mirror, attributes_info_short_changes{{{k_object_hash, smt::added}}, {{k_color_hash, "Red"}}});
+  game.init_status(blue_mirror, k_object_hash, smt::added);
+  game.init_parameter(blue_mirror, k_color_hash, "Blue");
 
+  entt::entity red_mirror = registry.create();
+  game.init_status(red_mirror, k_object_hash, smt::added);
+  game.init_parameter(red_mirror, k_color_hash, "Red");
+  
   auto mirror_trigger_filter = 
     [](engine::game_logic *game, const attributes_info_changes &changes, entt::entity entity, const engine::on_status_change_trigger_info &info){
       auto it = changes.ModifiedStatuses.Changes.find(k_illuminated_hash);

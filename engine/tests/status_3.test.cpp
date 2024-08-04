@@ -58,15 +58,21 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
   auto player = registry.create();
   registry.emplace<priority_info>(player, 5);
   auto subject = registry.create();
-  game.init_attributes(subject, {{},{{k_location_hash, k_location_field}}});
+  game.init_parameter(subject, k_location_hash, k_location_field);
   auto modifier = registry.create();
-  game.init_attributes(modifier, {{},{}});
-
+  
   registry.emplace<priority_info>(modifier, 10);
 
   auto filter = [](engine::game_logic *game, const attributes_info_changes &actual_changes, const attributes_info_cumulative_changes &proposed_changes, entt::entity entity, const engine::pre_change_trigger_info &info){
     auto it = proposed_changes.ParamChanges.Changes.find(k_location_hash);
-    if(it != proposed_changes.ParamChanges.Changes.end() && std::get<std::string>(it->second.Diff.value()) == k_location_grave){
+
+    if(it != proposed_changes.ParamChanges.Changes.end()){
+      if(it->second.Diff.Type == param_diff_type::set_value){
+        auto &data = std::get<param_set_value_diff_data>(it->second.Diff.Data);
+        if(std::get<std::string>(data.Value) == k_location_grave){
+          return true;
+        }
+      }
       return true;
     }
     return false;
@@ -83,7 +89,7 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
     game.run_simulation([&](engine::game_logic *game){
       game->set_originating_entity(player);
       attributes_info_short_changes sc;
-      sc.ModifiedParams.emplace(k_location_hash, k_location_grave);
+      sc.ModifiedParams.emplace(k_location_hash, diff_from_set_val(k_location_grave));
       game->change_intrinsics(subject, sc);
     });
 
@@ -97,7 +103,7 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
     game.run_simulation([&](engine::game_logic *game){
       game->set_originating_entity(player);
       attributes_info_short_changes sc;
-      sc.ModifiedParams.emplace(k_location_hash, k_location_grave);
+      sc.ModifiedParams.emplace(k_location_hash, diff_from_set_val(k_location_grave));
       game->change_intrinsics(subject, sc);
     });
 

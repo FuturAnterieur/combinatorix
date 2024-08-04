@@ -33,6 +33,9 @@ namespace engine {
       void run_simulation(const std::function<void(game_logic *)> &request);
       
       //Calculation API
+      void init_status(entt::entity entity, entt::id_type hash, smt val);
+      void init_parameter(entt::entity entity, entt::id_type hash, parameter_value_t val);
+
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
       void change_actives(entt::entity, const attributes_info_short_changes &changes);

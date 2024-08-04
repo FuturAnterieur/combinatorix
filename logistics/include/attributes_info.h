@@ -58,6 +58,7 @@ enum class param_op_type {
 
 struct param_set_value_diff_data{
   parameter_value_t Value;
+  bool HasValue{true};
 };
 
 struct param_apply_op_diff_data {
@@ -70,11 +71,15 @@ struct parameter_diff {
   std::variant<param_set_value_diff_data, param_apply_op_diff_data> Data;
 };
 
+logistics_API parameter_diff diff_from_set_val(parameter_value_t val);
+logistics_API parameter_diff diff_from_op(param_op_type op, float arg);
+
 struct logistics_API parameter {
   using diff_t = parameter_diff;
   using detailed_change_t = std::pair<CommittedValue<parameter>, CommittedValue<parameter>>;
 
   parameter();
+  parameter(const parameter_value_t &val);
   parameter(const std::string &val);
   parameter(const char *val);
   parameter(bool val);
@@ -328,7 +333,7 @@ struct attributes_info_changes{
 //sent to the backend by the clients, who should not have to care about committer IDs
 struct logistics_API  attributes_info_short_changes {
   std::map<entt::id_type, smt> ModifiedStatuses; 
-  std::map<entt::id_type, parameter> ModifiedParams;
+  std::map<entt::id_type, parameter_diff> ModifiedParams;
 };
 
 struct attributes_info_cumulative_changes {
@@ -369,20 +374,14 @@ template<typename T>
 
       return result;
     }
-
-    virtual Change<T> merge_changes(const std::vector<Change<T>> &changes, const priority_callback_t &prio_func){
-      std::vector<priority_t> priorities;
-      obtain_priorities(changes, prio_func, priorities);
-
-      Change<T> result;
-      return result;
-    }
-
     //For params : specialize the template to take into account if the diff is incremental (i.e. an HP param for instance)
   };
 
+template<typename T>
+inline Change<T> merge_changes(const std::vector<Change<T>> &changes, const priority_callback_t &prio_func);
+
 template<>
-Change<status_t> diff_merger<status_t>::merge_changes(const std::vector<Change<status_t>> &changes, const priority_callback_t &prio_func){
+inline Change<status_t> merge_changes(const std::vector<Change<status_t>> &changes, const priority_callback_t &prio_func){
   std::vector<priority_t> priorities;
   obtain_priorities(changes, prio_func, priorities);
 
@@ -400,7 +399,7 @@ Change<status_t> diff_merger<status_t>::merge_changes(const std::vector<Change<s
 }
 
 template<>
-Change<parameter> diff_merger<parameter>::merge_changes(const std::vector<Change<parameter>> &changes, const priority_callback_t &prio_func){
+inline Change<parameter> merge_changes(const std::vector<Change<parameter>> &changes, const priority_callback_t &prio_func){
   std::vector<priority_t> priorities;
   obtain_priorities(changes, prio_func, priorities);
 
@@ -427,9 +426,59 @@ Change<parameter> diff_merger<parameter>::merge_changes(const std::vector<Change
     }
   }
 
+  if(!setters.empty()){
+    auto &starting_diff_data = std::get<param_set_value_diff_data>(result.Diff.Data);
+    if(!std::holds_alternative<float>(starting_diff_data.Value))
+    {
+      return result;
+    }
+  }
+  
+
   //Next up : apply operators incrementally!!!!
   //will need an operator fusion function.
 
+  //this is for stacking Change operators together;
+  //in pre-change triggers, I will probably need to modify operators with operations
+  //(i.e. taking an addition value and multiplying it by a factor; (+ 2) x 5 becomes + 10)
+  //here we have +2 stacked with x5 becomes (Value x 5 + 2).
+  float total_add = 0.f;
+  float total_mul = 1.f;
+
+  for(size_t o : operators){
+    auto data = std::get<param_apply_op_diff_data>(changes[o].Diff.Data);
+    if(data.OpType == param_op_type::add){
+      total_add += data.Args[0];
+    } else if (data.OpType == param_op_type::mul){
+      total_mul *= data.Args[0];
+    } else if (data.OpType == param_op_type::mul_then_add){
+      total_mul *= data.Args[0];
+      total_add += data.Args[1];
+    }
+  }
+
+  if(!setters.empty()){
+    auto &starting_diff_data = std::get<param_set_value_diff_data>(result.Diff.Data);
+    float &value = std::get<float>(starting_diff_data.Value);
+    value = value * total_mul + total_add;
+  } else if (!operators.empty()) {
+    result.CommitterId = changes[operators[0]].CommitterId; //Hmm that's a weakness
+    result.Diff.Type = param_diff_type::apply_op;
+    param_apply_op_diff_data data;
+    if (total_mul != 1.f && total_add == 0.f){
+      data.OpType = param_op_type::mul;
+      data.Args.resize(1, total_mul);
+    } else if (total_mul != 1.f && total_add != 0.f){
+      data.OpType = param_op_type::mul_then_add;
+      data.Args.resize(2, 0.f);
+      data.Args[0] = total_mul; data.Args[1] = total_add;
+    } else {
+      data.OpType = param_op_type::add;
+      data.Args.resize(1, total_add);
+    }
+    result.Diff.Data = data;
+  }
+  
   return result;
 }
 
@@ -451,6 +500,7 @@ template<typename T>
 void generic_history<T>::add_change(timing_t timing, const Change<T> &change, const priority_callback_t &prio_func){
   auto &&hist_point = History.emplace(timing, history_point<T>()).first->second;
   hist_point.SubmittedChanges.push_back(change);
+  merge_timing(timing, prio_func); //TODO only merge when timing is complete. This is just to unbreak the tests temporarily.
 }
 
 template<typename T>
@@ -461,9 +511,7 @@ void generic_history<T>::merge_timing(timing_t timing, const priority_callback_t
     return;
   }
   auto &hist_point = it->second;
-  diff_merger<T> merger;
-  
-  hist_point.ResultingChange = merger.merge_changes(hist_point.SubmittedChanges, prio_func);
+  hist_point.ResultingChange = merge_changes(hist_point.SubmittedChanges, prio_func);
 }
 
 template<typename T>
@@ -475,7 +523,7 @@ Change<T> generic_history<T>::cumulative_change(timing_t upper_bound, const prio
   auto it = History.begin();
   while(it != History.end() && it->first <= upper_bound){
     //merge because changes may become incremental
-    result = merger.merge_changes(result, it->second, prio_func);
+    result = merger.merge_changes(result, it->second.ResultingChange, prio_func);
     it++;
   }
   

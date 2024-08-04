@@ -35,6 +35,21 @@ namespace engine{
   }
 
   //==============================================================
+  void game_logic::init_status(entt::entity entity, entt::id_type hash, smt val)
+  {
+    attributes_info_short_changes temp;
+    temp.ModifiedStatuses.emplace(hash, val);
+    init_attributes(entity, temp);
+  }
+
+  void game_logic::init_parameter(entt::entity entity, entt::id_type hash, parameter_value_t val)
+  {
+    attributes_info_short_changes temp;
+    temp.ModifiedParams.emplace(hash, diff_from_set_val(val));
+    init_attributes(entity, temp);
+  }
+
+  //==============================================================
   void game_logic::init_attributes(entt::entity entity, const attributes_info_short_changes &changes){
     HistoryManager->set_stable_values(entity, changes);
   }

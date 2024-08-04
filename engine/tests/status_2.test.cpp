@@ -57,18 +57,21 @@ TEST_CASE("Status effects / situation where a trigger affects many entities - re
   engine::game_logic game(&registry);
 
   entt::entity torrential_tribute = registry.create();
-  game.init_attributes(torrential_tribute, {{{k_creature_hash, smt::added}},{{k_location_hash, k_location_field}}});
+  game.init_status(torrential_tribute, k_creature_hash, smt::added);
+  game.init_parameter(torrential_tribute, k_location_hash, k_location_field);
   
   entt::entity bystander = registry.create();
-  game.init_attributes(bystander, {{{k_enchantment_hash, smt::added}},{{k_location_hash, k_location_field}}});
+  game.init_status(bystander, k_enchantment_hash,smt::added);
+  game.init_parameter(bystander, k_location_hash, k_location_field);
 
   entt::entity declencheur = registry.create();
-  game.init_attributes(declencheur, {{{k_creature_hash, smt::added}},{}});
-
+  game.init_status(declencheur, k_creature_hash, smt::added);
+  
   std::vector<entt::entity> victims;
   for(size_t i = 0; i < num_victims; i++){
     auto &victim = victims.emplace_back(registry.create());
-    game.init_attributes(victim, {{{k_creature_hash, smt::added}},{{k_location_hash, k_location_field}}});
+    game.init_status(victim, k_creature_hash, smt::added);
+    game.init_parameter(victim, k_location_hash, k_location_field);
   }
 
   engine::on_status_change_trigger_info tt_info;
@@ -97,7 +100,7 @@ TEST_CASE("Status effects / situation where a trigger affects many entities - re
       
       if(std::get<std::string>(location.value()) == k_location_field){
         attributes_info_short_changes changes;
-        changes.ModifiedParams.emplace(k_location_hash, k_location_grave);
+        changes.ModifiedParams.emplace(k_location_hash, diff_from_set_val(k_location_grave));
         game->change_intrinsics(other_entity, changes);
       }
     }
@@ -110,7 +113,7 @@ TEST_CASE("Status effects / situation where a trigger affects many entities - re
 
   game.run_simulation([&](engine::game_logic *game){
     attributes_info_short_changes changes;
-    changes.ModifiedParams.emplace(k_location_hash, k_location_field);
+    changes.ModifiedParams.emplace(k_location_hash, diff_from_set_val(k_location_field));
     game->change_intrinsics(declencheur, changes);
   });
   
