@@ -12,9 +12,9 @@ namespace logistics{
     };
 
 
-  using status_stable_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_snapshot, entt::entity, std::allocator<attributes_info_snapshot>>, attributes_info_snapshot>;
-  using status_changes_storage_t = entt::constness_as_t<entt::storage_type_t<attributes_info_history, entt::entity, std::allocator<attributes_info_history>>, attributes_info_history>;
-  using status_effect_changes_storage_t = entt::constness_as_t<entt::storage_type_t<status_effects_affecting_history, entt::entity, std::allocator<status_effects_affecting_history>>, status_effects_affecting_history>;
+  using status_stable_storage_t = entt::storage_for_t<attributes_info_snapshot>;
+  using status_changes_storage_t = entt::storage_for_t<attributes_info_history>;
+  using status_effect_changes_storage_t = entt::storage_for_t<status_effects_affecting_history>;
 
   logistics_API void paste_changes_to_official_registry(entt::registry *registry, const attributes_info_cumulative_changes &changes, entt::entity entity);
 }

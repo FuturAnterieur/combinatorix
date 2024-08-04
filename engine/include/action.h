@@ -50,9 +50,11 @@ namespace engine {
       //find  highest suppression priority
 
       priority_t highest_suppression_priority = std::numeric_limits<priority_t>::min();
+      entt::entity suppressing_entity = entt::null;
       for(size_t i = ModificationEdits.size(); i < all_edits_size; i++){
         if((*req.EntitiesWithResultingPriorityValues[i].second) > highest_suppression_priority){
           highest_suppression_priority = *req.EntitiesWithResultingPriorityValues[i].second;
+          suppressing_entity = SuppressionEdits.at(i - ModificationEdits.size()).CommitterId;
         }
       }
 
@@ -63,7 +65,7 @@ namespace engine {
       priority_t highest_modif_prio = std::numeric_limits<priority_t>::min();
       for(size_t i = 0; i < ModificationEdits.size(); i++){
         priority_t prio_val = *req.EntitiesWithResultingPriorityValues[i].second;
-        if(prio_val > highest_suppression_priority){
+        if(prio_val > highest_suppression_priority || ModificationEdits[i].CommitterId == suppressing_entity){
           if(prio_val > highest_modif_prio){
             highest_modif_prio = prio_val;
             result.emplace(ModificationEdits.at(i));

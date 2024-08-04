@@ -192,7 +192,7 @@ namespace engine{
 
   //=====================================================================
   attributes_info_snapshot game_logic::get_active_snapshot(entt::entity entity){
-    return HistoryManager->get_active_snapshot(entity);
+    return HistoryManager->get_most_recent_currents(entity);
   }
 
   //=====================================================================

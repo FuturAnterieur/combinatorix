@@ -66,6 +66,14 @@ parameter &parameter::operator=(parameter &&lhs){
   return *this;
 }
 
+parameter &parameter::operator=(const parameter_value_t &rhs)
+{
+  _Pimpl->Value = rhs;
+  //TODO : ditch DT I think, in favor of a simple "not null" indicator
+  DT = data_type::not_null;
+  return *this;
+}
+
 data_type parameter::dt() const {
   return DT;
 }

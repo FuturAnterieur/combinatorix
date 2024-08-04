@@ -24,6 +24,24 @@ hmm_mat4 isometric(){
   return iso;
 }
 
+hmm_v3 cam_pos;
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+      cam_pos.Z += 0.1f;
+    }
+    else if(key == GLFW_KEY_S && action == GLFW_PRESS){
+      cam_pos.Z -= 0.1f;
+    } 
+    if(key == GLFW_KEY_A && action == GLFW_PRESS) {
+      cam_pos.X -= 0.1f;
+    }
+    else if(key == GLFW_KEY_D && action == GLFW_PRESS) {
+      cam_pos.X += 0.1f;
+    }
+}
+
 int main() {
 
     constexpr int num_instances = 2;
@@ -36,6 +54,8 @@ int main() {
     float native_size = 640.f;
    
     glfw_init(&glfw_desc);
+
+    glfwSetKeyCallback(glfw_window(), key_callback);
 
     // setup sokol_gfx
     sg_desc sokol_desc = {};
@@ -174,6 +194,7 @@ int main() {
     
 
     while (!glfwWindowShouldClose(glfw_window())) {
+        
         sg_pass the_pass = {};
 
         hmm_mat4 iso = isometric();
@@ -187,13 +208,15 @@ int main() {
         rz = 0.f;
         hmm_mat4 rot = HMM_Rotate(rz, HMM_Vec3(0.0f, 1.0f, 0.0f));
         hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.25f, 0.25f, 0.25f));
-        hmm_mat4 model_scale = HMM_MultiplyMat4(rot, scale);
+        hmm_mat4 translate = HMM_Translate(cam_pos);
+        hmm_mat4 model_scale = HMM_MultiplyMat4(HMM_MultiplyMat4(translate, rot), scale);
         // model-view-projection matrix for vertex shader
         vs_params.mvp = HMM_MultiplyMat4(ortho_iso, model_scale);
         sg_range pos_buffers = sg_range{positions, num_instances * 3 * sizeof(float)};
 
         sg_update_buffer(bind.vertex_buffers[1], &pos_buffers);
 
+        //cam_pos.X = cam_pos.Y = cam_pos.Z = 0.f;
         sg_range uniforms = SG_RANGE(vs_params);
         the_pass.swapchain = glfw_swapchain();
         sg_begin_pass(&the_pass);
