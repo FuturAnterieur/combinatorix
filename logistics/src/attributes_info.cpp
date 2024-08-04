@@ -146,19 +146,30 @@ bool paste_cumulative_changes(const attributes_info_cumulative_changes &changes,
 }
 
 //=====================================
-bool attributes_info_history::add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback){
+bool attributes_info_history::add_changes(timing_t timing, const attributes_info_cumulative_changes &changes){
   
   for(const auto &[hash, change] : changes.ParamChanges.Changes){
     auto &hist = ParamsHistory.emplace(hash, generic_history<parameter>()).first->second;
-    hist.add_change(timing, change, callback);
+    hist.add_change(timing, change);
   }
     
   for(const auto &[hash, change] : changes.StatusesChanges.Changes){
     auto &hist = StatusesHistory.emplace(hash, generic_history<status_t>()).first->second;
-    hist.add_change(timing, change, callback);
+    hist.add_change(timing, change);
   }
 
   return true;
+}
+
+void attributes_info_history::merge_timing(timing_t timing, const priority_callback_t &callback)
+{
+  for(auto &[hash, hist] : StatusesHistory){
+    hist.merge_timing(timing, callback);
+  }
+
+  for(auto &[hash, hist] : ParamsHistory){
+    hist.merge_timing(timing, callback);
+  }
 }
 
 //=====================================

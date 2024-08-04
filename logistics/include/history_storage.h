@@ -48,7 +48,14 @@ namespace logistics{
       paste_cumulative_changes(changes, stable_values);
     }
     
-    inline void commit_changes(entt::entity entity, const attributes_info_cumulative_changes &changes, timing_t timing, bool apply_to_registry = false){
+    inline void add_changes(entt::entity entity, const attributes_info_cumulative_changes &changes, timing_t timing){
+      auto &status_changes_storage = get_changes_storage();
+      init_history_starting_point(entity);
+      auto &history = status_changes_storage.get(entity);
+      history.add_changes(timing, changes);
+    }
+
+    inline void commit_timing(entt::entity entity, timing_t timing, bool apply_to_registry = false){
       auto &status_changes_storage = get_changes_storage();
       init_history_starting_point(entity);
 
@@ -58,10 +65,10 @@ namespace logistics{
       cb.Func = classic_priority_callback;
       cb.UserData = _Registry;
 
-      history.add_changes(timing, changes, cb);
+      history.merge_timing(timing, cb);
       if (apply_to_registry){
         //TODO what to do in case of merge refusal??
-        paste_changes_to_official_registry(_Registry, changes, entity);
+        paste_changes_to_official_registry(_Registry, history.cumulative_changes(timing), entity);
       }
     }
 

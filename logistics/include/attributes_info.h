@@ -491,23 +491,21 @@ struct history_point {
 template<typename T>
 struct generic_history {
   std::map<timing_t, history_point<T>> History;
-  void add_change(timing_t timing, const Change<T> &change, const priority_callback_t &prio_func);
+  void add_change(timing_t timing, const Change<T> &change);
   void merge_timing(timing_t timing, const priority_callback_t &prio_func);
   Change<T> cumulative_change(timing_t upper_bound, const priority_callback_t &prio_func) const;
 };
 
 template<typename T>
-void generic_history<T>::add_change(timing_t timing, const Change<T> &change, const priority_callback_t &prio_func){
+void generic_history<T>::add_change(timing_t timing, const Change<T> &change){
   auto &&hist_point = History.emplace(timing, history_point<T>()).first->second;
   hist_point.SubmittedChanges.push_back(change);
-  merge_timing(timing, prio_func); //TODO only merge when timing is complete. This is just to unbreak the tests temporarily.
 }
 
 template<typename T>
 void generic_history<T>::merge_timing(timing_t timing, const priority_callback_t &prio_func){
   auto it = History.find(timing);
   if(it == History.end()){
-    assert(false);
     return;
   }
   auto &hist_point = it->second;
@@ -536,8 +534,9 @@ struct attributes_info_history {
   std::map<entt::id_type, generic_history<status_t>> StatusesHistory; //DA FUTURE
   std::map<entt::id_type, generic_history<parameter>> ParamsHistory;
 
-  logistics_API bool add_changes(timing_t timing, const attributes_info_cumulative_changes &changes, const priority_callback_t &callback);
-  
+  logistics_API bool add_changes(timing_t timing, const attributes_info_cumulative_changes &changes);
+  logistics_API void merge_timing(timing_t timing, const priority_callback_t &callback);
+
   logistics_API attributes_info_snapshot produce_snapshot(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   logistics_API attributes_info_cumulative_changes cumulative_changes(timing_t upper_bound = std::numeric_limits<timing_t>::max()) const;
   

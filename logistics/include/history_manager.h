@@ -29,7 +29,8 @@ namespace logistics {
 
       void init_local_changes(entt::entity entity);
       void clear_local_changes(entt::entity entity);
-      void commit_local_changes(entt::entity entity, const attributes_info_cumulative_changes &changes);
+      void add_local_changes(entt::entity entity, const attributes_info_cumulative_changes &changes);
+      void commit_local_changes(entt::entity entity);
 
       void commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_cumulative_changes &changes, timing_t timing);
       void undo_changes_to_registry();

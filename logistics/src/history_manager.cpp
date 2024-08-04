@@ -43,17 +43,23 @@ namespace logistics{
   }
 
   //==================================================================
-  void history_manager::commit_local_changes(entt::entity entity, const attributes_info_cumulative_changes &changes){
+  void history_manager::add_local_changes(entt::entity entity, const attributes_info_cumulative_changes &changes){
     if(!LocalAttrHistory.get_changes_storage().contains(entity)){
       LocalAttrHistory.init_history_starting_point(entity, IntrinsicAttrHistory.get_most_recent_snapshot(entity));
     }
     
-    LocalAttrHistory.commit_changes(entity, changes, 0, false);
+    LocalAttrHistory.add_changes(entity, changes, 0);
+  }
+
+  void history_manager::commit_local_changes(entt::entity entity)
+  {
+    LocalAttrHistory.commit_timing(entity, 0, false);
   }
 
   //------------------------------------
   void history_manager::commit_changes_for_current_to_active_branch(entt::entity entity, const attributes_info_cumulative_changes &changes, timing_t timing){
-    CurrentAttrHistory.commit_changes(entity, changes,  timing, true);
+    CurrentAttrHistory.add_changes(entity, changes, timing);
+    CurrentAttrHistory.commit_timing(entity,  timing, true);
   }
 
   //================================================================
@@ -79,7 +85,8 @@ namespace logistics{
 
   //=================================================================
   void history_manager::commit_changes_for_intrinsics_to_active_branch(entt::entity entity,  const attributes_info_cumulative_changes &changes, timing_t timing){
-    IntrinsicAttrHistory.commit_changes(entity, changes, timing, false);
+    IntrinsicAttrHistory.add_changes(entity, changes, timing);
+    IntrinsicAttrHistory.commit_timing(entity, timing, false);
   }
 
   //=============================

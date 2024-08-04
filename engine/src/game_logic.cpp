@@ -104,7 +104,7 @@ namespace engine{
   //=========================================================================
   void game_logic::change_actives(entt::entity entity, const attributes_info_short_changes &changes){
     auto cumul = cumul_changes_from_short(changes, CurrentSimulationData->ChangesContext.OriginatingEntity);
-    HistoryManager->commit_local_changes(entity, cumul);
+    HistoryManager->add_local_changes(entity, cumul);
   }
 
   void game_logic::set_originating_entity(entt::entity entity){
@@ -230,7 +230,8 @@ namespace engine{
       set_context_originating_entity(eff_entity);
       eff_info.ApplyFunc(this, entity, eff_info.OriginatingEntity);
     }
-    
+
+    HistoryManager->commit_local_changes(entity);
     //What to do with the originating entity after that????
     set_context_originating_entity(entt::null);
 
