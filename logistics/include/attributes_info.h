@@ -2,6 +2,7 @@
 #include "logistics_export.h"
 
 #include "priority.h"
+#include "numeric_value.h"
 #include <set>
 #include <list>
 #include <map>
@@ -30,11 +31,10 @@ enum class data_type {
   not_null,
   string,
   number,
-  integer,
   boolean
 };
 
-using parameter_value_t = std::variant<bool, int64_t, float, std::string>;
+using parameter_value_t = std::variant<bool, numeric_value, std::string>;
 
 template<typename T>
 struct concrete_to_enum_type{static constexpr data_type t;};
@@ -83,8 +83,7 @@ struct logistics_API parameter {
   parameter(const std::string &val);
   parameter(const char *val);
   parameter(bool val);
-  parameter(float val);
-  parameter(int64_t val);
+  parameter(const numeric_value &other);
   parameter(const parameter &other);
   parameter(parameter &&other);
 
@@ -171,7 +170,7 @@ inline CommittedValue<parameter> apply_change(const CommittedValue<parameter> &o
     result.Value = std::get<param_set_value_diff_data>(change.Diff.Data).Value;
   } else if (change.Diff.Type == param_diff_type::apply_op){
     auto &data = std::get<param_apply_op_diff_data>(change.Diff.Data);
-    const float *param_val = std::get_if<float>(&orig.Value.value());
+    const numeric_value *param_val = std::get_if<numeric_value>(&orig.Value.value());
     if(param_val == nullptr){
       result.Value = orig.Value;
       return result;
@@ -428,7 +427,7 @@ inline Change<parameter> merge_changes(const std::vector<Change<parameter>> &cha
 
   if(!setters.empty()){
     auto &starting_diff_data = std::get<param_set_value_diff_data>(result.Diff.Data);
-    if(!std::holds_alternative<float>(starting_diff_data.Value))
+    if(!std::holds_alternative<numeric_value>(starting_diff_data.Value))
     {
       return result;
     }
@@ -459,7 +458,7 @@ inline Change<parameter> merge_changes(const std::vector<Change<parameter>> &cha
 
   if(!setters.empty()){
     auto &starting_diff_data = std::get<param_set_value_diff_data>(result.Diff.Data);
-    float &value = std::get<float>(starting_diff_data.Value);
+    numeric_value &value = std::get<numeric_value>(starting_diff_data.Value);
     value = value * total_mul + total_add;
   } else if (!operators.empty()) {
     result.CommitterId = changes[operators[0]].CommitterId; //Hmm that's a weakness

@@ -25,13 +25,8 @@ parameter::parameter(const char *val) : _Pimpl(new pimpl()) {
   _Pimpl->Value = std::string(val);
 }
 
-parameter::parameter(float val) : _Pimpl(new pimpl()){
+parameter::parameter(const numeric_value &val) : _Pimpl(new pimpl()){
   DT = data_type::number;
-  _Pimpl->Value = val;
-}
-
-parameter::parameter(int64_t val) :  _Pimpl(new pimpl()){
-  DT = data_type::integer;
   _Pimpl->Value = val;
 }
 

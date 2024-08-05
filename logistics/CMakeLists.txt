@@ -5,6 +5,7 @@ set(CORE_LOGISTICS_SRCS
   src/combine.cpp
   src/history_manager.cpp
   src/history_utils.cpp
+  src/numeric_value.cpp
   src/priority.cpp
   src/split.cpp
 )

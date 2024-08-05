@@ -52,11 +52,11 @@ std::string get_location_value(entt::registry &registry, entt::entity entity){
   return ret;
 }
 
-float get_hp_value(entt::registry &registry, entt::entity entity){
+numeric_value get_hp_value(entt::registry &registry, entt::entity entity){
   auto &&storage = registry.storage<parameter>(k_hp_hash);
   float ret = -1.f;
   if(storage.contains(entity)){
-    return std::get<float>(storage.get(entity).value());
+    return std::get<numeric_value>(storage.get(entity).value());
   }
   return ret;
 }
@@ -98,8 +98,8 @@ TEST_CASE("Basic test for parameters with incremental changes applied to them (i
       game->add_status_effect(subject, se2);
     });
 
-    float result = get_hp_value(registry, subject);
-    CHECK(std::round(result) == 53.0f);
+    numeric_value result = get_hp_value(registry, subject);
+    CHECK(result.int_val() == 53);
   }
 
   SUBCASE("Case 2 : two modifiers + one intrinsic change"){
@@ -112,7 +112,7 @@ TEST_CASE("Basic test for parameters with incremental changes applied to them (i
       game->change_intrinsics(subject, intrinsics);
     });
 
-    float result = get_hp_value(registry, subject);
-    CHECK(std::round(result) == 103.0f);
+    numeric_value result = get_hp_value(registry, subject);
+    CHECK(result.int_val() == 103);
   }
 }
