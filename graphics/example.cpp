@@ -12,6 +12,7 @@
 #include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
 #include <glm/ext/scalar_constants.hpp> // glm::pi
 #include <glm/ext/matrix_clip_space.hpp>
+#include <fstream>
 
 #include <math.h>
 
@@ -83,36 +84,36 @@ int main() {
 
     // create a vertex buffer
     float vertices[] = {
-        // positions            colors
-        -1.0, -1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
-         1.0, -1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
-         1.0,  1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
-        -1.0,  1.0, -1.0,   1.0, 0.0, 0.0, 1.0,
+        // pos                  color                       uvs
+        -1.0f, -1.0f, -1.0f,    1.0f, 0.0f, 0.0f, 1.0f,     0.0f, 0.0f,
+         1.0f, -1.0f, -1.0f,    1.0f, 0.0f, 0.0f, 1.0f,     1.0f, 0.0f,
+         1.0f,  1.0f, -1.0f,    1.0f, 0.0f, 0.0f, 1.0f,     1.0f, 1.0f,
+        -1.0f,  1.0f, -1.0f,    1.0f, 0.0f, 0.0f, 1.0f,     0.0f, 1.0f,
 
-        -1.0, -1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
-         1.0, -1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
-         1.0,  1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
-        -1.0,  1.0,  1.0,   0.0, 1.0, 0.0, 1.0,
+        -1.0f, -1.0f,  1.0f,    0.0f, 1.0f, 0.0f, 1.0f,     0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f,    0.0f, 1.0f, 0.0f, 1.0f,     1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f,    0.0f, 1.0f, 0.0f, 1.0f,     1.0f, 1.0f,
+        -1.0f,  1.0f,  1.0f,    0.0f, 1.0f, 0.0f, 1.0f,     0.0f, 1.0f,
 
-        -1.0, -1.0, -1.0,   0.0, 0.0, 1.0, 1.0,
-        -1.0,  1.0, -1.0,   0.0, 0.0, 1.0, 1.0,
-        -1.0,  1.0,  1.0,   0.0, 0.0, 1.0, 1.0,
-        -1.0, -1.0,  1.0,   0.0, 0.0, 1.0, 1.0,
+        -1.0f, -1.0f, -1.0f,    0.0f, 0.0f, 1.0f, 1.0f,     0.0f, 0.0f,
+        -1.0f,  1.0f, -1.0f,    0.0f, 0.0f, 1.0f, 1.0f,     1.0f, 0.0f,
+        -1.0f,  1.0f,  1.0f,    0.0f, 0.0f, 1.0f, 1.0f,     1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f,    0.0f, 0.0f, 1.0f, 1.0f,     0.0f, 1.0f,
 
-        1.0, -1.0, -1.0,    1.0, 0.5, 0.0, 1.0,
-        1.0,  1.0, -1.0,    1.0, 0.5, 0.0, 1.0,
-        1.0,  1.0,  1.0,    1.0, 0.5, 0.0, 1.0,
-        1.0, -1.0,  1.0,    1.0, 0.5, 0.0, 1.0,
+         1.0f, -1.0f, -1.0f,    1.0f, 0.5f, 0.0f, 1.0f,     0.0f, 0.0f,
+         1.0f,  1.0f, -1.0f,    1.0f, 0.5f, 0.0f, 1.0f,     1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f,    1.0f, 0.5f, 0.0f, 1.0f,     1.0f, 1.0f,
+         1.0f, -1.0f,  1.0f,    1.0f, 0.5f, 0.0f, 1.0f,     0.0f, 1.0f,
 
-        -1.0, -1.0, -1.0,   0.0, 0.5, 1.0, 1.0,
-        -1.0, -1.0,  1.0,   0.0, 0.5, 1.0, 1.0,
-         1.0, -1.0,  1.0,   0.0, 0.5, 1.0, 1.0,
-         1.0, -1.0, -1.0,   0.0, 0.5, 1.0, 1.0,
+        -1.0f, -1.0f, -1.0f,    0.0f, 0.5f, 1.0f, 1.0f,     0.0f, 0.0f,
+        -1.0f, -1.0f,  1.0f,    0.0f, 0.5f, 1.0f, 1.0f,     1.0f, 0.0f,
+         1.0f, -1.0f,  1.0f,    0.0f, 0.5f, 1.0f, 1.0f,     1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f,    0.0f, 0.5f, 1.0f, 1.0f,     0.0f, 1.0f,
 
-        -1.0,  1.0, -1.0,   1.0, 0.0, 0.5, 1.0,
-        -1.0,  1.0,  1.0,   1.0, 0.0, 0.5, 1.0,
-         1.0,  1.0,  1.0,   1.0, 0.0, 0.5, 1.0,
-         1.0,  1.0, -1.0,   1.0, 0.0, 0.5, 1.0
+        -1.0f,  1.0f, -1.0f,    1.0f, 0.0f, 0.5f, 1.0f,     0.0f, 0.0f,
+        -1.0f,  1.0f,  1.0f,    1.0f, 0.0f, 0.5f, 1.0f,     1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f,    1.0f, 0.0f, 0.5f, 1.0f,     1.0f, 1.0f,
+         1.0f,  1.0f, -1.0f,    1.0f, 0.0f, 0.5f, 1.0f,     0.0f, 1.0f
     };
     sg_buffer_desc vbuf_desc ={}; 
     vbuf_desc.data = SG_RANGE(vertices);
@@ -152,23 +153,50 @@ int main() {
             "uniform mat4 mvp;\n"
             "layout(location=0) in vec3 position;\n"
             "layout(location=1) in vec4 color0;\n"
-            "layout(location=2) in vec3 instance_pos;\n"
+            "layout(location=2) in vec2 texcoord0;\n"
+            "layout(location=3) in vec3 instance_pos;\n"
             "out vec4 color;\n"
+            "out vec2 uv;"
             "void main() {\n"
             "  vec4 pos = vec4(position + instance_pos, 1.0);\n"
             "  gl_Position = mvp * pos;\n"
             "  color = color0;\n"
+            "  uv = texcoord0;\n"
             "}\n";
 
+    std::ifstream is("C:/Users/Pierre/Documents/Programmation/ChaosCombined/graphics/shaders/perlin.fs", std::ifstream::in);
+    is.seekg (0, is.end);
+    int length = is.tellg();
+    is.seekg (0, is.beg);
+
+    char * buffer = new char [length + 1];
+    is.read(buffer, length);
+    size_t i = 0;
+    char shit = buffer[length - 1];
+    while(i < length){
+      if(buffer[i] == -51){
+        buffer[i] = 0x00;
+        break;
+      }
+      i++;
+    }
+    buffer[length] = '\0';
+    
     shd_desc.vs.uniform_blocks[0].size = sizeof(params_t);
     shd_desc.vs.uniform_blocks[0].uniforms[0].name = "mvp";
     shd_desc.vs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_MAT4;
-    shd_desc.fs.source = "#version 330\n"
+    
+    
+    shd_desc.fs.uniform_blocks[0].size = sizeof(float);
+    shd_desc.fs.uniform_blocks[0].uniforms[0].name = "time";
+    shd_desc.fs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_FLOAT;
+    shd_desc.fs.source = buffer;
+    /*shd_desc.fs.source = "#version 330\n"
             "in vec4 color;\n"
             "out vec4 frag_color;\n"
             "void main() {\n"
             "  frag_color = color;\n"
-            "}\n";
+            "}\n";*/
     
 
     // create a shader (use vertex attribute locations)
@@ -177,18 +205,27 @@ int main() {
     sg_pipeline_desc pip_desc = {};
     pip_desc.shader = shd;
     pip_desc.index_type = SG_INDEXTYPE_UINT16;
-    pip_desc.layout.buffers[0].stride = 28;
+    pip_desc.layout.buffers[0].stride = 36;
+
     pip_desc.layout.buffers[1].stride = 12;
     pip_desc.layout.buffers[1].step_func = SG_VERTEXSTEP_PER_INSTANCE;
+
     pip_desc.layout.attrs[0].offset = 0; 
     pip_desc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3;
     pip_desc.layout.attrs[0].buffer_index = 0;
+
     pip_desc.layout.attrs[1].offset = 3 * sizeof(float); 
     pip_desc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT4;
     pip_desc.layout.attrs[1].buffer_index = 0;
-    pip_desc.layout.attrs[2].offset = 0; 
-    pip_desc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT3; 
-    pip_desc.layout.attrs[2].buffer_index = 1;
+
+    pip_desc.layout.attrs[2].offset = 7 * sizeof(float); 
+    pip_desc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;
+    pip_desc.layout.attrs[2].buffer_index = 0;
+
+    pip_desc.layout.attrs[3].offset = 0; 
+    pip_desc.layout.attrs[3].format = SG_VERTEXFORMAT_FLOAT3; 
+    pip_desc.layout.attrs[3].buffer_index = 1;
+
     pip_desc.cull_mode = SG_CULLMODE_BACK;
     pip_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
     pip_desc.depth.write_enabled = true;
@@ -219,7 +256,7 @@ int main() {
         float x_ratio = width / native_size;
         float y_ratio = aspect_ratio * x_ratio;
 
-        glm::mat4 pure_ortho = glm::ortho(-x_ratio, x_ratio, -y_ratio, y_ratio, -1.f, 3000.f);
+        glm::mat4 pure_ortho = glm::ortho(-x_ratio, x_ratio, -y_ratio, y_ratio, -5.f, 5.f);   
         glm::mat4 iso_lookAt = glm::lookAt(glm::vec3(-5.f, 5.f, 10.f), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)); 
 
         glm::mat4 ortho_iso = use_wikipedia ? 
@@ -240,12 +277,14 @@ int main() {
         sg_update_buffer(bind.vertex_buffers[1], &pos_buffers);
 
         //cam_pos.X = cam_pos.Y = cam_pos.Z = 0.f;
-        sg_range uniforms = SG_RANGE(vs_params);
+        sg_range vs_uniforms = SG_RANGE(vs_params);
+        sg_range fs_uniforms = SG_RANGE(timer);
         the_pass.swapchain = glfw_swapchain();
         sg_begin_pass(&the_pass);
         sg_apply_pipeline(pip);
         sg_apply_bindings(&bind);
-        sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &uniforms);
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &vs_uniforms);
+        sg_apply_uniforms(SG_SHADERSTAGE_FS, 0, &fs_uniforms);
         sg_draw(0, 36, 2);
         sg_end_pass();
         sg_commit();
@@ -253,6 +292,8 @@ int main() {
         glfwPollEvents();
         timer += incr_time ? 0.005f : 0.f;
     }
+    is.close();
+    delete [] buffer;
 
     /* cleanup */
     sg_shutdown();
