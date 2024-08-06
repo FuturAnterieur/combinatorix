@@ -8,37 +8,53 @@
 #include "sokol_gfx.h"
 #include "sokol_log.h"
 #include "glfw_glue.h"
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/scalar_constants.hpp> // glm::pi
+#include <glm/ext/matrix_clip_space.hpp>
 
-#define HANDMADE_MATH_IMPLEMENTATION
-#include "HandmadeMath.h"
+#include <math.h>
 
 struct params_t {
-  hmm_mat4 mvp;
+  glm::mat4 mvp;
 };
 
 
-hmm_mat4 isometric(){
-  hmm_mat4 iso1 = HMM_Rotate(45.f, HMM_Vec3(0.f, 1.f, 0.f));
-  hmm_mat4 iso2 = HMM_Rotate(35.264f, HMM_Vec3(1.f, 0.f, 0.f)); //should be -35.264f but...
-  hmm_mat4 iso = HMM_MultiplyMat4(iso2, iso1);
-  return iso;
+glm::mat4 isometric(){
+  glm::mat4 rot1 = glm::rotate(glm::mat4(1.f), glm::pi<float>()/4.f, glm::vec3(0.f, 1.f, 0.f));
+  glm::mat4 rot2 = glm::rotate(glm::mat4(1.f), 35.264f * glm::pi<float>()/180.f, glm::vec3(1.f, 0.f, 0.f));
+  return rot2 * rot1;
 }
 
-hmm_v3 cam_pos;
+glm::vec3 cam_pos;
+bool use_wikipedia = true;
+bool incr_time = false;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_W && action == GLFW_PRESS) {
-      cam_pos.Z += 0.1f;
+      cam_pos.z += 0.1f;
+      cam_pos.x -= 0.1f;
     }
     else if(key == GLFW_KEY_S && action == GLFW_PRESS){
-      cam_pos.Z -= 0.1f;
+      cam_pos.z -= 0.1f;
+      cam_pos.x += 0.1f;
     } 
     if(key == GLFW_KEY_A && action == GLFW_PRESS) {
-      cam_pos.X -= 0.1f;
+      cam_pos.x -= 0.1f;
+      cam_pos.z -= 0.1f;
     }
     else if(key == GLFW_KEY_D && action == GLFW_PRESS) {
-      cam_pos.X += 0.1f;
+      cam_pos.x += 0.1f;
+      cam_pos.z += 0.1f;
+    }
+
+    if(key == GLFW_KEY_U && action == GLFW_PRESS){
+      use_wikipedia = !use_wikipedia;
+    }
+
+    if(key == GLFW_KEY_SPACE && action == GLFW_RELEASE){
+      incr_time = !incr_time;
     }
 }
 
@@ -119,7 +135,7 @@ int main() {
     sg_buffer ibuf = sg_make_buffer(&ibuf_desc);
 
     sg_buffer_desc instance_data = {};
-    instance_data.size = num_instances * sizeof(hmm_vec3);
+    instance_data.size = num_instances * sizeof(glm::vec3);
     instance_data.usage = SG_USAGE_STREAM;
     instance_data.label = "instance_data";
 
@@ -139,7 +155,7 @@ int main() {
             "layout(location=2) in vec3 instance_pos;\n"
             "out vec4 color;\n"
             "void main() {\n"
-            "  vec4 pos = vec4(position + instance_pos, 1.0);"
+            "  vec4 pos = vec4(position + instance_pos, 1.0);\n"
             "  gl_Position = mvp * pos;\n"
             "  color = color0;\n"
             "}\n";
@@ -184,34 +200,41 @@ int main() {
     float rz = 0.0f;
     float timer = 0.f;
     params_t vs_params;
-    hmm_vec3 positions[num_instances];
-    positions[0].X = 0.0f;
-    positions[0].Y = 0.0f;
-    positions[0].Z = 0.0f;
-    positions[1].X = 0.0f;
-    positions[1].Y = 0.f;
-    positions[1].Z = 0.0f;
+    glm::vec3 positions[num_instances];
+    positions[0].x = 0.0f;
+    positions[0].y = 0.0f;
+    positions[0].z = 3.0f;
+    positions[1].x = 0.0f;
+    positions[1].y = 0.0f;
+    positions[1].z = 0.0f;
     
 
     while (!glfwWindowShouldClose(glfw_window())) {
         
         sg_pass the_pass = {};
 
-        hmm_mat4 iso = isometric();
-        float aspect_ratio = static_cast<float>(glfw_height()) / static_cast<float>(glfw_width());
-        float native_ratio = static_cast<float>(glfw_width()) / native_size;
+        float height = static_cast<float>(glfw_height());
+        float width =  static_cast<float>(glfw_width());
+        float aspect_ratio =  height / width;
+        float x_ratio = width / native_size;
+        float y_ratio = aspect_ratio * x_ratio;
 
-        hmm_mat4 ortho = HMM_Scale(HMM_Vec3(1.f / native_ratio, 1.f/(aspect_ratio * native_ratio), 1.f));
-        hmm_mat4 ortho_iso = HMM_MultiplyMat4(ortho, iso);
+        glm::mat4 pure_ortho = glm::ortho(-x_ratio, x_ratio, -y_ratio, y_ratio, -1.f, 3000.f);
+        glm::mat4 iso_lookAt = glm::lookAt(glm::vec3(-5.f, 5.f, 10.f), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)); 
+
+        glm::mat4 ortho_iso = use_wikipedia ? 
+                              pure_ortho * isometric() : //glm::scale(isometric(), glm::vec3(1.f / x_ratio, 1.f/(aspect_ratio * x_ratio), 1.f)) :
+                              pure_ortho * iso_lookAt;
+        
 
         // rotated model matrix
-        rz = 0.f;
-        hmm_mat4 rot = HMM_Rotate(rz, HMM_Vec3(0.0f, 1.0f, 0.0f));
-        hmm_mat4 scale = HMM_Scale(HMM_Vec3(0.25f, 0.25f, 0.25f));
-        hmm_mat4 translate = HMM_Translate(cam_pos);
-        hmm_mat4 model_scale = HMM_MultiplyMat4(HMM_MultiplyMat4(translate, rot), scale);
+        rz = timer;
+        glm::mat4 model = glm::scale(glm::mat4(1.f), glm::vec3(0.25f, 0.25f, 0.25f));
+        model = glm::rotate(model, rz, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, cam_pos);
+        
         // model-view-projection matrix for vertex shader
-        vs_params.mvp = HMM_MultiplyMat4(ortho_iso, model_scale);
+        vs_params.mvp = ortho_iso * model;
         sg_range pos_buffers = sg_range{positions, num_instances * 3 * sizeof(float)};
 
         sg_update_buffer(bind.vertex_buffers[1], &pos_buffers);
@@ -223,12 +246,12 @@ int main() {
         sg_apply_pipeline(pip);
         sg_apply_bindings(&bind);
         sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &uniforms);
-        sg_draw(0, 36, 1);
+        sg_draw(0, 36, 2);
         sg_end_pass();
         sg_commit();
         glfwSwapBuffers(glfw_window());
         glfwPollEvents();
-        timer += 0.005f;
+        timer += incr_time ? 0.005f : 0.f;
     }
 
     /* cleanup */
