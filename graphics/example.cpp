@@ -161,26 +161,25 @@ int main() {
             "  vec4 pos = vec4(position + instance_pos, 1.0);\n"
             "  gl_Position = mvp * pos;\n"
             "  color = color0;\n"
-            "  uv = texcoord0;\n"
+            "  uv = texcoord0 + instance_pos.xz;\n"
             "}\n";
 
-    std::ifstream is("C:/Users/Pierre/Documents/Programmation/ChaosCombined/graphics/shaders/perlin.fs", std::ifstream::in);
-    is.seekg (0, is.end);
-    int length = is.tellg();
-    is.seekg (0, is.beg);
+    std::ifstream file("C:/Users/Pierre/Documents/Programmation/ChaosCombined/graphics/shaders/perlin.fs", std::ifstream::in);
+    std::string source;
 
-    char * buffer = new char [length + 1];
-    is.read(buffer, length);
-    size_t i = 0;
-    char shit = buffer[length - 1];
-    while(i < length){
-      if(buffer[i] == -51){
-        buffer[i] = 0x00;
+    while(file.good()) 
+    {
+      int c = file.get();
+      if(c >= 0) 
+      {
+        source += (char)c;
+      }
+      else 
+      {
         break;
       }
-      i++;
     }
-    buffer[length] = '\0';
+    file.close();
     
     shd_desc.vs.uniform_blocks[0].size = sizeof(params_t);
     shd_desc.vs.uniform_blocks[0].uniforms[0].name = "mvp";
@@ -190,7 +189,7 @@ int main() {
     shd_desc.fs.uniform_blocks[0].size = sizeof(float);
     shd_desc.fs.uniform_blocks[0].uniforms[0].name = "time";
     shd_desc.fs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_FLOAT;
-    shd_desc.fs.source = buffer;
+    shd_desc.fs.source = source.data();
     /*shd_desc.fs.source = "#version 330\n"
             "in vec4 color;\n"
             "out vec4 frag_color;\n"
@@ -292,9 +291,7 @@ int main() {
         glfwPollEvents();
         timer += incr_time ? 0.005f : 0.f;
     }
-    is.close();
-    delete [] buffer;
-
+    
     /* cleanup */
     sg_shutdown();
     glfwTerminate();
