@@ -7,32 +7,8 @@ out vec4 frag_color;
 
 float rand( in vec2 p )
 {
-	float shape = cos(abs(p.x) + abs(p.y));
+	float shape = sin(p.x) * sin(p.y);
 	return shape;
-}
-
-float perlin(vec2 p)
-{
-	float i,j;
-	float x,y;
-	
-	i = floor(p.x); x = fract(p.x);
-	j = floor(p.y); y = fract(p.y);
-	
-	float sx = x*x*x*(x*(x*6.0 - 15.0) + 10.0);
-	float sy = y*y*y*(y*(y*6.0 - 15.0) + 10.0);
- 
-	float a = rand(vec2(i,j));
-	float b = rand(vec2(i+1,j));
-	float c = rand(vec2(i,j+1));
-	float d = rand(vec2(i+1,j+1));
-	
-	float k0 = a;
-	float k1 = b - a;
-	float k2 = c - a;
-	float k3 = a - b - c + d;
-	
-	return k0 + sx*k1 + sy*k2 + sx*sy*k3;
 }
 
 float fbm(vec2 p)
@@ -42,7 +18,7 @@ float fbm(vec2 p)
 	
 	for (int i = 0; i < 5; i++)
 	{
-		f += w*perlin(p);
+		f += w*rand(p);
 		w *= 0.5;
 		p *= 2.0;
 	}
