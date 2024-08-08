@@ -30,8 +30,14 @@ It might need, in the future :
 
 ## Change editing 
 Currently, intrinsic changes can be intercepted and modified before they are applied.
+- Change edits are added to a temporary stack in the change edit history
+- At the start, the original change (issued by the user) is placed on the stack.
 - Only modification type that can be applied to Change objects is 'set', not 'incremental' 
-- Changes can be banned through this mechanic, but for now, bans potentially affect all changes/edits on a given hash (barring priority); they are not selective.
+- Changes can be banned through this mechanic.
+- All change edits have a filter which decides if the change edit is added to the stack or not
+- Then suppression type edits (i.e. bans) that are on the stack can have a filter that will be applied to each change in the stack, to determine if the ban 'catches' the edit or not.
+- For a ban to suppress a change, the ban needs to have higher priority and a filter that catches the change.
+- For now, bans cannot ban other bans.
 
 # What is planned
 ## Client API
@@ -39,9 +45,10 @@ Currently, intrinsic changes can be intercepted and modified before they are app
 - Offer capacity to edit triggers inside user callbacks mentioned just above
 
 ## Change editing
-- Add change ban filter feature (a std::function in engine::change_suppression_edit).
-  - don't forget to merge the edits logically after that (i.e. only block changes that    are catched by the filters that have higher priorities than them).
+- <<====>>> DONE <<<====>>> Add change ban filter feature (a std::function in engine::change_suppression_edit).
+  - don't forget to merge the edits logically after that (i.e. only block changes that    are catched by the filters that have higher priorities than them). ====>>
 - Incremental modifications to existing changes
+- Implement change editing for local (i.e. status effect) changes. Should use the same structures/functions that change-editing-for-intinsics uses.
 - Clean up the API (clients should not access change_edit_history directly).
 
 ## Status effect history

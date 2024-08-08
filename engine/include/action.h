@@ -13,16 +13,18 @@ namespace engine {
   class game_logic;
   struct pre_change_trigger_info;
 
+  template<typename T>
   struct change_suppression_edit {
+    std::function<bool(const Change<T> &change)> Filter;
     entt::entity CommitterId;
   };
 
   template<typename T>
   struct change_history_t {
     std::vector<Change<T>> ModificationEdits; //Change<T> already has a committer ID
-    std::vector<change_suppression_edit> SuppressionEdits;
-    void add_suppression_edit(entt::entity committer_id){
-      SuppressionEdits.push_back(change_suppression_edit{committer_id});
+    std::vector<change_suppression_edit<T>> SuppressionEdits;
+    void add_suppression_edit(entt::entity committer_id, const std::function<bool(const Change<T> &change)>  &filter){
+      SuppressionEdits.push_back(change_suppression_edit{filter, committer_id});
     }
     void add_modification_edit(const Change<T> &change){
       ModificationEdits.push_back(change);
@@ -47,29 +49,29 @@ namespace engine {
       classic_priority_callback(req, registry);
 
       std::optional<Change<T>> result = std::nullopt;
-      //find  highest suppression priority
-
-      priority_t highest_suppression_priority = std::numeric_limits<priority_t>::min();
-      entt::entity suppressing_entity = entt::null;
-      for(size_t i = ModificationEdits.size(); i < all_edits_size; i++){
-        if((*req.EntitiesWithResultingPriorityValues[i].second) > highest_suppression_priority){
-          highest_suppression_priority = *req.EntitiesWithResultingPriorityValues[i].second;
-          suppressing_entity = SuppressionEdits.at(i - ModificationEdits.size()).CommitterId;
-        }
-      }
-
+      
       //filter out modification edits
       //For non-incremental parameters, keep the highest priority only
 
       //anyway incremental parameters would be calculated differently, because we still want only one change to be outputted for a single timing
       priority_t highest_modif_prio = std::numeric_limits<priority_t>::min();
       for(size_t i = 0; i < ModificationEdits.size(); i++){
-        priority_t prio_val = *req.EntitiesWithResultingPriorityValues[i].second;
-        if(prio_val > highest_suppression_priority || ModificationEdits[i].CommitterId == suppressing_entity){
-          if(prio_val > highest_modif_prio){
-            highest_modif_prio = prio_val;
-            result.emplace(ModificationEdits.at(i));
+        priority_t prio_val = all_priorities[i];
+        bool banned = false;
+        int suppress_counter = ModificationEdits.size();
+        for(const auto &suppress_edit : SuppressionEdits){
+          priority_t suppress_prio = all_priorities[suppress_counter];
+          bool caught_by_filter = suppress_edit.Filter(ModificationEdits.at(i));
+          if(suppress_prio > prio_val && ModificationEdits.at(i).CommitterId != suppress_edit.CommitterId && caught_by_filter){
+            banned = true; 
+            break;
           }
+          suppress_counter++;
+        }
+
+        if(!banned && prio_val > highest_modif_prio){
+          highest_modif_prio = prio_val;
+          result.emplace(ModificationEdits.at(i));
         }
       }
 
@@ -85,8 +87,8 @@ namespace engine {
       //TODO offer API functions in game_logic
       void engine_API record_status_edit(entt::id_type hash, Change<status_t> change);
       void engine_API record_param_edit(entt::id_type hash, Change<parameter> change);
-      void engine_API record_status_change_suppression(entt::id_type hash, entt::entity committer);
-      void engine_API record_param_change_suppression(entt::id_type hash, entt::entity committer);
+      void engine_API record_status_change_suppression(entt::id_type hash, entt::entity committer, const std::function<bool( const Change<status_t> &change)> &filter);
+      void engine_API record_param_change_suppression(entt::id_type hash, entt::entity committer, const std::function<bool(const Change<parameter> &change)> &filter);
       attributes_info_cumulative_changes create_cumul_changes(game_logic *game) const;
   };
 

@@ -64,22 +64,21 @@ TEST_CASE("Basic test with change cancellation through pre-change triggers"){
   registry.emplace<priority_info>(modifier, 10);
 
   auto filter = [](engine::game_logic *game, const attributes_info_changes &actual_changes, const attributes_info_cumulative_changes &proposed_changes, entt::entity entity, const engine::pre_change_trigger_info &info){
-    auto it = proposed_changes.ParamChanges.Changes.find(k_location_hash);
-
-    if(it != proposed_changes.ParamChanges.Changes.end()){
-      if(it->second.Diff.Type == param_diff_type::set_value){
-        auto &data = std::get<param_set_value_diff_data>(it->second.Diff.Data);
-        if(std::get<std::string>(data.Value) == k_location_grave){
-          return true;
-        }
-      }
-      return true;
-    }
-    return false;
+    //trivial example. Can filter based on entity attributes if needed
+    
+    return true;
   };
 
   auto func = [](engine::game_logic *game, const attributes_info_changes &actual_changes, const attributes_info_cumulative_changes &proposed_changes, entt::entity entity, const engine::pre_change_trigger_info &info, engine::change_edit_history &hist){
-    hist.record_param_change_suppression(k_location_hash, info.Owner);
+    hist.record_param_change_suppression(k_location_hash, info.Owner, [](const Change<parameter> &change)
+      {
+        //the ban filter here is just to check if a specific change passes or not.
+        if(change.Diff.Type == param_diff_type::set_value){
+          const auto &data = std::get<param_set_value_diff_data>(change.Diff.Data);
+          return std::get<std::string>(data.Value) == k_location_grave;
+        } 
+        return false;
+    });
   };
 
   auto mod_trigger = game.create_pre_change_trigger(engine::pre_change_trigger_info{func, filter, modifier});

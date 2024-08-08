@@ -14,14 +14,14 @@ namespace engine {
     hist.add_modification_edit(change);
   }
 
-  void change_edit_history::record_status_change_suppression(entt::id_type hash, entt::entity committer){
+  void change_edit_history::record_status_change_suppression(entt::id_type hash, entt::entity committer, const std::function<bool(const Change<status_t> &change)> &filter){
     auto &hist = Statuses.emplace(hash, change_history_t<status_t>()).first->second;
-    hist.add_suppression_edit(committer);
+    hist.add_suppression_edit(committer, filter);
   }
 
-  void change_edit_history::record_param_change_suppression(entt::id_type hash, entt::entity committer){
+  void change_edit_history::record_param_change_suppression(entt::id_type hash, entt::entity committer, const std::function<bool(const Change<parameter> &change)> &filter){
     auto &hist = Parameters.emplace(hash, change_history_t<parameter>()).first->second;
-    hist.add_suppression_edit(committer);
+    hist.add_suppression_edit(committer, filter);
   }
 
   attributes_info_cumulative_changes change_edit_history::create_cumul_changes(game_logic *game) const
