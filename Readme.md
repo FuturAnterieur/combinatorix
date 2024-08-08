@@ -46,7 +46,7 @@ Currently, intrinsic changes can be intercepted and modified before they are app
 
 ## Change editing
 - <<====>>> DONE <<<====>>> Add change ban filter feature (a std::function in engine::change_suppression_edit).
-  - don't forget to merge the edits logically after that (i.e. only block changes that    are catched by the filters that have higher priorities than them). ====>>
+  - don't forget to merge the edits logically after that (i.e. only block changes that    are catched by the filters that have higher priorities than them).
 - Incremental modifications to existing changes
 - Implement change editing for local (i.e. status effect) changes. Should use the same structures/functions that change-editing-for-intinsics uses.
 - Clean up the API (clients should not access change_edit_history directly).
