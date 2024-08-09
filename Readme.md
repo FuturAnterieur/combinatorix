@@ -44,6 +44,12 @@ Currently, intrinsic changes can be intercepted and modified before they are app
 - Create separate APIs (all referring to game_logic) for status triggers, pre-change triggers, status effects, and the lambda passed to game_logic::run_simulation
 - Offer capacity to edit triggers inside user callbacks mentioned just above
 
+## Unit movement
+- Support movement with...
+  - many substeps of movement at each timing
+  - checking for collision restraint colliders at each substep
+  - checking for status-related colliders at least at each full timing... beware of stuff happening on the exact same timing though
+
 ## Change editing
 - <<====>>> DONE <<<====>>> Add change ban filter feature (a std::function in engine::change_suppression_edit).
   - don't forget to merge the edits logically after that (i.e. only block changes that    are catched by the filters that have higher priorities than them).
