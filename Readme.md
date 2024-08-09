@@ -50,6 +50,21 @@ Currently, intrinsic changes can be intercepted and modified before they are app
   - checking for collision restraint colliders at each substep
   - checking for status-related colliders at least at each full timing... beware of stuff happening on the exact same timing though
 
+## More triggers
+- Event / Game action triggers
+  - need to identify/codify game actions
+  - still would have a filter function, timing delta, and action function
+
+## User interaction during trigger functions
+- Offer players choices during trigger execution (i.e. in trigger funcs)
+- Basic scheme : 
+  - game_logic trigger API has a request_info_from_player function
+  - it pauses the thread which currently runs game_logic (i.e. a thread controlled by the engine class), probably using a condition variable mechanic
+  - the other thread is woken up and retrieves the player's response
+  - then data is emplaced in game_logic via a common buffer
+  - game_logic thread is restarted; execution resumes exactly where it had left off.
+
+
 ## Change editing
 - <<====>>> DONE <<<====>>> Add change ban filter feature (a std::function in engine::change_suppression_edit).
   - don't forget to merge the edits logically after that (i.e. only block changes that    are catched by the filters that have higher priorities than them).
