@@ -28,7 +28,7 @@ float fbm(vec3 p)
 float domainwarp(in vec3 p, out vec3 q, out vec3 r)
 {
 	float t = time/2.0;
-	q = vec3( fbm( p + vec3(sin(t), 0.0, 3.4) ),      fbm( p + vec3(5.2, 1.3 - sin(t), 3.4) ), fbm(p + vec3(1.0, 2.0, 3.0)) );
+	q = vec3( fbm( p + vec3(sin(2.0 * t), 0.0, 3.4) ),      fbm( p + vec3(5.2, 1.3 - sin(2.0 * t), 3.4) ), fbm(p + vec3(1.0, 2.0, 3.0)) );
 	r = vec3( fbm( p + 4.0*q + vec3(6.0, -9.0, 5.0)),      fbm( p + 4.0*q + vec3(-1.4, 3.6, 2.0)),       fbm(p));
 
 	float f = 0.65 + fbm( p + 4.0*r );
@@ -53,5 +53,5 @@ void main(void)
     col = mix( col, vec3(0.0,0.2,0.4), 0.5*smoothstep(1.2,1.3,abs(r.x)+abs(r.y)) );
     col = clamp( col*f*2.0, 0.0, 1.0 );
   
-	frag_color = vec4(col, 1.0); //vec4(f * (q.y + r.x) * color.rgb, 1.0);
+	frag_color = vec4(col.bgr, 1.0); //vec4(f * (q.y + r.x) * color.rgb, 1.0);
 }

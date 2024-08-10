@@ -60,10 +60,21 @@ Currently, intrinsic changes can be intercepted and modified before they are app
 - Basic scheme : 
   - game_logic trigger API has a request_info_from_player function
   - it pauses the thread which currently runs game_logic (i.e. a thread controlled by the engine class), probably using a condition variable mechanic
-  - the other thread is woken up and retrieves the player's response
+  - during this time, it sends a request to the player's client and waits for a response
   - then data is emplaced in game_logic via a common buffer
   - game_logic thread is restarted; execution resumes exactly where it had left off.
 
+## Requirements checking
+- Often, when actions are offered to a player, the server needs to inform him which actions are possible and which aren't.
+- Some action requirements could rely on "X must happen in order to proceed with the rest of the action."
+- In my case, X would probably, most of the time, be an intrinsic attribute change.
+- So that means change-edits might prevent X from happening the way the action requires it to.
+- But qu'à cela ne tienne! We can run a "supposed change" on the change edits.
+- Instead of committing the change with its edits and proceeding to a full simulation, just run
+  the target entity's current pre-change triggers on a sample of the proposed change, and
+  check if the resulting change still fulfills the requirement's criteria.
+- this would limit such requirements to just say "I require change X and it has to retain such and such characteristic." It couldn't go further in a simulation, i.e. "also change X requires to trigger effects Y and Z". But this should be enough for most cases.
+- offer a supposition-requirement API for the related functors.
 
 ## Change editing
 - <<====>>> DONE <<<====>>> Add change ban filter feature (a std::function in engine::change_suppression_edit).
