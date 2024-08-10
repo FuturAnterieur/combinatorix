@@ -161,10 +161,10 @@ int main() {
             "  vec4 pos = vec4(position + instance_pos, 1.0);\n"
             "  gl_Position = mvp * pos;\n"
             "  color = color0;\n"
-            "  uv = texcoord0 + instance_pos.xz;\n"
+            "  uv = texcoord0;\n"
             "}\n";
 
-    std::ifstream file("C:/Users/Pierre/Documents/Programmation/ChaosCombined/graphics/shaders/perlin.fs", std::ifstream::in);
+    std::ifstream file("C:/Users/Pierre/Documents/Programmation/ChaosCombined/graphics/shaders/cosdwarp2d.fs", std::ifstream::in);
     std::string source;
 
     while(file.good()) 
