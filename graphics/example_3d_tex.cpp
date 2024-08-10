@@ -146,7 +146,7 @@ int main() {
     shd_desc.vs.uniform_blocks[0].uniforms[0].name = "mvp";
     shd_desc.vs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_MAT4;
     
-    std::string fs = get_shader_source("graphics/shaders/perlin3d.fs");
+    std::string fs = get_shader_source("graphics/shaders/light_edges.fs");
     shd_desc.fs.source = fs.data();    
     shd_desc.fs.uniform_blocks[0].size = sizeof(float);
     shd_desc.fs.uniform_blocks[0].uniforms[0].name = "time";
