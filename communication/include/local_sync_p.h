@@ -10,11 +10,9 @@ struct local_sync_channel {
 
   std::mutex Mutex{};
   std::condition_variable cvWaiting{};
-  std::condition_variable cvReceiverAck{};
   std::condition_variable cvSendCounter{};
-  bool ReceiverAck{false};
   bool InfoReady{false};
-  std::string Data{}; //Here, or elsewhere?????
+  std::string Data{};
   size_t SendCount{0};
   size_t ReceiveCount{0};
 };
