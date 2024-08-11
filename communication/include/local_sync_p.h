@@ -7,11 +7,11 @@
 struct local_sync_channel {
   local_sync_channel() = default;
   ~local_sync_channel() = default;
-  
+
   std::mutex Mutex{};
   std::condition_variable cvWaiting{};
-  std::condition_variable cvReceiverReady{};
-  bool ReceiverReady{false};
+  std::condition_variable cvReceiverAck{};
+  bool ReceiverAck{false};
   bool InfoReady{false};
   std::string Data{}; //Here, or elsewhere?????
 };

@@ -11,8 +11,8 @@ class communication_API local_communicator {
   public: 
     void set_container(local_channel_container *container);
 
-    void wait_receiver_ready(size_t channel_id);
     void send(size_t channel_id, const std::string &data);
+    void send_and_wait_for_ack(size_t channel_id, const std::string &data);
     void receive(size_t channel_id, std::string &data);
 
 
