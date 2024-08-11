@@ -16,6 +16,7 @@ struct endpoint {
   
 };
 
+using namespace std::chrono_literals;
 
 TEST_CASE("simple unidir"){
   endpoint server(1);
@@ -33,17 +34,16 @@ TEST_CASE("simple unidir"){
 
   post(server.Pool, [&](){
     server.Comm.wait_receiver_ready(chan_idx);
-    server.Comm.send(chan_idx);
+    server.Comm.send(chan_idx, "WOW");
     while(IsRunning){}
   });
 
-  using namespace std::chrono_literals;
   post(client.Pool, [&]() {
     
     std::this_thread::sleep_for(1s);
-  
-    client.Comm.receive(chan_idx);
-    CHECK(true);
+    std::string result;
+    client.Comm.receive(chan_idx, result);
+    CHECK(result == "WOW");
     IsRunning = false;
   });
 
@@ -67,21 +67,60 @@ TEST_CASE("simple unidir without waiting for receiver-ready"){
   std::atomic<bool> IsRunning = true;
 
   post(server.Pool, [&](){
-    server.Comm.send(chan_idx);
+    std::string data = "Testing 1 2 1 2";
+    server.Comm.send(chan_idx, data);
     while(IsRunning){}
   });
 
-  using namespace std::chrono_literals;
   post(client.Pool, [&]() {
     
     std::this_thread::sleep_for(1s);
   
-    client.Comm.receive(chan_idx);
-    CHECK(true);
+    std::string data;
+    client.Comm.receive(chan_idx, data);
+    CHECK(data == "Testing 1 2 1 2");
     IsRunning = false;
   });
 
   while(IsRunning){}
 
   CHECK(true);
+}
+
+TEST_CASE("simple bidir"){
+  endpoint server(1);
+  endpoint client(1);
+
+  local_channel_container channels;
+  size_t chan_one = channels.add_channel();
+  size_t chan_two = channels.add_channel();
+  
+  server.Comm.set_container(&channels);
+  client.Comm.set_container(&channels);
+
+  server.Pool.launch();
+  client.Pool.launch();
+  std::atomic<bool> IsRunning = true;
+
+  post(server.Pool, [&](){
+    std::string data = "What is your favorite color?";
+    server.Comm.send(chan_one, data);
+    //Hmm. since send is asynchronous, I cannot use only one channel
+    std::string answer;
+    server.Comm.receive(chan_two, answer);
+    CHECK(answer == "Red");
+
+    IsRunning = false;
+  });
+
+  post(client.Pool, [&](){
+    std::string question;
+    client.Comm.receive(chan_one, question);
+    CHECK(question == "What is your favorite color?");
+    client.Comm.send(chan_two, "Red");
+  });
+
+  std::this_thread::sleep_for(3s);
+
+  CHECK(IsRunning == false);
 }
