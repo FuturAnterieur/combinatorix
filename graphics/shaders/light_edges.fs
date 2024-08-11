@@ -51,13 +51,13 @@ float fbm(in vec3 p)
 float domainwarp(in vec3 p, out vec3 q, out vec3 r)
 {
   float t = time/2.0;
-  //p += 3.0*sin( vec3(1.0)*t);
+  p += 3.0*sin( vec3(1.0)*t);
 	
-  //q = vec3(fbm(p), fbm(p), fbm(p));
-  //vec3 disp = p + 4.0 * q;
-	//r = vec3(fbm(disp), fbm(disp), fbm(disp));
+  q = vec3(fbm(p), fbm(p), fbm(p));
+  vec3 disp = p + 4.0 * q;
+	r = vec3(fbm(disp), fbm(disp), fbm(disp));
 
-	float f = rand(p);
+	float f = fbm(q + r);
 	return f;
 }
 
