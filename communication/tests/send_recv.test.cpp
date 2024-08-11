@@ -40,7 +40,7 @@ TEST_CASE("simple unidir"){
   using namespace std::chrono_literals;
   post(client.Pool, [&]() {
     
-    std::this_thread::sleep_for(2s);
+    std::this_thread::sleep_for(1s);
   
     client.Comm.receive(chan_idx);
     CHECK(true);
@@ -74,7 +74,7 @@ TEST_CASE("simple unidir without waiting for receiver-ready"){
   using namespace std::chrono_literals;
   post(client.Pool, [&]() {
     
-    std::this_thread::sleep_for(2s);
+    std::this_thread::sleep_for(1s);
   
     client.Comm.receive(chan_idx);
     CHECK(true);

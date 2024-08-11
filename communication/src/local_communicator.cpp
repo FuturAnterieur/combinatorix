@@ -27,15 +27,15 @@ void local_communicator::receive(size_t channel_id){
   local_sync_channel &channel = *Container->get_channel(channel_id);
 
   std::unique_lock lk(channel.Mutex);
-  if(channel.InfoReady){
-    channel.InfoReady = false;
-  } else {
-    channel.ReceiverReady = true;
-    channel.cvReceiverReady.notify_one();
-    channel.cvWaiting.wait(lk, [&channel](){return channel.InfoReady; });
-    channel.ReceiverReady = false;
-  }
+ 
+  
+  channel.ReceiverReady = true;
+  channel.cvReceiverReady.notify_one(); //in case someone is waiting
+  channel.cvWaiting.wait(lk, [&channel](){return channel.InfoReady; });
+  channel.ReceiverReady = false;
+  
   //consume data
+  channel.InfoReady = false;
 
   lk.unlock();
 }
