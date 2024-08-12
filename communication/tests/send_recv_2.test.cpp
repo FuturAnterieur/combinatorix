@@ -9,7 +9,7 @@
 struct endpoint {
   thread_pool Pool;
   local_communicator Comm;
-  endpoint(int num_threads) : Pool(num_threads) {
+  endpoint(int num_threads, int comm_index) : Pool(num_threads), Comm(comm_index) {
     
   }
   ~endpoint() = default;
@@ -19,8 +19,8 @@ struct endpoint {
 using namespace std::chrono_literals;
 
 TEST_CASE("bidir with a single channel"){
-  endpoint server(1);
-  endpoint client(1);
+  endpoint server(1, 0);
+  endpoint client(1, 1);
 
   local_channel_container channels;
   size_t chan_one = channels.add_channel();
@@ -34,7 +34,7 @@ TEST_CASE("bidir with a single channel"){
 
   post(server.Pool, [&](){
     std::string data = "What is your favorite color?";
-    server.Comm.send(chan_one, data, true, true);
+    server.Comm.send(chan_one, data);
 
     std::string answer;
     server.Comm.receive(chan_one, answer);

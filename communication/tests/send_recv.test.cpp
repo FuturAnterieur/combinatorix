@@ -9,7 +9,7 @@
 struct endpoint {
   thread_pool Pool;
   local_communicator Comm;
-  endpoint(int num_threads) : Pool(num_threads) {
+  endpoint(int num_threads, int comm_index) : Pool(num_threads), Comm(comm_index) {
     
   }
   ~endpoint() = default;
@@ -19,8 +19,8 @@ struct endpoint {
 using namespace std::chrono_literals;
 
 TEST_CASE("simple unidir"){
-  endpoint server(1);
-  endpoint client(1);
+  endpoint server(1, 0);
+  endpoint client(1, 1);
 
   local_channel_container channels;
   size_t chan_idx = channels.add_channel();
@@ -50,8 +50,8 @@ TEST_CASE("simple unidir"){
 }
 
 TEST_CASE("simple unidir with receiver delay"){
-  endpoint server(1);
-  endpoint client(1);
+  endpoint server(1, 0);
+  endpoint client(1, 1);
 
   local_channel_container channels;
   size_t chan_idx = channels.add_channel();
@@ -85,8 +85,8 @@ TEST_CASE("simple unidir with receiver delay"){
 }
 
 TEST_CASE("simple bidir"){
-  endpoint server(1);
-  endpoint client(1);
+  endpoint server(1, 0);
+  endpoint client(1, 1);
 
   local_channel_container channels;
   size_t chan_one = channels.add_channel();
