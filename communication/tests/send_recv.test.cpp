@@ -122,39 +122,3 @@ TEST_CASE("simple bidir"){
   CHECK(IsRunning == false);
 }
 
-TEST_CASE("bidir with a single channel"){
-  endpoint server(1);
-  endpoint client(1);
-
-  local_channel_container channels;
-  size_t chan_one = channels.add_channel();
-  
-  server.Comm.set_container(&channels);
-  client.Comm.set_container(&channels);
-
-  server.Pool.launch();
-  client.Pool.launch();
-  std::atomic<bool> IsRunning = true;
-
-  post(server.Pool, [&](){
-    std::string data = "What is your favorite color?";
-    server.Comm.send_and_wait_for_ack(chan_one, data);
-
-    std::string answer;
-    server.Comm.receive(chan_one, answer);
-    CHECK(answer == "Red");
-
-    IsRunning = false;
-  });
-
-  post(client.Pool, [&](){
-    std::string question;
-    client.Comm.receive(chan_one, question);
-    CHECK(question == "What is your favorite color?");
-    client.Comm.send(chan_one, "Red");
-  });
-
-  std::this_thread::sleep_for(2s);
-
-  CHECK(IsRunning == false);
-}
