@@ -2,6 +2,7 @@
 set(ENGINE_SRCS 
   src/action.cpp
   src/engine.cpp
+  src/game_communicator.cpp
   src/game_logic.cpp
   src/simulation_data.cpp
   src/simulation_executable.cpp
@@ -12,7 +13,7 @@ add_library(engine SHARED ${ENGINE_SRCS})
 target_include_directories(engine PRIVATE ${ENTT_SOURCE_DIR}/src ${CEREAL_SOURCE_DIR}/include)
 target_include_directories(engine PRIVATE ../)
 target_include_directories(engine PRIVATE include)
-target_link_libraries(engine PRIVATE logistics thread_pool)
+target_link_libraries(engine PRIVATE logistics thread_pool communication)
 
 #add_executable(fake_engine main.cpp)
 #target_include_directories(fake_engine PRIVATE ${ENTT_SOURCE_DIR}/src ${CEREAL_SOURCE_DIR}/include)
@@ -27,3 +28,4 @@ add_cxx_doctest_driver(TestStatusWithEngine SRCS tests/status.test.cpp INCLUDES 
 add_cxx_doctest_driver(TestStatus2WithEngine SRCS tests/status_2.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine TEST_FANCY_NAME slightly_less_basic_status)
 add_cxx_doctest_driver(TestStatus3 SRCS tests/status_3.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine TEST_FANCY_NAME pre_change_triggers)
 add_cxx_doctest_driver(TestIncrementalChanges SRCS tests/status_4.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine TEST_FANCY_NAME incremental_changes)
+add_cxx_doctest_driver(TestLocalComms SRCS tests/local_comm.test.cpp INCLUDES ${TEST_INCLUDES} LINKS logistics engine communication thread_pool TEST_FANCY_NAME engine_local_comms_1)

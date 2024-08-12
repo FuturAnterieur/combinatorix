@@ -20,6 +20,20 @@ namespace engine{
     HistoryManager->set_registry(registry);
   }
 
+  void game_logic::set_communicator(game_communicator *comm)
+  {
+    _Communicator = comm;
+  }
+
+  std::string game_logic::ask_question(size_t chan_index, const std::string &question_data)
+  {
+    if(!_Communicator){
+      return "";
+    }
+
+    return _Communicator->ask_question(question_data, chan_index);
+  }
+
   //==============================================================
   void game_logic::run_simulation(const std::function<void(game_logic *)> &request){
     

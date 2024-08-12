@@ -1,6 +1,15 @@
 #pragma once
 
-class game_communicator{
+#include "communication/include/local_communicator.h"
+#include "engine_export.h"
+
+class engine_API game_communicator{
   public:
-    void ask_question();
+    game_communicator(local_communicator *comm);
+
+    std::string ask_question(const std::string &question_data, size_t chan_idx);
+
+  private:
+    local_communicator *_Communication;
+    
 };

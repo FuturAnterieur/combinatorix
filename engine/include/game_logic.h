@@ -5,6 +5,7 @@
 #include <entt/entity/fwd.hpp>
 #include "logistics/include/history_manager.h"
 #include "simulation_data.h"
+#include "game_communicator.h"
 
 namespace engine {
   struct pre_change_trigger_info;
@@ -18,6 +19,7 @@ namespace engine {
 
       std::unique_ptr<simulation_data> CurrentSimulationData;
       std::unique_ptr<logistics::history_manager> HistoryManager;
+      game_communicator *_Communicator{nullptr};
 
     public:
 
@@ -28,6 +30,9 @@ namespace engine {
       inline entt::registry *get_registry() {
         return _Registry;
       }
+
+      void set_communicator(game_communicator *comm);
+      std::string ask_question(size_t chan_index, const std::string &question_data);
 
       //API
       void run_simulation(const std::function<void(game_logic *)> &request);
