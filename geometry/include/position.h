@@ -1,8 +1,8 @@
 #pragma once
-#include "Vec2D.h"
+#include <glm/glm.hpp>
 
 namespace geometry {
   struct position {
-    Vec2D<ftype> Value;
+    glm::vec2 Value;
   };
 }

@@ -21,8 +21,8 @@ namespace geometry {
   void create_proxy(entt::registry &registry, const aabb &tight_fitting_aabb, entt::entity owner){
     
     auto &node_data = registry.emplace<tree_node>(owner);
-    node_data.AABB.Min = tight_fitting_aabb.Min - Vec2D<ftype>(0.1f, 0.1f);
-    node_data.AABB.Max = tight_fitting_aabb.Max + Vec2D<ftype>(0.1f, 0.1f);  
+    node_data.AABB.Min = tight_fitting_aabb.Min - glm::vec2(0.1f, 0.1f);
+    node_data.AABB.Max = tight_fitting_aabb.Max + glm::vec2(0.1f, 0.1f);  
     insert_leaf(registry, owner);
   }
 

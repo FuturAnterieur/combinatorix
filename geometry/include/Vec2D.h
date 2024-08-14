@@ -3,7 +3,7 @@
 #include <algorithm>
 
 namespace geometry {
-  
+  //NOW UNUSED, deprecated in favor of glm::vec2.
   template<typename T>
   class Vec2D {
     public:
@@ -84,6 +84,4 @@ namespace geometry {
     result.y = std::max(lhs.y, rhs.y);
     return result;
   }
-
-  using ftype = float;
 }

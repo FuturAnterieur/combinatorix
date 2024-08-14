@@ -1,7 +1,7 @@
 #include "aabb.h"
 
 namespace geometry {
-  ftype aabb::perimeter() const{
+  float aabb::perimeter() const{
     return (Max.x - Min.x + Max.y - Min.y) * 2.f;
   }
 

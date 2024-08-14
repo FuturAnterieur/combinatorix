@@ -44,7 +44,7 @@ namespace engine {
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
       void change_actives(entt::entity, const attributes_info_short_changes &changes);
-      //void request_to_move(entt::entity, /*move request - to be detailed in geometry*/);
+      //void request_to_move(entt::entity, );
       void set_originating_entity(entt::entity entity); //To be used e.g. to say when a player is playing. Mostly useful at the start of a simulation, because otherwise, it is managed internally.
 
       void add_on_status_change_trigger(entt::entity entity, on_status_change_trigger_info &info);

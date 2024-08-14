@@ -1,13 +1,17 @@
 #pragma once
 
+
 #include "geometry_export.h"
-#include "Vec2D.h"
+#include <glm/glm.hpp>
+
+using ftype = float;
+
 namespace geometry{
   struct geometry_API aabb {
-    Vec2D<ftype> Min;
-    Vec2D<ftype> Max;
+    glm::vec2 Min;
+    glm::vec2 Max;
 
-    ftype perimeter() const;
+    float perimeter() const;
   };
 
   aabb combine(const aabb &lhs, const aabb &rhs);

@@ -8,8 +8,8 @@ TEST_CASE("debug to see tree building"){
   entt::registry registry;
 
   aabb AABB1, AABB2, AABB3;
-  AABB1.Min = Vec2D<ftype>(0.0f, 0.0f);
-  AABB1.Max = Vec2D<ftype>(10.f, 10.f);
+  AABB1.Min = glm::vec2(0.0f, 0.0f);
+  AABB1.Max = glm::vec2(10.f, 10.f);
 
   AABB2.Min.x = 15.f; AABB2.Min.y = 15.f;
   AABB2.Max.x = 20.f; AABB2.Max.y = 20.f;
