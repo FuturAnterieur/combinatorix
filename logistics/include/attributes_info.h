@@ -176,7 +176,6 @@ inline CommittedValue<parameter> apply_change(const CommittedValue<parameter> &o
       return result;
     }
 
-    //TODO : int/float shenanigans
     switch (data.OpType){
       case param_op_type::add:
         result.Value = *param_val + data.Args[0];
@@ -357,7 +356,6 @@ template<typename T>
   class diff_merger {
     public:
     //If we are doing cumulative changes : left will have a lower timing than right and right will always be prioritized in case of conflict
-    //Otherwise this will be called in add_changes
     virtual Change<T> merge_changes(const Change<T> &left, const Change<T> &right, const priority_callback_t &prio_func) {
       //most basic generic merge function here
       priority_request req;
@@ -373,7 +371,6 @@ template<typename T>
 
       return result;
     }
-    //For params : specialize the template to take into account if the diff is incremental (i.e. an HP param for instance)
   };
 
 template<typename T>

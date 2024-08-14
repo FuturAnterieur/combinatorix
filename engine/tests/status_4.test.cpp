@@ -132,4 +132,21 @@ TEST_CASE("Basic test for parameters with incremental changes applied to them (i
     CHECK(result.int_val() == 88);
   }
 
+  SUBCASE("Case 4 : two intrinsics of the set type"){
+    game.run_simulation([&](engine::game_logic *game){
+      attributes_info_short_changes intrinsics1, intrinsics2;
+      intrinsics1.ModifiedParams.emplace(k_hp_hash, diff_from_set_val(12.f));
+      intrinsics2.ModifiedParams.emplace(k_hp_hash, diff_from_set_val(8.f));
+      
+      game->set_originating_entity(modifier1);
+      game->change_intrinsics(subject, intrinsics1);
+
+      game->set_originating_entity(modifier2);
+      game->change_intrinsics(subject, intrinsics2);
+    });
+
+    numeric_value result = get_hp_value(registry, subject);
+    CHECK(result.int_val() == 12);
+  }
+
 }
