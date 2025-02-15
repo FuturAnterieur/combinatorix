@@ -141,16 +141,18 @@ int main() {
     sg_shader_desc shd_desc = {};
     
     std::string vs = get_shader_source("graphics/shaders/tex3d.vs");
-    shd_desc.vs.source = vs.data();
-    shd_desc.vs.uniform_blocks[0].size = sizeof(params_t);
-    shd_desc.vs.uniform_blocks[0].uniforms[0].name = "mvp";
-    shd_desc.vs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_MAT4;
+    shd_desc.vertex_func.source = vs.data();
+    shd_desc.uniform_blocks[0].size = sizeof(params_t);
+    shd_desc.uniform_blocks[0].glsl_uniforms[0].glsl_name = "mvp";
+    shd_desc.uniform_blocks[0].stage = SG_SHADERSTAGE_VERTEX;
+    shd_desc.uniform_blocks[0].glsl_uniforms[0].type = SG_UNIFORMTYPE_MAT4;
     
     std::string fs = get_shader_source("graphics/shaders/light_edges.fs");
-    shd_desc.fs.source = fs.data();    
-    shd_desc.fs.uniform_blocks[0].size = sizeof(float);
-    shd_desc.fs.uniform_blocks[0].uniforms[0].name = "time";
-    shd_desc.fs.uniform_blocks[0].uniforms[0].type = SG_UNIFORMTYPE_FLOAT;
+    shd_desc.fragment_func.source = fs.data();    
+    shd_desc.uniform_blocks[1].size = sizeof(float);
+    shd_desc.uniform_blocks[1].stage = SG_SHADERSTAGE_FRAGMENT;
+    shd_desc.uniform_blocks[1].glsl_uniforms[0].glsl_name = "time";
+    shd_desc.uniform_blocks[1].glsl_uniforms[0].type = SG_UNIFORMTYPE_FLOAT;
 
    
     // create a shader (use vertex attribute locations)
@@ -229,8 +231,8 @@ int main() {
         sg_begin_pass(&the_pass);
         sg_apply_pipeline(pip);
         sg_apply_bindings(&bind);
-        sg_apply_uniforms(SG_SHADERSTAGE_VS, 0, &vs_uniforms);
-        sg_apply_uniforms(SG_SHADERSTAGE_FS, 0, &fs_uniforms);
+        sg_apply_uniforms(0, &vs_uniforms);
+        sg_apply_uniforms(1, &fs_uniforms);
         sg_draw(0, 36, 2);
         sg_end_pass();
         sg_commit();
