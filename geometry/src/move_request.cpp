@@ -1,6 +1,7 @@
 #include "move_request.h"
 #include "position.h"
 #include "velocity.h"
+#include "collision_tree.h"
 
 #include <entt/entity/registry.hpp>
 #include <glm/glm.hpp>
@@ -14,37 +15,19 @@ namespace geometry{
     Registry = registry;
   }
 
-  void move_request_processor::process_move_requests(move_requests_container &reqs, float duration, float delta_time)
-  {
-    size_t num_steps = static_cast<size_t>(duration / delta_time);
-    for(size_t t = 0; t < num_steps; t++){
-      for(auto &req : reqs){
+  bool move_request_processor::is_move_allowed(const move_request &req) {
 
-        auto &cur_pos = Registry->get<position>(req.Entity);
-        glm::vec2 dir_vec = glm::normalize(req.Destination.Value - cur_pos.Value);
-        
-        glm::vec2 proposed = cur_pos.Value + req.Velocity * delta_time * dir_vec;
-        
-        //TODO : manage collisions with obstruction colliders (on condition that Entity has an obstruction collider itself)!!!!!
-        glm::vec2 reached = proposed;
+    if (Registry->any_of<aabb_collider>(req.Entity)){
+      aabb aabb_ = Registry->get<aabb_collider>(req.Entity).AABB;
+      glm::vec2 projected_delta = req.Destination.Value - aabb_.center();
+      aabb_.Min += projected_delta;
+      aabb_.Max += projected_delta;
 
-        cur_pos.Value = reached;
-        if(reached != proposed){
-          req.Destination.Value = reached;
-        }
-      }
+      return !query(*Registry, aabb_);
+    } else if (Registry->any_of<circle_collider>(req.Entity)) {
+      //TODO aabb construction from circle
     }
 
-    reqs.erase(std::remove_if(reqs.begin(),
-                              reqs.end(),
-                              [=](move_request &req)-> bool 
-                              { 
-                                auto &cur_pos = Registry->get<position>(req.Entity);
-                                const float epsilon = 5e-6;
-                                glm::vec2 delta = req.Destination.Value - cur_pos.Value;
-                                float delta_squared = delta.x * delta.x + delta.y * delta.y; 
-                                return delta_squared <= epsilon;
-                              }), 
-                    reqs.end());
+    return false;
   }
 }

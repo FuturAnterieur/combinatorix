@@ -26,6 +26,34 @@ namespace geometry {
     insert_leaf(registry, owner);
   }
 
+  bool query(entt::registry &registry, const aabb &aabb_)
+  {
+    std::vector<entt::entity> stack;
+    auto root_view = registry.view<is_root>();
+    if (root_view.empty()) {
+      return false;
+    }
+
+    stack.push_back(root_view.front());
+
+    while (!stack.empty()) {
+      entt::entity current = stack.back();
+      stack.pop_back();
+      if (current == entt::null) {
+        continue;
+      }
+
+      auto &data = registry.get<tree_node>(current);
+      if (data.is_leaf()) {
+        return detect_aabb_to_aabb_collision(aabb_collider{data.AABB}, aabb_collider{aabb_});
+      } else {
+        stack.push_back(data.Child1);
+        stack.push_back(data.Child2);
+      }
+    }
+    return false;
+  }
+
   void insert_leaf(entt::registry &registry, entt::entity leaf){
     auto &node_data = registry.get<tree_node>(leaf);
     auto root_view = registry.view<is_root>();

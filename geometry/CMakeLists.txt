@@ -1,9 +1,9 @@
 include(MyFunctions)
 
 set(CORE_GEOMETRY_SRCS 
-  src/aabb.cpp
   src/collision_tree.cpp
   src/move_request.cpp
+  src/shape.cpp
 )
 
 add_library(geometry SHARED ${CORE_GEOMETRY_SRCS})

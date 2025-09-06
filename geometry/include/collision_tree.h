@@ -1,7 +1,7 @@
 #pragma once
 
 #include "geometry_export.h"
-#include "aabb.h"
+#include "shape.h"
 #include <entt/entity/fwd.hpp>
 
 namespace geometry {
@@ -22,6 +22,8 @@ namespace geometry {
   struct is_root {};
 
   void geometry_API create_proxy(entt::registry &registry, const aabb &tight_fitting_aabb, entt::entity owner);
+  // In box 2d, tree queries take a callback for further testing in case of AABB match on a leaf
+  bool geometry_API query(entt::registry &registry, const aabb &aabb_);
 
   void insert_leaf(entt::registry &registry, entt::entity leaf);
   void remove_leaf(entt::registry &registry, entt::entity leaf);
