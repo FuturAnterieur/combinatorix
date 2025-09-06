@@ -44,11 +44,13 @@ namespace geometry {
       }
 
       auto &data = registry.get<tree_node>(current);
-      if (data.is_leaf()) {
-        return detect_aabb_to_aabb_collision(aabb_collider{data.AABB}, aabb_collider{aabb_});
-      } else {
-        stack.push_back(data.Child1);
-        stack.push_back(data.Child2);
+      if (detect_aabb_to_aabb_collision(aabb_collider{data.AABB}, aabb_collider{aabb_})) {
+        if (data.is_leaf()) {
+          return true;
+        } else {
+          stack.push_back(data.Child1);
+          stack.push_back(data.Child2);
+        }
       }
     }
     return false;

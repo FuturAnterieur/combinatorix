@@ -45,10 +45,16 @@ Currently, intrinsic changes can be intercepted and modified before they are app
 - Offer capacity to edit triggers inside user callbacks mentioned just above
 
 ## Unit movement
+OLD PLANS : 
 - Support movement with...
   - many substeps of movement at each timing
   - checking for collision restraint colliders at each substep
   - checking for status-related colliders at least at each full timing... beware of stuff happening on the exact same timing though
+
+NEW, SIMPLER PLANS : 
+- Just support simple "move to X" queries, without substeps
+- So no 'realtime' movement reactivity
+- Probably attempt to support one move request per unit per timing but we'll see
 
 ## More triggers
 - Event / Game action triggers
