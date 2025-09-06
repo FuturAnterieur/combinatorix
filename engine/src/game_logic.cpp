@@ -3,6 +3,8 @@
 #include "status_structs.h"
 #include "action.h"
 #include "logistics/include/history_storage.h"
+#include "geometry/include/collision_processor.h"
+#include "geometry/include/collision_tree.h"
 
 #define DEFAULT_UPDATE_DELTA 0
 
@@ -61,6 +63,32 @@ namespace engine{
     attributes_info_short_changes temp;
     temp.ModifiedParams.emplace(hash, diff_from_set_val(val));
     init_attributes(entity, temp);
+  }
+
+  //==============================================================
+  void game_logic::init_aabb_collider(entt::entity entity, const geometry::aabb_collider &collider)
+  {
+    // Important : check for collision first
+    geometry::collision_processor processor(_Registry);
+    if (processor.aabb_collision_query(collider)) {
+      return;
+    }
+
+    _Registry->emplace<geometry::aabb_collider>(entity, collider);
+    geometry::create_proxy(*_Registry, collider.AABB, entity);
+  }
+
+  //==============================================================
+  void game_logic::init_circle_collider(entt::entity entity, const geometry::circle_collider &collider)
+  {
+    // Important : check for collision first
+    geometry::collision_processor processor(_Registry);
+    if (processor.circle_collision_query(collider)) {
+      return;
+    }
+
+    _Registry->emplace<geometry::circle_collider>(entity, collider);
+    geometry::create_proxy(*_Registry, geometry::aabb_from_circle(collider), entity);
   }
 
   //==============================================================

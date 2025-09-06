@@ -6,6 +6,7 @@
 #include "logistics/include/history_manager.h"
 #include "simulation_data.h"
 #include "game_communicator.h"
+#include "geometry/include/shape.h"
 
 namespace engine {
   struct pre_change_trigger_info;
@@ -40,6 +41,9 @@ namespace engine {
       //Calculation API
       void init_status(entt::entity entity, entt::id_type hash, smt val);
       void init_parameter(entt::entity entity, entt::id_type hash, parameter_value_t val);
+      void init_aabb_collider(entt::entity entity, const geometry::aabb_collider &collider);
+      void init_circle_collider(entt::entity entity, const geometry::circle_collider &collider);
+
 
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);
@@ -61,11 +65,6 @@ namespace engine {
       parameter_view_t get_parameter_view(entt::id_type hash);
       status_view_t get_status_view(entt::id_type hash);
 
-      //void use(entt::entity ability); //target would be set in the ability entity????
-      //void add_on_use_trigger(entt::entity owner, /*const on_use_trigger_func_t &func*/);
-      //entt::entity add_ability(entt::entity candidate_owner, use_func_t func, const combination_info &info);
-
-      //bool combine(entt::entity a, entt::entity b, /*combination_kind*/);
 
     private:
       friend struct entity_update_executable;

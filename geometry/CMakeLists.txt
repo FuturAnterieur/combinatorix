@@ -2,7 +2,7 @@ include(MyFunctions)
 
 set(CORE_GEOMETRY_SRCS 
   src/collision_tree.cpp
-  src/move_request.cpp
+  src/collision_processor.cpp
   src/shape.cpp
 )
 

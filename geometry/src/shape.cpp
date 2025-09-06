@@ -25,7 +25,12 @@ namespace geometry {
     return (b.AABB.Min.x < a.AABB.Max.x && b.AABB.Max.x > a.AABB.Min.x
       && b.AABB.Min.y < a.AABB.Max.y && b.AABB.Max.y > a.AABB.Min.y);
   }
-    
+
+  aabb aabb_from_circle(const circle_collider &c)
+  {
+    return aabb{{c.Position.x - c.Radius, c.Position.y - c.Radius}, {c.Position.x + c.Radius, c.Position.y + c.Radius}};
+  }
+
   bool detect_circle_to_aabb_collision(const circle_collider &a, const aabb_collider &b)
   {
     glm::vec2 aabb_center = b.AABB.center();

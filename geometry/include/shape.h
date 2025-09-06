@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 #include "geometry_export.h"
 #include <glm/glm.hpp>
 #include <entt/entity/fwd.hpp>
@@ -34,4 +33,6 @@ namespace geometry{
   bool detect_circle_to_circle_collision(const circle_collider &a, const circle_collider &b);
   bool detect_circle_to_aabb_collision(const circle_collider &a, const aabb_collider &b);
   bool detect_aabb_to_aabb_collision(const aabb_collider &a, const aabb_collider &b);
+
+  geometry_API aabb aabb_from_circle(const circle_collider &c);
 }
