@@ -26,12 +26,27 @@ namespace geometry {
     insert_leaf(registry, owner);
   }
 
-  bool query(entt::registry &registry, const aabb &aabb_)
+  void move_proxy(entt::registry &registry, const aabb &tight_fitting_aabb, entt::entity owner)
+  {
+    remove_leaf(registry, owner);
+    auto &node_data = registry.get<tree_node>(owner);
+    node_data.AABB.Min = tight_fitting_aabb.Min - glm::vec2(0.1f, 0.1f);
+    node_data.AABB.Max = tight_fitting_aabb.Max + glm::vec2(0.1f, 0.1f);  
+    insert_leaf(registry, owner);
+  }
+
+  void destroy_proxy(entt::registry &registry, entt::entity owner)
+  {
+    remove_leaf(registry, owner);
+    registry.remove<tree_node>(owner);
+  }
+
+  entt::entity query(entt::registry &registry, const aabb &aabb_)
   {
     std::vector<entt::entity> stack;
     auto root_view = registry.view<is_root>();
     if (root_view.empty()) {
-      return false;
+      return entt::null;
     }
 
     stack.push_back(root_view.front());
@@ -46,14 +61,14 @@ namespace geometry {
       auto &data = registry.get<tree_node>(current);
       if (detect_aabb_to_aabb_collision(aabb_collider{data.AABB}, aabb_collider{aabb_})) {
         if (data.is_leaf()) {
-          return true;
+          return current;
         } else {
           stack.push_back(data.Child1);
           stack.push_back(data.Child2);
         }
       }
     }
-    return false;
+    return entt::null;
   }
 
   void insert_leaf(entt::registry &registry, entt::entity leaf){

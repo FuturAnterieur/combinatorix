@@ -10,6 +10,12 @@ namespace geometry {
     return {(Max.x + Min.x) / 2.f, (Max.y + Min.y) / 2.f};
   }
 
+  void aabb::move(const glm::vec2 &displacement)
+  {
+    Max += displacement;
+    Min += displacement;
+  }
+
   aabb combine(const aabb &lhs, const aabb &rhs){
     return aabb{min(lhs.Min, rhs.Min), max(lhs.Max, rhs.Max)};
   }

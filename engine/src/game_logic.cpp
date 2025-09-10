@@ -2,6 +2,7 @@
 #include "logistics/include/combine.h"
 #include "status_structs.h"
 #include "action.h"
+#include "move_request_history.h"
 #include "logistics/include/history_storage.h"
 #include "geometry/include/collision_processor.h"
 #include "geometry/include/collision_tree.h"
@@ -46,8 +47,29 @@ namespace engine{
     CurrentSimulationData->Finished = false;
     while(!CurrentSimulationData->Finished){
       CurrentSimulationData->run_one_timing();
+      // of course at each timing we process moves
+      // timing has priority over priority_info
+      _Registry->sort<move_request_history>([&](entt::entity lhs, entt::entity rhs) {
+        int lhs_prio = 1;
+        int rhs_prio = 0;
+        priority_request req{{{lhs, &lhs_prio}, {rhs, &rhs_prio}}};
+        classic_priority_callback(req, _Registry);
+        return lhs_prio > rhs_prio;
+      });
+  
+      geometry::collision_processor processor(_Registry);
+  
+      auto mrh_view = _Registry->view<move_request_history>();
+      for (entt::entity entity : mrh_view) {
+        auto &history = mrh_view.get<move_request_history>(entity);
+        //do_move will limit the movement of illegal moves
+        processor.do_move(geometry::move_request{entity, history.PendingRequests.front()});
+      }
+      _Registry->clear<move_request_history>();
     }
+
     HistoryManager->merge_active_branch_to_reality(CurrentSimulationData->EndTiming);
+
   }
 
   //==============================================================
@@ -89,6 +111,22 @@ namespace engine{
 
     _Registry->emplace<geometry::circle_collider>(entity, collider);
     geometry::create_proxy(*_Registry, geometry::aabb_from_circle(collider), entity);
+  }
+
+  //==============================================================
+  void game_logic::enqueue_move_request(entt::entity entity, const geometry::position &pos)
+  {
+    geometry::collision_processor processor(_Registry);
+    if (!processor.is_move_allowed(geometry::move_request{entity, pos})) {
+      return;
+    }
+
+    auto &history = _Registry->get_or_emplace<move_request_history>(entity);
+
+    //For now : allow only one pending request per entity
+    if (history.PendingRequests.empty()) {
+      history.PendingRequests.push_back(pos);
+    } 
   }
 
   //==============================================================

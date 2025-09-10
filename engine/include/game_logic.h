@@ -7,6 +7,7 @@
 #include "simulation_data.h"
 #include "game_communicator.h"
 #include "geometry/include/shape.h"
+#include "geometry/include/position.h"
 
 namespace engine {
   struct pre_change_trigger_info;
@@ -44,6 +45,7 @@ namespace engine {
       void init_aabb_collider(entt::entity entity, const geometry::aabb_collider &collider);
       void init_circle_collider(entt::entity entity, const geometry::circle_collider &collider);
 
+      void enqueue_move_request(entt::entity, const geometry::position &req);
 
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);

@@ -21,6 +21,8 @@ namespace geometry {
       collision_processor(entt::registry *registry);
       bool is_move_allowed(const move_request &req);
 
+      bool do_move(const move_request &req);
+
       bool aabb_collision_query(const aabb_collider &collider);
       bool circle_collision_query(const circle_collider &collider);
 

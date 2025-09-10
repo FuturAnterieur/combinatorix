@@ -17,6 +17,7 @@ namespace geometry{
 
     float perimeter() const;
     glm::vec2 center() const;
+    void move(const glm::vec2 &displacement);
   };
 
   aabb combine(const aabb &lhs, const aabb &rhs);
