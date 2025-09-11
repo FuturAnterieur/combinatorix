@@ -18,18 +18,16 @@ namespace geometry{
 
   bool collision_processor::is_move_allowed(const move_request &req) {
 
+    glm::vec2 projected_pos = Registry->get<position>(req.Entity).Value + req.Delta;
     if (Registry->any_of<aabb_collider>(req.Entity)){
-      aabb aabb_ = Registry->get<aabb_collider>(req.Entity).AABB;
-      glm::vec2 projected_delta = req.Destination.Value - aabb_.center();
-      aabb_.Min += projected_delta;
-      aabb_.Max += projected_delta;
-      return !aabb_collision_query(aabb_collider{aabb_});
+      aabb aabb_ = Registry->get<aabb_collider>(req.Entity).RelativeAABB;
+      
+      aabb_.move_of(projected_pos);
+      return !aabb_collision_query(aabb_);
 
     } else if (Registry->any_of<circle_collider>(req.Entity)) {
       circle_collider collider = Registry->get<circle_collider>(req.Entity);
-      collider.Position = req.Destination.Value;
-
-      return !circle_collision_query(collider);
+      return !circle_collision_query(projected_pos, collider.Radius);
     }
 
     return false;
@@ -37,21 +35,25 @@ namespace geometry{
 
   bool collision_processor::do_move(const move_request &req)
   {
+    auto &starting_position = Registry->get<position>(req.Entity);
     if (Registry->any_of<aabb_collider>(req.Entity)){
-      aabb initial_aabb_ = Registry->get<aabb_collider>(req.Entity).AABB;
+      aabb initial_aabb_ = Registry->get<aabb_collider>(req.Entity).RelativeAABB;
+      initial_aabb_.move_of(starting_position.Value);
       aabb aabb_ = initial_aabb_;
-      glm::vec2 projected_delta = req.Destination.Value - aabb_.center();
-      aabb_.move(projected_delta);
+      glm::vec2 projected_delta = req.Delta;
       float subtracted_ratio = 0.9f;
-      while(aabb_collision_query(aabb_collider{aabb_}) && subtracted_ratio >= 0.0f){
+      //TODO one day, use proper collision resolution algorithm
+      while(aabb_collision_query(aabb_) && subtracted_ratio >= 0.0f){
         projected_delta = projected_delta * subtracted_ratio;
         aabb_ = initial_aabb_;
-        aabb_.move(projected_delta);
+        aabb_.move_of(projected_delta);
         subtracted_ratio -= 0.1f;
       }
-      aabb &final_aabb =  Registry->get<aabb_collider>(req.Entity).AABB;
-      final_aabb.move(projected_delta);
-      move_proxy(*Registry, final_aabb, req.Entity);
+      starting_position.Value += projected_delta;
+      aabb final_absolute_aabb = Registry->get<aabb_collider>(req.Entity).RelativeAABB;
+      final_absolute_aabb.move_of(starting_position.Value);
+
+      move_proxy(*Registry, final_absolute_aabb, req.Entity);
 
     } else if (Registry->any_of<circle_collider>(req.Entity)) {
       // TODO do it
@@ -64,13 +66,13 @@ namespace geometry{
   }
 
   //TODO for now we're only checking broad-phase AABBs, need to check for shapes themselves too!
-  bool collision_processor::aabb_collision_query(const aabb_collider &collider)
+  bool collision_processor::aabb_collision_query(const aabb &absolute_aabb)
   {
-    return query(*Registry, collider.AABB) != entt::null;
+    return query(*Registry, absolute_aabb) != entt::null;
   }
 
-  bool collision_processor::circle_collision_query(const circle_collider &collider) {
-    return query(*Registry, aabb_from_circle(collider)) != entt::null;
+  bool collision_processor::circle_collision_query(const glm::vec2 &position, float radius) {
+    return query(*Registry, aabb_from_circle(position, radius)) != entt::null;
   }
 }
 

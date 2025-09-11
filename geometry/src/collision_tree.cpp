@@ -59,7 +59,7 @@ namespace geometry {
       }
 
       auto &data = registry.get<tree_node>(current);
-      if (detect_aabb_to_aabb_collision(aabb_collider{data.AABB}, aabb_collider{aabb_})) {
+      if (detect_aabb_to_aabb_collision(data.AABB, aabb_)) {
         if (data.is_leaf()) {
           return current;
         } else {

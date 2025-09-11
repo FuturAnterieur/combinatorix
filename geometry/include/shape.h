@@ -17,23 +17,27 @@ namespace geometry{
 
     float perimeter() const;
     glm::vec2 center() const;
-    void move(const glm::vec2 &displacement);
+    void move_of(const glm::vec2 &displacement);
   };
 
   aabb combine(const aabb &lhs, const aabb &rhs);
 
   struct geometry_API circle_collider {
-    glm::vec2 Position;
     float Radius;
   };
 
   struct geometry_API aabb_collider {
-    aabb AABB;
+    aabb RelativeAABB;
   };
 
-  bool detect_circle_to_circle_collision(const circle_collider &a, const circle_collider &b);
-  bool detect_circle_to_aabb_collision(const circle_collider &a, const aabb_collider &b);
-  bool detect_aabb_to_aabb_collision(const aabb_collider &a, const aabb_collider &b);
+  struct circle_with_position {
+    glm::vec2 Position;
+    float Radius;
+  };
 
-  geometry_API aabb aabb_from_circle(const circle_collider &c);
+  bool detect_circle_to_circle_collision(const circle_with_position &a, const circle_with_position &b);
+  bool detect_circle_to_aabb_collision(const circle_collider &a, const aabb_collider &b);
+  bool detect_aabb_to_aabb_collision(const aabb &a, const aabb &b);
+
+  geometry_API aabb aabb_from_circle(const glm::vec2 &pos, float radius);
 }

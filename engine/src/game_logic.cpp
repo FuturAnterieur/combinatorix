@@ -63,7 +63,9 @@ namespace engine{
       for (entt::entity entity : mrh_view) {
         auto &history = mrh_view.get<move_request_history>(entity);
         //do_move will limit the movement of illegal moves
-        processor.do_move(geometry::move_request{entity, history.PendingRequests.front()});
+        for (const auto &delta : history.PendingRequests) {
+          processor.do_move(geometry::move_request{entity, delta});
+        }
       }
       _Registry->clear<move_request_history>();
     }
@@ -90,43 +92,53 @@ namespace engine{
   //==============================================================
   void game_logic::init_aabb_collider(entt::entity entity, const geometry::aabb_collider &collider)
   {
+    if (!_Registry->any_of<geometry::position>(entity)) {
+      return;
+    }
+
+    const auto &position = _Registry->get<geometry::position>(entity);
     // Important : check for collision first
+
+    geometry::aabb absolute_aabb = collider.RelativeAABB;
+    absolute_aabb.move_of(position.Value);
     geometry::collision_processor processor(_Registry);
-    if (processor.aabb_collision_query(collider)) {
+    if (processor.aabb_collision_query(absolute_aabb)) {
       return;
     }
 
     _Registry->emplace<geometry::aabb_collider>(entity, collider);
-    geometry::create_proxy(*_Registry, collider.AABB, entity);
+    geometry::create_proxy(*_Registry, absolute_aabb, entity);
   }
 
   //==============================================================
   void game_logic::init_circle_collider(entt::entity entity, const geometry::circle_collider &collider)
   {
+    if (!_Registry->any_of<geometry::position>(entity)) {
+      return;
+    }
+
+    const auto &position = _Registry->get<geometry::position>(entity);
     // Important : check for collision first
     geometry::collision_processor processor(_Registry);
-    if (processor.circle_collision_query(collider)) {
+    if (processor.circle_collision_query(position.Value, collider.Radius)) {
       return;
     }
 
     _Registry->emplace<geometry::circle_collider>(entity, collider);
-    geometry::create_proxy(*_Registry, geometry::aabb_from_circle(collider), entity);
+    geometry::create_proxy(*_Registry, geometry::aabb_from_circle(position.Value, collider.Radius), entity);
   }
 
   //==============================================================
-  void game_logic::enqueue_move_request(entt::entity entity, const geometry::position &pos)
+  void game_logic::enqueue_move_request(entt::entity entity, const glm::vec2 &delta)
   {
     geometry::collision_processor processor(_Registry);
-    if (!processor.is_move_allowed(geometry::move_request{entity, pos})) {
+    if (!processor.is_move_allowed(geometry::move_request{entity, delta})) {
       return;
     }
 
     auto &history = _Registry->get_or_emplace<move_request_history>(entity);
-
-    //For now : allow only one pending request per entity
-    if (history.PendingRequests.empty()) {
-      history.PendingRequests.push_back(pos);
-    } 
+    history.PendingRequests.push_back(delta);
+  
   }
 
   //==============================================================

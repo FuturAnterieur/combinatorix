@@ -46,7 +46,7 @@ TEST_CASE("Exchange between client and server with request to move"){
 
   entt::entity exploration = registry.create();
   game.init_status(exploration, k_enchantment_hash, smt::added);
-  game.init_circle_collider(exploration, geometry::circle_collider{{10.f, 10.f}, 2.5f});
+  game.init_circle_collider(exploration, geometry::circle_collider{5.f});
 
   local_channel_container channels;
   size_t chan_idx = channels.add_channel();
