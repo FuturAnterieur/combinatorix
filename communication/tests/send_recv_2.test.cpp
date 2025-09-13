@@ -8,7 +8,7 @@
 
 struct endpoint {
   thread_pool Pool;
-  blocking_on_receive_communicator Comm;
+  local_communicator Comm;
   endpoint(int num_threads, int comm_index) : Pool(num_threads), Comm(comm_index) {
     
   }
@@ -37,7 +37,7 @@ TEST_CASE("bidir with a single channel"){
     server.Comm.send(chan_one, data);
 
     std::string answer;
-    server.Comm.receive(chan_one, answer);
+    server.Comm.receive_blocking(chan_one, answer);
     CHECK(answer == "Red");
 
     IsRunning = false;
@@ -45,7 +45,7 @@ TEST_CASE("bidir with a single channel"){
 
   post(client.Pool, [&](){
     std::string question;
-    client.Comm.receive(chan_one, question);
+    client.Comm.receive_blocking(chan_one, question);
     CHECK(question == "What is your favorite color?");
     client.Comm.send(chan_one, "Red");
   });

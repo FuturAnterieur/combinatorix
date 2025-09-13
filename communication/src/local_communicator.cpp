@@ -1,26 +1,17 @@
 #include "local_communicator.h"
 #include "local_sync_p.h"
 
-blocking_on_receive_communicator::blocking_on_receive_communicator(int index)
+local_communicator::local_communicator(int index)
 {
   Index = index;
 }
 
-queue_on_receive_communicator::queue_on_receive_communicator(int index)
-{
-  Index = index;
-}
-
-void queue_on_receive_communicator::set_container(local_channel_container *container) {
-  Container = container;
-}
-
-void blocking_on_receive_communicator::set_container(local_channel_container *container)
+void local_communicator::set_container(local_channel_container *container)
 {
   Container = container;
 }
 
-void blocking_on_receive_communicator::send(size_t channel_id, const std::string &data)
+void local_communicator::send(size_t channel_id, const std::string &data)
 {
   local_sync_channel &channel = *Container->get_channel(channel_id);
   std::unique_lock lk(channel.Mutex);
@@ -33,7 +24,7 @@ void blocking_on_receive_communicator::send(size_t channel_id, const std::string
   lk.unlock();
 }
 
-void blocking_on_receive_communicator::receive(size_t channel_id, std::string &data){
+void local_communicator::receive_blocking(size_t channel_id, std::string &data){
   local_sync_channel &channel = *Container->get_channel(channel_id);
 
   std::unique_lock lk(channel.Mutex);
@@ -51,20 +42,8 @@ void blocking_on_receive_communicator::receive(size_t channel_id, std::string &d
   lk.unlock();
 }
 
-void queue_on_receive_communicator::send(size_t channel_id, const std::string &data){
-  //TODO certify this code
-  local_sync_channel &channel = *Container->get_channel(channel_id);
-  std::unique_lock lk(channel.Mutex);
-  
-  channel.Queue.push_front(data);
-
-  channel.LastMessageCommIndex = Index;
-  channel.cvWaiting.notify_one();
-  
-  lk.unlock();
-}
-
-void queue_on_receive_communicator::receive(size_t channel_id, std::deque<std::string> &data) {
+void local_communicator::receive_non_blocking(size_t channel_id, std::deque<std::string> &data)
+{
   local_sync_channel &channel = *Container->get_channel(channel_id);
 
   std::unique_lock lk(channel.Mutex);

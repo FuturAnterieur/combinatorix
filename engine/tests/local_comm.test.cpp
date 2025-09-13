@@ -19,7 +19,7 @@ struct client {
 
   }
   thread_pool Pool;
-  blocking_on_receive_communicator Comm;
+  local_communicator Comm;
   std::map<std::string, std::string> AnsweringMap;
 };
 
@@ -46,7 +46,7 @@ TEST_CASE("Exchange between client and server"){
   local_channel_container channels;
   size_t chan_idx = channels.add_channel();
 
-  blocking_on_receive_communicator serv_comm(0);
+  local_communicator serv_comm(0);
   serv_comm.set_container(&channels);
 
   game_communicator serv_gam_comm(&serv_comm);
@@ -61,7 +61,7 @@ TEST_CASE("Exchange between client and server"){
 
   post(cli.Pool, [&](){
     std::string question;
-    cli.Comm.receive(chan_idx, question);
+    cli.Comm.receive_blocking(chan_idx, question);
     CHECK(question == "Color");
     cli.Comm.send(chan_idx, cli.AnsweringMap.at(question));
   });

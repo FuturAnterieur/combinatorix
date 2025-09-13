@@ -8,7 +8,7 @@
 
 struct endpoint {
   thread_pool Pool;
-  blocking_on_receive_communicator Comm;
+  local_communicator Comm;
   endpoint(int num_threads, int comm_index) : Pool(num_threads), Comm(comm_index) {
     
   }
@@ -39,7 +39,7 @@ TEST_CASE("simple unidir"){
 
   post(client.Pool, [&]() {
     std::string result;
-    client.Comm.receive(chan_idx, result);
+    client.Comm.receive_blocking(chan_idx, result);
     CHECK(result == "WOW");
     IsRunning = false;
   });
@@ -74,7 +74,7 @@ TEST_CASE("simple unidir with receiver delay"){
     std::this_thread::sleep_for(1s);
   
     std::string data;
-    client.Comm.receive(chan_idx, data);
+    client.Comm.receive_blocking(chan_idx, data);
     CHECK(data == "Testing 1 2 1 2");
     IsRunning = false;
   });
@@ -104,7 +104,7 @@ TEST_CASE("simple bidir"){
     server.Comm.send(chan_one, data);
     //Hmm. since send is asynchronous, I cannot use only one channel
     std::string answer;
-    server.Comm.receive(chan_two, answer);
+    server.Comm.receive_blocking(chan_two, answer);
     CHECK(answer == "Red");
 
     IsRunning = false;
@@ -112,7 +112,7 @@ TEST_CASE("simple bidir"){
 
   post(client.Pool, [&](){
     std::string question;
-    client.Comm.receive(chan_one, question);
+    client.Comm.receive_blocking(chan_one, question);
     CHECK(question == "What is your favorite color?");
     client.Comm.send(chan_two, "Red");
   });

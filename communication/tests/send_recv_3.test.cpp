@@ -8,7 +8,7 @@
 
 struct endpoint {
   thread_pool Pool;
-  blocking_on_receive_communicator Comm;
+  local_communicator Comm;
   endpoint(int num_threads, int comm_index) : Pool(num_threads), Comm(comm_index) {
     
   }
@@ -27,7 +27,7 @@ TEST_CASE("bidir with a single channel - simulating game thread + main display t
   
   server.Comm.set_container(&channels);
   
-  queue_on_receive_communicator client_comm(1);
+  local_communicator client_comm(1);
   client_comm.set_container(&channels);
 
   server.Pool.launch();
@@ -38,10 +38,10 @@ TEST_CASE("bidir with a single channel - simulating game thread + main display t
     server.Comm.send(chan_one, "Waiting for animation to complete");
 
     std::string answer;
-    server.Comm.receive(chan_two, answer);
+    server.Comm.receive_blocking(chan_two, answer);
     CHECK(answer == "Red");
 
-    server.Comm.receive(chan_two, answer);
+    server.Comm.receive_blocking(chan_two, answer);
     CHECK(answer == "Animation complete");
 
     IsRunning = false;
@@ -51,7 +51,7 @@ TEST_CASE("bidir with a single channel - simulating game thread + main display t
   int anim_frame_counter = 0;
   while (IsRunning) {
     std::deque<std::string> received_messages;
-    client_comm.receive(chan_one, received_messages);
+    client_comm.receive_non_blocking(chan_one, received_messages);
     while(!received_messages.empty()) {
       std::string data = received_messages.back();
       received_messages.pop_back();
