@@ -1,7 +1,7 @@
 #include "engine/include/game_communicator.h"
 #include "game_communicator.h"
 
-game_communicator::game_communicator(local_communicator *comm)
+game_communicator::game_communicator(blocking_on_receive_communicator *comm)
 {
   _Communication = comm;
 }

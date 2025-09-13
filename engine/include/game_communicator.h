@@ -5,11 +5,11 @@
 
 class engine_API game_communicator{
   public:
-    game_communicator(local_communicator *comm);
+    game_communicator(blocking_on_receive_communicator *comm);
 
     std::string ask_question(const std::string &question_data, size_t chan_idx);
 
   private:
-    local_communicator *_Communication;
+    blocking_on_receive_communicator *_Communication;
     
 };

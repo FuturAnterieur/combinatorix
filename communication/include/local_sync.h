@@ -12,7 +12,8 @@ class communication_API local_channel_container{
     size_t add_channel();
     
   private:
-    friend class local_communicator;
+    friend class blocking_on_receive_communicator;
+    friend class queue_on_receive_communicator;
     local_sync_channel *get_channel(size_t index);
 
     struct pimpl;

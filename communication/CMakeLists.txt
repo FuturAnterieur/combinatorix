@@ -11,3 +11,4 @@ set(TEST_INCLUDES include ../ ${DOCTEST_INCLUDE_DIR})
 
 add_cxx_doctest_driver(TestSendRecv SRCS tests/send_recv.test.cpp INCLUDES ${TEST_INCLUDES} LINKS thread_pool communication TEST_FANCY_NAME send-recv)
 add_cxx_doctest_driver(TestSendRecv2 SRCS tests/send_recv_2.test.cpp INCLUDES ${TEST_INCLUDES} LINKS thread_pool communication TEST_FANCY_NAME send-recv-2)
+add_cxx_doctest_driver(TestSendRecv3 SRCS tests/send_recv_3.test.cpp INCLUDES ${TEST_INCLUDES} LINKS thread_pool communication TEST_FANCY_NAME send-recv-3)

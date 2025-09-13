@@ -3,6 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <string>
+#include <deque>
 
 struct local_sync_channel {
   local_sync_channel() = default;
@@ -11,7 +12,6 @@ struct local_sync_channel {
   std::mutex Mutex{};
   std::condition_variable cvWaiting{};
   
-  bool InfoReady{false};
-  std::string Data{};
+  std::deque<std::string> Queue; //TODO if we want channels to be bidir, two queues are needed
   int LastMessageCommIndex{-1};
 };

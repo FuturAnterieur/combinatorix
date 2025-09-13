@@ -9,9 +9,8 @@
 namespace geometry {
 
   struct move_request {
-    entt::entity Entity;
-    // float Velocity; //would get it from the entity's move speed, which is a parameter
-    glm::vec2 Delta;
+    entt::entity Entity; //TODO to support moving groups of units without them collisioning into each other, support a set of entities here, all sharing the same delta.
+    glm::vec2 Delta;      //but oh no! some might move faster than others -> only group those that have the same speed. So complicated!
   };
 
   using move_requests_container = std::vector<move_request>;

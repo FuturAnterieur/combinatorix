@@ -8,7 +8,7 @@
 
 struct endpoint {
   thread_pool Pool;
-  local_communicator Comm;
+  blocking_on_receive_communicator Comm;
   endpoint(int num_threads, int comm_index) : Pool(num_threads), Comm(comm_index) {
     
   }

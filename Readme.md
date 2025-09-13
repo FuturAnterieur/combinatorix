@@ -40,6 +40,10 @@ Currently, intrinsic changes can be intercepted and modified before they are app
 - For now, bans cannot ban other bans.
 
 # What is planned
+## Code internals
+- Builder class around engine::game_logic to initialize game entities (with statuses, params, positions and colliders)
+
+
 ## Client API
 - Create separate APIs (all referring to game_logic) for status triggers, pre-change triggers, status effects, and the lambda passed to game_logic::run_simulation
 - Offer capacity to edit triggers inside user callbacks mentioned just above
@@ -55,11 +59,14 @@ NEW, SIMPLER PLANS :
 - Just support simple "move to X" queries, without substeps
 - So no 'realtime' movement reactivity
 - Probably attempt to support one move request per unit per timing but we'll see
+- For animation : the game_logic runs in its thread and runs the move completions;
+  it could message the main display thread to run its animations and wait for it to finish.
 
 ## More triggers
 - Event / Game action triggers
   - need to identify/codify game actions
   - still would have a filter function, timing delta, and action function
+- MAYBE game rules/phases could just be other entities with some parameters
 
 ## User interaction during trigger functions
 - Offer players choices during trigger execution (i.e. in trigger funcs)

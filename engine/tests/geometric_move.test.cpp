@@ -21,7 +21,7 @@ struct client {
 
   }
   thread_pool Pool;
-  local_communicator Comm;
+  blocking_on_receive_communicator Comm;
   std::map<std::string, std::string> AnsweringMap;
 };
 
@@ -51,7 +51,7 @@ TEST_CASE("Exchange between client and server with request to move"){
   local_channel_container channels;
   size_t chan_idx = channels.add_channel();
 
-  local_communicator serv_comm(0);
+  blocking_on_receive_communicator serv_comm(0);
   serv_comm.set_container(&channels);
 
   game_communicator serv_gam_comm(&serv_comm);
