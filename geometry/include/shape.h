@@ -30,13 +30,19 @@ namespace geometry{
     aabb RelativeAABB;
   };
 
+
   struct circle_with_position {
     glm::vec2 Position;
     float Radius;
   };
 
+  glm::vec2 circle_to_circle_d(const circle_with_position &a, const circle_with_position &b);
+  float circle_to_aabb_signed_distance(const circle_with_position &a, const aabb &b);
+  glm::vec2 circle_to_aabb_d(const circle_with_position &a, const aabb &b);
+  glm::vec2 aabb_to_aabb_d(const aabb &a, const aabb &b);
+
   bool detect_circle_to_circle_collision(const circle_with_position &a, const circle_with_position &b);
-  bool detect_circle_to_aabb_collision(const circle_collider &a, const aabb_collider &b);
+  bool detect_circle_to_aabb_collision(const circle_with_position &a, const aabb &b);
   bool detect_aabb_to_aabb_collision(const aabb &a, const aabb &b);
 
   geometry_API aabb aabb_from_circle(const glm::vec2 &pos, float radius);

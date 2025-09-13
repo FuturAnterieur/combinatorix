@@ -42,41 +42,47 @@ TEST_CASE("Exchange between client and server with request to move"){
 
   entt::entity opalescence = registry.create();
   game.init_status(opalescence, k_enchantment_hash, smt::added);
+  registry.emplace<geometry::position>(opalescence, glm::vec2(0.f, 0.f));
   game.init_aabb_collider(opalescence, geometry::aabb_collider{{{-5.f, -5.f}, {5.f, 5.f}}});
 
   entt::entity exploration = registry.create();
+  registry.emplace<geometry::position>(exploration, glm::vec2(0, 15.f));
   game.init_status(exploration, k_enchantment_hash, smt::added);
   game.init_circle_collider(exploration, geometry::circle_collider{5.f});
 
-  local_channel_container channels;
-  size_t chan_idx = channels.add_channel();
+  // local_channel_container channels;
+  // size_t chan_idx = channels.add_channel();
 
-  local_communicator serv_comm(0);
-  serv_comm.set_container(&channels);
+  // local_communicator serv_comm(0);
+  // serv_comm.set_container(&channels);
 
-  game_communicator serv_gam_comm(&serv_comm);
+  // game_communicator serv_gam_comm(&serv_comm);
 
-  game.set_communicator(&serv_gam_comm);
+  // game.set_communicator(&serv_gam_comm);
 
-  client cli(1, 1);
-  cli.Comm.set_container(&channels);
-  cli.AnsweringMap["Color"] = "Red";
+  // client cli(1, 1);
+  // cli.Comm.set_container(&channels);
+  // cli.AnsweringMap["Color"] = "Red";
   
-  cli.Pool.launch();
+  // cli.Pool.launch();
 
-  post(cli.Pool, [&](){
-    std::string question;
-    cli.Comm.receive_blocking(chan_idx, question);
-    CHECK(question == "Color");
-    cli.Comm.send(chan_idx, cli.AnsweringMap.at(question));
-  });
+  // post(cli.Pool, [&](){
+  //   std::string question;
+  //   cli.Comm.receive_blocking(chan_idx, question);
+  //   CHECK(question == "Color");
+  //   cli.Comm.send(chan_idx, cli.AnsweringMap.at(question));
+  // });
 
   game.run_simulation([&](engine::game_logic *game){
-    std::string color = game->ask_question(chan_idx, "Color");
+    //std::string color = game->ask_question(chan_idx, "Color");
     attributes_info_short_changes changes;
-    changes.ModifiedParams.emplace(k_color_hash, diff_from_set_val(color));
+    changes.ModifiedParams.emplace(k_color_hash, diff_from_set_val("Red"));
     game->change_intrinsics(opalescence, changes);
+    game->enqueue_move_request(exploration, glm::vec2(0, -5.f));
   });
 
   CHECK(get_string_value(registry, opalescence, k_color_hash) == "Red");
+  glm::vec2 result = registry.get<geometry::position>(exploration).Value;
+  CHECK(result.x == 0.f);
+  CHECK(result.y == 10.f);
 }

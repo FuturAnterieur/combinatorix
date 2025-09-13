@@ -62,7 +62,7 @@ namespace engine{
       auto mrh_view = _Registry->view<move_request_history>();
       for (entt::entity entity : mrh_view) {
         auto &history = mrh_view.get<move_request_history>(entity);
-        //do_move will limit the movement of illegal moves
+        //do_move will restrict the movement of illegal moves
         for (const auto &delta : history.PendingRequests) {
           processor.do_move(geometry::move_request{entity, delta});
         }
@@ -102,7 +102,7 @@ namespace engine{
     geometry::aabb absolute_aabb = collider.RelativeAABB;
     absolute_aabb.move_of(position.Value);
     geometry::collision_processor processor(_Registry);
-    if (processor.aabb_collision_query(absolute_aabb)) {
+    if (processor.aabb_collision_query(absolute_aabb, entity)) {
       return;
     }
 
@@ -120,7 +120,7 @@ namespace engine{
     const auto &position = _Registry->get<geometry::position>(entity);
     // Important : check for collision first
     geometry::collision_processor processor(_Registry);
-    if (processor.circle_collision_query(position.Value, collider.Radius)) {
+    if (processor.circle_collision_query(position.Value, collider.Radius, entity)) {
       return;
     }
 

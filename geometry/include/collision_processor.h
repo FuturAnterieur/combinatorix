@@ -22,11 +22,12 @@ namespace geometry {
 
       bool do_move(const move_request &req);
 
-      bool aabb_collision_query(const aabb &absolute_aabb);
-      bool circle_collision_query(const glm::vec2 &position, float radius);
+      bool aabb_collision_query(const aabb &absolute_aabb, entt::entity owner);
+      bool circle_collision_query(const glm::vec2 &position, float radius, entt::entity owner);
 
+      bool is_circle_colliding_with_entity(const glm::vec2 &position, float radius, entt::entity entity);
+      bool is_aabb_colliding_with_entity(const aabb &absolute_aabb, entt::entity);
 
-      //void process_move_requests(move_requests_container &req, float duration, float delta_time);
     private:
       entt::registry *Registry{nullptr};
   };
