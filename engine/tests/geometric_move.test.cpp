@@ -56,7 +56,7 @@ TEST_CASE("Exchange between client and server with request to move"){
       attributes_info_short_changes changes;
       changes.ModifiedParams.emplace(k_color_hash, diff_from_set_val("Red"));
       game->change_intrinsics(opalescence, changes);
-      game->enqueue_move_request(exploration, glm::vec2(0, -5.f));
+      game->enqueue_move_request({exploration}, glm::vec2(0, -5.f));
     });
   
     CHECK(get_string_value(registry, opalescence, k_color_hash) == "Red");
@@ -71,13 +71,13 @@ TEST_CASE("Exchange between client and server with request to move"){
       attributes_info_short_changes changes;
       changes.ModifiedParams.emplace(k_color_hash, diff_from_set_val("Red"));
       game->change_intrinsics(opalescence, changes);
-      game->enqueue_move_request(exploration, glm::vec2(0, -20.f));
+      game->enqueue_move_request({exploration}, glm::vec2(0, -20.0f));
     });
   
     CHECK(get_string_value(registry, opalescence, k_color_hash) == "Red");
     glm::vec2 result = registry.get<geometry::position>(exploration).Value;
     CHECK(result.x == 0.f);
-    CHECK(result.y == 15.f);
+    CHECK(result.y == 11.f);
   }
 
 

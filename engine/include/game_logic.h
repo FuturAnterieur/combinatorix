@@ -45,7 +45,7 @@ namespace engine {
       void init_aabb_collider(entt::entity entity, const geometry::aabb_collider &collider);
       void init_circle_collider(entt::entity entity, const geometry::circle_collider &collider);
 
-      void enqueue_move_request(entt::entity, const glm::vec2 &delta);
+      void enqueue_move_request(const std::vector<entt::entity> &entities, const glm::vec2 &delta);
 
       void init_attributes(entt::entity entity, const attributes_info_short_changes &delta);
       void change_intrinsics(entt::entity, const attributes_info_short_changes &changes);

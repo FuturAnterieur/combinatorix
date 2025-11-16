@@ -9,7 +9,7 @@
 namespace geometry {
 
   struct move_request {
-    entt::entity Entity; //TODO to support moving groups of units without them collisioning into each other, support a set of entities here, all sharing the same delta.
+    std::vector<entt::entity> Entities; //TODO to support moving groups of units without them collisioning into each other, support a set of entities here, all sharing the same delta.
     glm::vec2 Delta;      //but oh no! some might move faster than others -> only group those that have the same speed. So complicated!
   };
 
@@ -18,7 +18,8 @@ namespace geometry {
   class geometry_API collision_processor {
     public: 
       collision_processor(entt::registry *registry);
-      bool is_move_allowed(const move_request &req);
+      bool is_move_allowed(entt::entity entity, const glm::vec2 &delta);
+      void move_entity(entt::entity entity, const glm::vec2 &delta);
 
       bool do_move(const move_request &req);
 

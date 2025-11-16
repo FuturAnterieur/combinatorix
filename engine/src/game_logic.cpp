@@ -14,6 +14,7 @@ namespace engine{
   game_logic::game_logic(entt::registry *registry){
     HistoryManager.reset(new logistics::history_manager());
     set_registry(registry);
+    _Registry->ctx().emplace<move_request_history>();
   }
 
   //==============================================================
@@ -49,25 +50,21 @@ namespace engine{
       CurrentSimulationData->run_one_timing();
       // of course at each timing we process moves
       // timing has priority over priority_info
-      _Registry->sort<move_request_history>([&](entt::entity lhs, entt::entity rhs) {
-        int lhs_prio = 1;
-        int rhs_prio = 0;
-        priority_request req{{{lhs, &lhs_prio}, {rhs, &rhs_prio}}};
-        classic_priority_callback(req, _Registry);
-        return lhs_prio > rhs_prio;
-      });
+      // _Registry->sort<move_request_history>([&](entt::entity lhs, entt::entity rhs) {
+      //   int lhs_prio = 1;
+      //   int rhs_prio = 0;
+      //   priority_request req{{{lhs, &lhs_prio}, {rhs, &rhs_prio}}};
+      //   classic_priority_callback(req, _Registry);
+      //   return lhs_prio > rhs_prio;
+      // });
   
       geometry::collision_processor processor(_Registry);
   
-      auto mrh_view = _Registry->view<move_request_history>();
-      for (entt::entity entity : mrh_view) {
-        auto &history = mrh_view.get<move_request_history>(entity);
-        //do_move will restrict the movement of illegal moves
-        for (const auto &delta : history.PendingRequests) {
-          processor.do_move(geometry::move_request{entity, delta});
-        }
+      auto &mrh = _Registry->ctx().get<move_request_history>();
+      for (const auto &request : mrh.PendingRequests) {
+        processor.do_move(request);
       }
-      _Registry->clear<move_request_history>();
+      _Registry->ctx().get<move_request_history>().PendingRequests.clear();
     }
 
     HistoryManager->merge_active_branch_to_reality(CurrentSimulationData->EndTiming);
@@ -129,15 +126,15 @@ namespace engine{
   }
 
   //==============================================================
-  void game_logic::enqueue_move_request(entt::entity entity, const glm::vec2 &delta)
+  void game_logic::enqueue_move_request(const std::vector<entt::entity> &entities, const glm::vec2 &delta)
   {
     geometry::collision_processor processor(_Registry);
-    if (!processor.is_move_allowed(geometry::move_request{entity, delta})) {
-      return;
-    }
+    // if (!processor.is_move_allowed(geometry::move_request{entities, delta})) {
+    //   return;
+    // }
 
-    auto &history = _Registry->get_or_emplace<move_request_history>(entity);
-    history.PendingRequests.push_back(delta);
+    auto &history = _Registry->ctx().get<move_request_history>();
+    history.PendingRequests.emplace_back(geometry::move_request{entities, delta});
   
   }
 

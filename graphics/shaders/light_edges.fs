@@ -74,7 +74,7 @@ void main(void)
 	float f = domainwarp(uvw, q, r);
 
    vec3 col = vec3(0.0);
-    col = mix( vec3(0.2,0.1,0.4), vec3(0.3,0.7,0.7), f );
+    col = mix( vec3(0.7,0.1,0.4), vec3(0.7,0.5,0.5), f );
     //col = mix( col, vec3(0.9,0.9,0.9), dot(q,q) );
     //col = mix( col, vec3(0.9,0.9,0.9), 0.2*r.x + 0.5*r.y*r.z );
     
