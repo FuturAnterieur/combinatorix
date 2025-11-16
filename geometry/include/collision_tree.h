@@ -3,6 +3,7 @@
 #include "geometry_export.h"
 #include "shape.h"
 #include <entt/entity/fwd.hpp>
+#include <set>
 
 namespace geometry {
   struct geometry_API tree_node {
@@ -25,7 +26,7 @@ namespace geometry {
   void geometry_API move_proxy(entt::registry &registry, const aabb &new_tight_fitting_aabb, entt::entity owner);
   void geometry_API destroy_proxy(entt::registry &registry, entt::entity owner);
   // In box 2d, tree queries take a callback for further testing in case of AABB match on a leaf
-  entt::entity geometry_API query(entt::registry &registry, const aabb &aabb_, entt::entity owner);
+  entt::entity geometry_API query(entt::registry &registry, const aabb &aabb_, entt::entity owner, const std::set<entt::entity> &excluded_entities);
 
   void insert_leaf(entt::registry &registry, entt::entity leaf);
   void remove_leaf(entt::registry &registry, entt::entity leaf);

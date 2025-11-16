@@ -5,6 +5,7 @@
 #include "geometry/include/shape.h"
 #include <entt/entity/fwd.hpp>
 #include <optional>
+#include <set>
 
 namespace geometry {
 
@@ -18,13 +19,13 @@ namespace geometry {
   class geometry_API collision_processor {
     public: 
       collision_processor(entt::registry *registry);
-      bool is_move_allowed(entt::entity entity, const glm::vec2 &delta);
+      bool is_move_allowed(entt::entity entity, const glm::vec2 &delta, const std::set<entt::entity> &excluded_entities);
       void move_entity(entt::entity entity, const glm::vec2 &delta);
 
       bool do_move(const move_request &req);
 
-      bool aabb_collision_query(const aabb &absolute_aabb, entt::entity owner);
-      bool circle_collision_query(const glm::vec2 &position, float radius, entt::entity owner);
+      bool aabb_collision_query(const aabb &absolute_aabb, entt::entity owner, const std::set<entt::entity> &excluded_entities);
+      bool circle_collision_query(const glm::vec2 &position, float radius, entt::entity owner, const std::set<entt::entity> &excluded_entities);
 
       bool is_circle_colliding_with_entity(const glm::vec2 &position, float radius, entt::entity entity);
       bool is_aabb_colliding_with_entity(const aabb &absolute_aabb, entt::entity);

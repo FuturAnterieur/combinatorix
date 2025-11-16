@@ -16,18 +16,18 @@ namespace geometry{
     Registry = registry;
   }
 
-  bool collision_processor::is_move_allowed(entt::entity entity, const glm::vec2 &delta) {
+  bool collision_processor::is_move_allowed(entt::entity entity, const glm::vec2 &delta, const std::set<entt::entity> &excluded_entities) {
 
     glm::vec2 projected_pos = Registry->get<position>(entity).Value + delta;
     if (Registry->any_of<aabb_collider>(entity)){
       aabb aabb_ = Registry->get<aabb_collider>(entity).RelativeAABB;
       
       aabb_.move_of(projected_pos);
-      return !aabb_collision_query(aabb_, entity);
+      return !aabb_collision_query(aabb_, entity, excluded_entities);
 
     } else if (Registry->any_of<circle_collider>(entity)) {
       circle_collider collider = Registry->get<circle_collider>(entity);
-      return !circle_collision_query(projected_pos, collider.Radius, entity);
+      return !circle_collision_query(projected_pos, collider.Radius, entity, excluded_entities);
     }
 
     return false;
@@ -51,12 +51,15 @@ namespace geometry{
 
   bool collision_processor::do_move(const move_request &req)
   {
+    std::set<entt::entity> entities_excluded_from_queries;
+    entities_excluded_from_queries.insert(req.Entities.begin(), req.Entities.end());
+
     float ratio = 0.f;
     bool move_allowed = true;
     while (move_allowed && ratio < 1.f) {
       bool ok_this_round = true;
       for (size_t i = 0; i < req.Entities.size(); i++) {
-        if (!is_move_allowed(req.Entities[i], req.Delta * ratio)) {
+        if (!is_move_allowed(req.Entities[i], req.Delta * ratio, entities_excluded_from_queries)) {
           ok_this_round = false;
           break;
         }
@@ -76,14 +79,14 @@ namespace geometry{
     return true;
   }
 
-  bool collision_processor::aabb_collision_query(const aabb &absolute_aabb, entt::entity owner)
+  bool collision_processor::aabb_collision_query(const aabb &absolute_aabb, entt::entity owner, const std::set<entt::entity> &excluded_entities)
   {
-    entt::entity colliding = query(*Registry, absolute_aabb, owner);
+    entt::entity colliding = query(*Registry, absolute_aabb, owner, excluded_entities);
     return colliding != entt::null && colliding != owner && is_aabb_colliding_with_entity(absolute_aabb, colliding);
   }
 
-  bool collision_processor::circle_collision_query(const glm::vec2 &position, float radius, entt::entity owner) {
-    entt::entity colliding = query(*Registry, aabb_from_circle(position, radius), owner);
+  bool collision_processor::circle_collision_query(const glm::vec2 &position, float radius, entt::entity owner, const std::set<entt::entity> &excluded_entities) {
+    entt::entity colliding = query(*Registry, aabb_from_circle(position, radius), owner, excluded_entities);
     return colliding != entt::null && colliding != owner && is_circle_colliding_with_entity(position, radius, colliding);
   }
 

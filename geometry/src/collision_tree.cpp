@@ -41,7 +41,7 @@ namespace geometry {
     registry.remove<tree_node>(owner);
   }
 
-  entt::entity query(entt::registry &registry, const aabb &aabb_, entt::entity owner)
+  entt::entity query(entt::registry &registry, const aabb &aabb_, entt::entity owner, const std::set<entt::entity> &excluded_entities)
   {
     std::vector<entt::entity> stack;
     auto root_view = registry.view<is_root>();
@@ -54,7 +54,7 @@ namespace geometry {
     while (!stack.empty()) {
       entt::entity current = stack.back();
       stack.pop_back();
-      if (current == entt::null || current == owner) {
+      if (current == entt::null || current == owner || excluded_entities.find(current) != excluded_entities.end()) {
         continue;
       }
 

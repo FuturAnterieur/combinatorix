@@ -99,7 +99,7 @@ namespace engine{
     geometry::aabb absolute_aabb = collider.RelativeAABB;
     absolute_aabb.move_of(position.Value);
     geometry::collision_processor processor(_Registry);
-    if (processor.aabb_collision_query(absolute_aabb, entity)) {
+    if (processor.aabb_collision_query(absolute_aabb, entity, {entity})) {
       return;
     }
 
@@ -117,7 +117,7 @@ namespace engine{
     const auto &position = _Registry->get<geometry::position>(entity);
     // Important : check for collision first
     geometry::collision_processor processor(_Registry);
-    if (processor.circle_collision_query(position.Value, collider.Radius, entity)) {
+    if (processor.circle_collision_query(position.Value, collider.Radius, entity, {entity})) {
       return;
     }
 
